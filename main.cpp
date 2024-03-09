@@ -10,6 +10,12 @@
 #include "Robot.hpp"
 using namespace std;
 
+#ifdef __DEBUG__
+#define DEBUG if(true)
+#else
+#define DEBUG if(false)
+#endif
+
 chrono::high_resolution_clock::time_point start_time;
 
 auto &robots = Robots::robots;
@@ -38,11 +44,13 @@ void Init() {
     atlas.build();
 
     cout << "OK" << endl;
-    cerr << "build time: "
-         << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_time).count()
-         << " seconds"
-         << endl;
-    exit(0);
+    DEBUG {
+        cerr << "build time: "
+             << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_time).count()
+             << " seconds"
+             << endl;
+    };
+    //    exit(0);
 }
 
 int Input() {
@@ -67,7 +75,6 @@ int Input() {
 
 int main() {
     start_time = chrono::high_resolution_clock::now();
-    freopen("./test.txt", "r", stdin);
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
 

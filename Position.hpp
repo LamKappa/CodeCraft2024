@@ -12,6 +12,7 @@ using u8 = u_int8_t;
 using u16 = u_int16_t;
 struct Position : public std::pair<u8, u8> {
     using pair::pair;
+    static const Position npos;
 #define x first
 #define y second
     friend std::istream &operator>>(std::istream &in, Position &pos) {
@@ -31,6 +32,8 @@ struct Position : public std::pair<u8, u8> {
 #undef x
 #undef y
 };
+
+const Position Position::npos = {-1, -1};
 
 const std::array<Position, 4> Move{
         Position{1u, 0u},

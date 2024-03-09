@@ -43,10 +43,21 @@ struct Atlas {
         return dist[A * A / 2 + B];
     }
 
+    auto path(Position A, Position B) {
+        for(auto& move: Move) {
+            auto C = A + move;
+            if(C.outside() || bitmap[C]) { continue; }
+            if(distance(C, B) < distance(A, B)){
+                return move;
+            }
+        }
+        return Position::npos;
+    }
+
     auto build() {
         std::fill(dist, dist + dist_size, INF_DIS);
 
-        auto range_bfs = [this](int l, int r) {
+        auto range_bfs = [this](u16 l, u16 r) {
             std::queue<Position> q;
             decltype(bitmap) mask;
             std::fill(mask, mask + l, false);
@@ -60,7 +71,7 @@ struct Atlas {
                     auto u = q.front();
                     q.pop();
                     for(auto& move: Move) {
-                        Position v = u + move;
+                        auto v = u + move;
                         if(v.outside() || bitmap[v] || vised[v]) { continue; }
                         vised[v] = true;
                         distance(i, v) = distance(i, u) + 1;
@@ -70,10 +81,11 @@ struct Atlas {
             }
         };
 
-        std::future<void> ft1 = async(std::launch::async, [&range_bfs]{
+        // parallel by 2-cores
+        std::future<void> ft1 = async(std::launch::async, [&range_bfs] {
             range_bfs(0, bitmap_size / 2);
         });
-        std::future<void> ft2 = async(std::launch::async, [&range_bfs]{
+        std::future<void> ft2 = async(std::launch::async, [&range_bfs] {
             range_bfs(bitmap_size / 2, bitmap_size);
         });
 
