@@ -28,10 +28,13 @@ struct Atlas {
     static Atlas atlas;
     static constexpr u16 INF_DIS = -1;
 
-    std::bitset<N * N> bitmap;
-    std::array<u16, N * N * N * N / 2> dist;
+    // C-Array optimize
+    static constexpr int bitmap_size = N * N;
+    static constexpr int dist_size = N * N * N * N / 2;
+    bool bitmap[bitmap_size];
+    u16 dist[dist_size];
 
-    auto bitmap_at(int i, int j) {
+    auto& bitmap_at(int i, int j) {
         return bitmap[Position{i, j}];
     }
 
@@ -41,12 +44,14 @@ struct Atlas {
     }
 
     auto build() {
-        dist.fill(INF_DIS);
+        std::fill(dist, dist + dist_size, INF_DIS);
 
-        std::future<void> ft1 = async(std::launch::async, [&] {
+        auto range_bfs = [this](int l, int r) {
             std::queue<Position> q;
-            decltype(bitmap) mask(0);
-            for(int i = 0; i < N * N / 2; i++) {
+            decltype(bitmap) mask;
+            std::fill(mask, mask + l, false);
+            std::fill(mask + l, mask + bitmap_size, false);
+            for(int i = l; i < r; i++) {
                 if(bitmap[i]) { continue; }
                 auto vised = (mask[i] = true, mask);
                 distance(i, i) = 0;
@@ -56,40 +61,20 @@ struct Atlas {
                     q.pop();
                     for(auto& move: Move) {
                         Position v = u + move;
-                        if(v.outside() || bitmap.test(v) || vised.test(v)) { continue; }
-                        vised.set(v);
+                        if(v.outside() || bitmap[v] || vised[v]) { continue; }
+                        vised[v] = true;
                         distance(i, v) = distance(i, u) + 1;
                         q.emplace(v);
                     }
                 }
             }
+        };
+
+        std::future<void> ft1 = async(std::launch::async, [&range_bfs]{
+            range_bfs(0, bitmap_size / 2);
         });
-
-        std::future<void> ft2 = async(std::launch::async, [&] {
-            std::queue<Position> q;
-            decltype(bitmap) mask(0);
-            mask[0] = 1;
-            for(int i = 1; i < N * N / 2; i <<= 1) {
-                mask |= mask << i;
-            }
-            mask |= mask << (N * N / 2 - (1 << 14));
-            for(int i = N * N / 2; i < N * N; i++) {
-                if(bitmap[i]) { continue; }
-                auto vised = (mask[i] = true, mask);
-                distance(i, i) = 0;
-                q.emplace(i);
-                while(!q.empty()) {
-                    auto u = q.front();
-                    q.pop();
-                    for(auto& move: Move) {
-                        Position v = u + move;
-                        if(v.outside() || bitmap.test(v) || vised.test(v)) { continue; }
-                        vised.set(v);
-                        distance(i, v) = distance(i, u) + 1;
-                        q.emplace(v);
-                    }
-                }
-            }
+        std::future<void> ft2 = async(std::launch::async, [&range_bfs]{
+            range_bfs(bitmap_size / 2, bitmap_size);
         });
 
         ft1.wait();

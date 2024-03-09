@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#pragma GCC optimize(3)
+#pragma GCC optimize(3, "inline", "Ofast")
 
 #include "Atlas.hpp"
 #include "Berth.hpp"
@@ -39,10 +39,10 @@ void Init() {
 
     cout << "OK" << endl;
     cerr << "build time: "
-         << chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - start_time).count()
+         << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_time).count()
          << " seconds"
          << endl;
-//    exit(0);
+    exit(0);
 }
 
 int Input() {
@@ -67,7 +67,7 @@ int Input() {
 
 int main() {
     start_time = chrono::high_resolution_clock::now();
-//    freopen("./test.txt", "r", stdin);
+    freopen("./test.txt", "r", stdin);
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
 
