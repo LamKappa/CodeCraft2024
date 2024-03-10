@@ -10,8 +10,9 @@
 
 struct Robot {
     Position pos;
-    int goods{};
-    int status{};
+//    Mission mission;
+    bool goods{};
+    bool status{};
 
     Robot() = default;
 
@@ -24,6 +25,10 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
     using array::array;
     static Robots robots;
     Robots() = default;
+
+    void resolve(){
+
+    }
 };
 
 #endif//CODECRAFTSDK_ROBOT_HPP

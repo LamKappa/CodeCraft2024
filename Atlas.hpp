@@ -13,9 +13,10 @@
 #include <thread>
 #include <tuple>
 
-#include "Bitset.hpp"
 #include "Config.h"
 #include "Position.hpp"
+#include "Bitset.hpp"
+#include "Queue.hpp"
 
 enum MAP_SYMBOLS {
     GROUND = ' ',
@@ -67,7 +68,7 @@ struct Atlas {
         f_lock.wait();
 
         auto range_bfs = [this](u16 l, u16 r) {
-            std::queue<Position, std::deque<Position, std::allocator<Position>>> q;
+            Queue<Flatten_Position, 3*N> q;
             auto vised = bitmap;
             vised.set(0, l);
             for(int i = l; i < r; i++) {
@@ -75,12 +76,11 @@ struct Atlas {
                 vised.reset(i + 1, bitmap_size);
                 vised.set(i);
                 distance(i, i) = 0;
-                q.emplace(i);
+                q.push(i);
                 while(!q.empty()) {
-                    auto u = q.front();
-                    q.pop();
+                    auto u = q.pop();
                     for(auto& move: Move) {
-                        auto v = u + move;
+                        auto v = Position{u} + move;
                         if(v.outside() || bitmap.test(v) || vised.test(v)) { continue; }
                         vised.set(v);
                         distance(i, v) = distance(i, u) + 1;

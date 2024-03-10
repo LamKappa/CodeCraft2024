@@ -3,14 +3,14 @@
 
 #include "Atlas.hpp"
 #include "Berth.hpp"
-#include "Boat.hpp"
 #include "Config.h"
 #include "Item.hpp"
 #include "Position.hpp"
 #include "Robot.hpp"
+#include "Ship.hpp"
 using namespace std;
 
-#ifdef __DEBUG__
+#ifdef NDEBUG
 #define DEBUG if(true)
 #else
 #define DEBUG if(false)
@@ -20,7 +20,7 @@ chrono::high_resolution_clock::time_point start_time;
 
 auto &robots = Robots::robots;
 auto &berths = Berths::berths;
-auto &boats = Boats::boats;
+auto &ships = Ships::ships;
 auto &items = Items::items;
 auto &atlas = Atlas::atlas;
 
@@ -41,7 +41,7 @@ void Init() {
     for(int i = 0; i < BERTH_NUM; i++) {
         cin >> berths[i];
     }
-    cin >> Boat::CAPACITY;
+    cin >> Ship::CAPACITY;
     cin >> buff;
 
     atlas.build();
@@ -71,12 +71,14 @@ void Input() {
         cin >> robots[i];
     }
     for(int i = 0; i < BOAT_NUM; i++) {
-        cin >> boats[i];
+        cin >> ships[i];
     }
     cin >> buff;
 }
 
 void Resolve() {
+//    auto f1 = robots.resolve();
+//    auto f2 = ships.resolve();
 }
 
 void Output() {
