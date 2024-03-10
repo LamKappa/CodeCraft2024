@@ -46,7 +46,9 @@ struct Berth {
     }
 
     friend auto &operator>>(std::istream &in, Berth &b) {
-        return in >> b.id >> b.pos >> b.transport_time >> b.loading_speed;
+        in >> b.id >> b.pos >> b.transport_time >> b.loading_speed;
+        b.pos = b.pos + Position{1, 1};
+        return in;
     }
 };
 

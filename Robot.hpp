@@ -4,7 +4,7 @@
 
 #include <array>
 #include <future>
-#include <istream>
+#include <iostream>
 
 #include "Atlas.hpp"
 #include "Berth.hpp"
@@ -59,7 +59,7 @@ struct Robot {
         }
         auto complete() {
             if(mission_state == CARRYING &&
-               (executor && executor->pos == target[1])) {
+               (executor && !executor->goods)) {
                 Berths::berths.find_by_pos(target[1])
                         .sign(item_value);
                 mission_state = IDLING;
