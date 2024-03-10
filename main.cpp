@@ -103,7 +103,7 @@ void Output() {
 
 int main() {
     start_time = chrono::high_resolution_clock::now();
-    DEBUG freopen("./test.txt", "r", stdin);
+    DEBUG freopen("../test.txt", "r", stdin);
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
 
