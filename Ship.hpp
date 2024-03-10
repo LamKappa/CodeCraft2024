@@ -72,7 +72,8 @@ struct Ship {
             case SAILING: {
             } break;
             case LOADING: {
-                executor->load += Berths::berths[executor->berth_id].get_load();
+                executor->load++;
+                Berths::berths[executor->berth_id].get_load();
             } break;
             case QUEUEING: {
             } break;
@@ -108,9 +109,9 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
         return std::async(std::launch::async, [this] {
             for(auto &ship: ships) {
                 ship.mission.check_waiting();
-                ship.mission.check_loading();
                 ship.mission.check_queueing();
                 ship.mission.forward();
+                ship.mission.check_loading();
                 ship.mission.check_overload();
             }
         });

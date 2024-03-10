@@ -112,7 +112,7 @@ void Output() {
             if(ships[i].sail_out) { continue; }
             auto next_move = ships[i].mission.target;
             if(next_move == no_index) {
-//                cout << "go " << i << '\n';
+                cout << "go " << i << '\n';
 //                cerr << "go " << i << endl;
             } else {
                 cout << "ship " << i << " " << (int) next_move << '\n';
