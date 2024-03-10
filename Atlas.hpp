@@ -10,12 +10,11 @@
 #include <istream>
 #include <queue>
 #include <set>
-#include <thread>
 #include <tuple>
 
+#include "Bitset.hpp"
 #include "Config.h"
 #include "Position.hpp"
-#include "Bitset.hpp"
 #include "Queue.hpp"
 
 enum MAP_SYMBOLS {
@@ -58,7 +57,7 @@ struct Atlas {
         return Position::npos;
     }
 
-    auto init(){
+    auto init() {
         f_lock = std::async(std::launch::async, [this] {
             std::memset(dist, 0xff, dist_size * sizeof(u16));
         });
@@ -68,7 +67,7 @@ struct Atlas {
         f_lock.wait();
 
         auto range_bfs = [this](u16 l, u16 r) {
-            Queue<Flatten_Position, 3*N> q;
+            Queue<Flatten_Position, 3 * N> q;
             auto vised = bitmap;
             vised.set(0, l);
             for(int i = l; i < r; i++) {
@@ -95,7 +94,7 @@ struct Atlas {
             range_bfs(0, bitmap_size / 2);
         });
         auto ft2 = std::async(std::launch::async, [&range_bfs] {
-            range_bfs(bitmap_size/ 2, bitmap_size);
+            range_bfs(bitmap_size / 2, bitmap_size);
         });
 
         ft1.wait();

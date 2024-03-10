@@ -1,3 +1,7 @@
+#pragma once
+#ifndef CODECRAFTSDK_BITSET_HPP
+#define CODECRAFTSDK_BITSET_HPP
+
 #include <cstring>
 #include <utility>
 
@@ -47,3 +51,5 @@ struct Bitset {
         }
     }
 };
+
+#endif//CODECRAFTSDK_BITSET_HPP

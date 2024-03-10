@@ -3,14 +3,16 @@
 #define CODECRAFTSDK_ROBOT_HPP
 
 #include <array>
+#include <future>
 #include <istream>
 
 #include "Config.h"
+#include "Mission.hpp"
 #include "Position.hpp"
 
 struct Robot {
     Position pos;
-//    Mission mission;
+    Mission mission;
     bool goods{};
     bool status{};
 
@@ -26,8 +28,12 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
     static Robots robots;
     Robots() = default;
 
-    void resolve(){
-
+    std::future<void> resolve() {
+        return std::async(std::launch::async, [this] {
+            for(auto &robot: robots) {
+                if(!robot.mission.complete()) { continue; }
+            }
+        });
     }
 };
 

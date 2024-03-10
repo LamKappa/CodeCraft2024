@@ -3,6 +3,7 @@
 #define CODECRAFTSDK_SHIP_HPP
 
 #include <array>
+#include <future>
 #include <istream>
 
 #include "Config.h"
@@ -24,6 +25,12 @@ struct Ships : public std::array<Ship, BOAT_NUM> {
     using array::array;
     static Ships ships;
     Ships() = default;
+
+    std::future<void> resolve() {
+        return std::async(std::launch::async, [this] {
+
+        });
+    }
 };
 
 #endif//CODECRAFTSDK_SHIP_HPP

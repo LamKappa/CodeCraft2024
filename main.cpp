@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#pragma GCC optimize(3, "inline", "Ofast")
+#pragma GCC optimize(3, "Ofast", "inline")
 
 #include "Atlas.hpp"
 #include "Berth.hpp"
@@ -32,7 +32,7 @@ void Init() {
     for(int i = 0; i < N; i++) {
         for(int j = 0; j < N; j++) {
             char ch;
-            cin>>ch;
+            cin >> ch;
             if(static_cast<bool>(BARRIER_SYM.count(ch))) {
                 atlas.bitmap.set(Position{i, j});
             }
@@ -61,8 +61,8 @@ void Input() {
     cin >> stamp >> money;
     int num;
     cin >> num;
-    while(!items.empty() && items.front().stamp + Item::MAX_TIME_REMAIN < stamp) {
-        items.pop_front();
+    while(!items.empty() && items.peek().stamp + Item::OVERDUE < stamp) {
+        items.pop();
     }
     for(int i = 0; i < num; i++) {
         cin >> items.new_item();
@@ -77,8 +77,11 @@ void Input() {
 }
 
 void Resolve() {
-//    auto f1 = robots.resolve();
-//    auto f2 = ships.resolve();
+    auto f1 = robots.resolve();
+    auto f2 = ships.resolve();
+
+    f1.wait();
+    f2.wait();
 }
 
 void Output() {
