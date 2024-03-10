@@ -91,7 +91,6 @@ void Resolve() {
 
 void Output() {
     for(int i = 0; i < ROBOT_NUM; i++) {
-//        cerr << i << " " << (int)robots[i].pos.first << " " << (int)robots[i].pos.second << " " << endl;
         if(robots[i].mission.mission_state != Robot::Mission::MISSION_STATE::WAITTING) {
             auto next_move = robots[i].mission.next_move;
             int move_id = COMMAND.at(next_move);
@@ -100,19 +99,28 @@ void Output() {
             }
         }
         if(!robots[i].goods) cout << "get " << i << '\n';
-        else cout << "pull " << i << '\n';
+        else
+            cout << "pull " << i << '\n';
     }
     for(int i = 0; i < SHIP_NUM; i++) {
-        if(ships[i].mission.mission_state == Ship::Mission::MISSION_STATE::SAILING &&
-           ships[i].status != 0) {
+        if(ships[i].berth_id != no_index &&
+           berths[ships[i].berth_id].transport_time + 1 >= MAX_FRAME - stamp) {
+            cout << "go " << i << '\n';
+            continue;
+        }
+        if(ships[i].mission.mission_state == Ship::Mission::MISSION_STATE::SAILING) {
+            if(ships[i].sail_out) { continue; }
             auto next_move = ships[i].mission.target;
             if(next_move == no_index) {
-                cout << "go " << i << '\n';
+//                cout << "go " << i << '\n';
+//                cerr << "go " << i << endl;
             } else {
-                cout << "ship " << i << " " << (int)next_move << '\n';
-                cerr << "ship " << i << " " << (int)next_move << endl;
+                cout << "ship " << i << " " << (int) next_move << '\n';
+//                cerr << "ship " << i << " " << (int)next_move << endl;
             }
+            ships[i].sail_out = true;
         }
+//        if(stamp == 1) cout << "ship " << i << " " << (int)(i) << '\n';
     }
 }
 

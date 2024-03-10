@@ -14,6 +14,7 @@ struct Ship {
     int status{};
     index_t berth_id{};
     static int CAPACITY;
+    bool sail_out = false;
 
     struct Mission {
         Mission() = default;
@@ -34,8 +35,25 @@ struct Ship {
             if(!executor) { return; }
             if(executor->status == 1 && executor->berth_id == no_index) {
                 mission_state = WAITING;
+                executor->sail_out = false;
                 executor->load = 0;
                 executor->status = 3;
+            }
+        }
+        auto check_loading() {
+            if(!executor) { return; }
+            if(executor->status == 1 && executor->berth_id != no_index) {
+                mission_state = LOADING;
+                executor->sail_out = false;
+                executor->status = 1;
+            }
+        }
+        auto check_queueing() {
+            if(!executor) { return; }
+            if(executor->status == 2 && executor->berth_id != no_index) {
+                mission_state = QUEUEING;
+                executor->sail_out = false;
+                executor->status = 1;
             }
         }
         auto check_overload() {
@@ -48,11 +66,6 @@ struct Ship {
         }
         auto forward() {
             if(!executor) { return; }
-            switch(executor->status) {
-            case 0: mission_state = SAILING; break;
-            case 1: mission_state = LOADING; break;
-            case 2: mission_state = QUEUEING; break;
-            }
             switch(mission_state) {
             case WAITING: {
             } break;
@@ -95,6 +108,8 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
         return std::async(std::launch::async, [this] {
             for(auto &ship: ships) {
                 ship.mission.check_waiting();
+                ship.mission.check_loading();
+                ship.mission.check_queueing();
                 ship.mission.forward();
                 ship.mission.check_overload();
             }
