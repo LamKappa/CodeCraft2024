@@ -25,6 +25,7 @@ auto &ships = Ships::ships;
 auto &items = Items::items;
 auto &atlas = Atlas::atlas;
 
+std::mt19937 eng(random_device{}());
 int stamp, money;
 char buff[256];
 
@@ -46,6 +47,8 @@ void Init() {
     cin >> buff;
 
     atlas.build();
+    Berth::wanted = Ships::wanted;
+    berths.init();
 
     cout << "OK" << endl;
     DEBUG {
@@ -72,10 +75,9 @@ void Input() {
     for(int i = 0; i < ROBOT_NUM; i++) {
         cin >> robots[i];
     }
-    for(int i = 0; i < BOAT_NUM; i++) {
+    for(int i = 0; i < SHIP_NUM; i++) {
         cin >> ships[i];
     }
-    ships.sort();
     cin >> buff;
 }
 
@@ -89,15 +91,25 @@ void Resolve() {
 
 void Output() {
     for(int i = 0; i < ROBOT_NUM; i++) {
-        auto next_move = robots[i].mission.next_move;
-        int move_id = COMMAND.at(next_move);
-        if(move_id >= 0){
-            cout << "move " << i << " " << move_id << '\n';
+        if(robots[i].mission.mission_state != Robot::Mission::MISSION_STATE::WAITTING) {
+            auto next_move = robots[i].mission.next_move;
+            int move_id = COMMAND.at(next_move);
+            if(move_id >= 0) {
+                cout << "move " << i << " " << move_id << '\n';
+            }
         }
         cout << "get " << i << '\n';
         cout << "pull " << i << '\n';
     }
-    for(int i = 0; i < BOAT_NUM; i++) {
+    for(int i = 0; i < SHIP_NUM; i++) {
+        if(ships[i].mission.mission_state == Ship::Mission::MISSION_STATE::SAILING) {
+            auto next_move = ships[i].mission.target;
+            if(next_move == no_index) {
+                cout << "go " << i << '\n';
+            } else {
+                cout << "ship " << i << " " << next_move << '\n';
+            }
+        }
     }
 }
 

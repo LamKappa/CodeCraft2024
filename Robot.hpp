@@ -17,16 +17,17 @@ struct Robot {
     struct Mission {
         Mission() = default;
         enum MISSION_STATE {
-            VACCANT,
+            WAITTING,
             IDLING,
             SEARCHING,
             CARRYING,
         };
-        MISSION_STATE mission_state{MISSION_STATE::VACCANT};
+        MISSION_STATE mission_state{MISSION_STATE::WAITTING};
         Robot *executor{nullptr};
         float reserved_value{0.f};
         std::array<Position, 2> target{Position::npos};
         Position next_move{Position::npos};
+        int item_value;
 
         static Mission idle;
         [[nodiscard]] static auto calc_value(const Robot &robot, const Item &item, const Berth &berth) {
@@ -39,33 +40,40 @@ struct Robot {
         static Mission create(decltype(executor) exec) {
             Mission mission = {SEARCHING, exec};
             for(auto &item: Items::items) {
+                if(item.occupied) { continue; }
                 for(auto &berth: Berths::berths) {
                     float value = calc_value(*exec, item, berth);
                     if(value > mission.reserved_value) {
+                        mission.item_value = item.value;
                         mission.reserved_value = value;
                         mission.target = {item.pos, berth.pos};
                     }
                 }
             }
+            if(mission.reserved_value <= 0.f) { return idle; }
             return mission;
         }
 
-        [[nodiscard]] inline auto vaccant() {
-            return mission_state == VACCANT;
+        [[nodiscard]] inline auto vaccant() const {
+            return mission_state == WAITTING || mission_state == IDLING;
         }
         auto complete() {
             if(mission_state == CARRYING &&
                (executor && executor->pos == target[1])) {
-                mission_state = VACCANT;
+                Berths::berths.find_by_pos(target[1])
+                        .sign(item_value);
+                mission_state = IDLING;
             }
         }
         auto update() {
             if(mission_state != SEARCHING) { return; }
             for(auto itr = Items::items.rbegin(); itr != Items::items.rend() && itr->stamp == ::stamp; itr++) {
                 auto &item = *itr;
+                if(item.occupied) { continue; }
                 for(auto &berth: Berths::berths) {
                     float value = calc_value(*executor, item, berth);
                     if(value > reserved_value) {
+                        item_value = item.value;
                         reserved_value = value;
                         target = {item.pos, berth.pos};
                     }
@@ -74,20 +82,20 @@ struct Robot {
         }
         auto forward() {
             if(!executor) { return; }
-            if(mission_state == SEARCHING && executor && executor->goods) {
+            if(mission_state == SEARCHING && executor->goods) {
                 mission_state = CARRYING;
+                Berths::berths.find_by_pos(target[1])
+                        .notify(Atlas::atlas.distance(executor->pos, target[1]));
             }
             switch(mission_state) {
-            case VACCANT:
-                break;
-            case IDLING: {
-                /* todo */
+            case WAITTING: {
             } break;
-
+            case IDLING: {
+                next_move = Move[eng() % 4];
+            } break;
             case SEARCHING: {
                 next_move = Atlas::atlas.path(executor->pos, target[0]);
             } break;
-
             case CARRYING: {
                 next_move = Atlas::atlas.path(executor->pos, target[1]);
             } break;

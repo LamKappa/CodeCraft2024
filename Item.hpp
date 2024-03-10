@@ -2,17 +2,19 @@
 #ifndef CODECRAFTSDK_ITEM_HPP
 #define CODECRAFTSDK_ITEM_HPP
 
+#include <deque>
 #include <istream>
 
 #include "Config.h"
 #include "Position.hpp"
-#include "queue"
 
 struct Item {
     int stamp{};
     long unique_id;
     Position pos;
     int value{};
+
+    bool occupied{};
 
     static long item_cnt;
 

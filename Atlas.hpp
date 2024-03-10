@@ -31,8 +31,6 @@ struct Atlas {
     static Atlas atlas;
     static constexpr u16 INF_DIS = -1;
 
-    using Flatten_Position = u16;
-
     // C-Array optimize
     static constexpr int bitmap_size = N * N;
     static constexpr int dist_size = N * N * N * N / 2;

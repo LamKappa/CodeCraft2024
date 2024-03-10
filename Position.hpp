@@ -9,6 +9,7 @@
 
 #include "Config.h"
 
+using Flatten_Position = u16;
 struct Position : public std::pair<u8, u8> {
     using pair::pair;
     static const Position npos;
@@ -18,8 +19,8 @@ struct Position : public std::pair<u8, u8> {
         in >> (int &) pos.x >> (int &) pos.y;
         return in;
     }
-    Position(u16 flatten_pos): pair(flatten_pos / N, flatten_pos % N) {}
-    operator u16() const {
+    Position(Flatten_Position flatten_pos): pair(flatten_pos / N, flatten_pos % N) {}
+    operator Flatten_Position() const {
         return x * N + y;
     }
     auto operator+(const Position &o) {
