@@ -41,6 +41,7 @@ struct Robot {
             Mission mission = {SEARCHING, exec};
             for(auto &item: Items::items) {
                 if(item.occupied) { continue; }
+                if(item.live_time() < Atlas::atlas.distance(exec->pos, item.pos)) { continue; }
                 for(auto &berth: Berths::berths) {
                     float value = calc_value(*exec, item, berth);
                     if(value > mission.reserved_value) {
@@ -105,13 +106,6 @@ struct Robot {
             } break;
             case CARRYING: {
                 next_move = Atlas::atlas.path(executor->pos, target[1]);
-                if(next_move == Position::npos){
-                    Flatten_Position A = executor->pos, B = target[1];
-                    if(A > B) std::swap(A, B);
-                    std::cerr << "from " << executor->pos << " to " << target[1]
-                              << " dis(" << (1 + A) * A / 2 + B << ") = " << Atlas::atlas.dist[(1 + A) * A / 2 + B]
-                              << " dis:" << Atlas::atlas.distance(executor->pos, target[1]) << std::endl;
-                }
             } break;
             }
         }

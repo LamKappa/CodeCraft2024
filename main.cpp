@@ -103,12 +103,14 @@ void Output() {
         else cout << "pull " << i << '\n';
     }
     for(int i = 0; i < SHIP_NUM; i++) {
-        if(ships[i].mission.mission_state == Ship::Mission::MISSION_STATE::SAILING) {
+        if(ships[i].mission.mission_state == Ship::Mission::MISSION_STATE::SAILING &&
+           ships[i].status != 0) {
             auto next_move = ships[i].mission.target;
             if(next_move == no_index) {
                 cout << "go " << i << '\n';
             } else {
                 cout << "ship " << i << " " << (int)next_move << '\n';
+                cerr << "ship " << i << " " << (int)next_move << endl;
             }
         }
     }

@@ -22,6 +22,9 @@ struct Item {
     static constexpr int MAX_ITEM_PER_STAMP = 10;
     static constexpr int OVERDUE = 1000;
 
+    [[nodiscard]] auto live_time()const{
+        return ::stamp - stamp;
+    }
     friend std::istream &operator>>(std::istream &in, Item &it) {
         it.stamp = ::stamp;
         it.unique_id = item_cnt++;
