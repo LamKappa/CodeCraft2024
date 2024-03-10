@@ -28,11 +28,14 @@ int stamp, money;
 char buff[256];
 
 void Init() {
+    atlas.init();
     for(int i = 0; i < N; i++) {
         for(int j = 0; j < N; j++) {
             char ch;
-            cin >> ch;
-            atlas.bitmap_at(i, j) = static_cast<bool>(BARRIER_SYM.count(ch));
+            cin>>ch;
+            if(static_cast<bool>(BARRIER_SYM.count(ch))) {
+                atlas.bitmap.set(Position{i, j});
+            }
         }
     }
     for(int i = 0; i < BERTH_NUM; i++) {
@@ -46,14 +49,15 @@ void Init() {
     cout << "OK" << endl;
     DEBUG {
         cerr << "build time: "
-             << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_time).count()
-             << " seconds"
+             << fixed << setprecision(3)
+             << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_time).count() / 1000.L
+             << " s"
              << endl;
     };
-    //    exit(0);
+    exit(0);
 }
 
-int Input() {
+void Input() {
     cin >> stamp >> money;
     int num;
     cin >> num;
@@ -70,22 +74,29 @@ int Input() {
         cin >> boats[i];
     }
     cin >> buff;
-    return stamp;
+}
+
+void Resolve() {
+}
+
+void Output() {
+    for(int i = 0; i < ROBOT_NUM; i++) {
+    }
+    for(int i = 0; i < BOAT_NUM; i++) {
+    }
 }
 
 int main() {
     start_time = chrono::high_resolution_clock::now();
+    freopen("./test.txt", "r", stdin);
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
 
     Init();
     for(int _ = 1; _ <= 15000; _++) {
         Input();
-        for(int i = 0; i < ROBOT_NUM; i++) {
-            cout << "move " << (i % 10) << " " << (rand() % 4) << '\n';
-        }
-        //        for(int i = 0; i < BOAT_NUM; i ++)
-        //            printf("ship %d %d\n", i % 5, rand() % 10);
+        Resolve();
+        Output();
         cout << "OK" << endl;
     }
 

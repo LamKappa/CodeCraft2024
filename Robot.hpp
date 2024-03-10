@@ -10,8 +10,8 @@
 
 struct Robot {
     Position pos;
-    int goods;
-    int status;
+    int goods{};
+    int status{};
 
     Robot() = default;
 

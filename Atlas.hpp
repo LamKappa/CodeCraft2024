@@ -4,13 +4,16 @@
 
 #include <array>
 #include <bitset>
+#include <cstring>
 #include <future>
+#include <iostream>
 #include <istream>
 #include <queue>
 #include <set>
 #include <thread>
 #include <tuple>
 
+#include "Bitset.hpp"
 #include "Config.h"
 #include "Position.hpp"
 
@@ -28,43 +31,49 @@ struct Atlas {
     static Atlas atlas;
     static constexpr u16 INF_DIS = -1;
 
+    using Flatten_Position = u16;
+
     // C-Array optimize
     static constexpr int bitmap_size = N * N;
     static constexpr int dist_size = N * N * N * N / 2;
-    bool bitmap[bitmap_size];
+    Bitset<bitmap_size> bitmap;
     u16 dist[dist_size];
 
-    auto& bitmap_at(int i, int j) {
-        return bitmap[Position{i, j}];
-    }
+    std::future<void> f_lock;
 
-    auto& distance(Position A, Position B) {
-        if(A > B) swap(A, B);
+    auto& distance(Flatten_Position A, Flatten_Position B) {
+        if(A > B) return dist[B * B / 2 + A];
         return dist[A * A / 2 + B];
     }
 
     auto path(Position A, Position B) {
         for(auto& move: Move) {
             auto C = A + move;
-            if(C.outside() || bitmap[C]) { continue; }
-            if(distance(C, B) < distance(A, B)){
+            if(C.outside() || bitmap.test(C)) { continue; }
+            if(distance(C, B) < distance(A, B)) {
                 return move;
             }
         }
         return Position::npos;
     }
 
+    auto init(){
+        f_lock = std::async(std::launch::async, [this] {
+            std::memset(dist, 0xff, dist_size * sizeof(u16));
+        });
+    }
+
     auto build() {
-        std::fill(dist, dist + dist_size, INF_DIS);
+        f_lock.wait();
 
         auto range_bfs = [this](u16 l, u16 r) {
-            std::queue<Position> q;
-            decltype(bitmap) mask;
-            std::fill(mask, mask + l, false);
-            std::fill(mask + l, mask + bitmap_size, false);
+            std::queue<Position, std::deque<Position, std::allocator<Position>>> q;
+            auto vised = bitmap;
+            vised.set(0, l);
             for(int i = l; i < r; i++) {
-                if(bitmap[i]) { continue; }
-                auto vised = (mask[i] = true, mask);
+                if(bitmap.test(i)) { continue; }
+                vised.reset(i + 1, bitmap_size);
+                vised.set(i);
                 distance(i, i) = 0;
                 q.emplace(i);
                 while(!q.empty()) {
@@ -72,21 +81,21 @@ struct Atlas {
                     q.pop();
                     for(auto& move: Move) {
                         auto v = u + move;
-                        if(v.outside() || bitmap[v] || vised[v]) { continue; }
-                        vised[v] = true;
+                        if(v.outside() || bitmap.test(v) || vised.test(v)) { continue; }
+                        vised.set(v);
                         distance(i, v) = distance(i, u) + 1;
-                        q.emplace(v);
+                        q.push(v);
                     }
                 }
             }
         };
 
         // parallel by 2-cores
-        std::future<void> ft1 = async(std::launch::async, [&range_bfs] {
+        auto ft1 = std::async(std::launch::async, [&range_bfs] {
             range_bfs(0, bitmap_size / 2);
         });
-        std::future<void> ft2 = async(std::launch::async, [&range_bfs] {
-            range_bfs(bitmap_size / 2, bitmap_size);
+        auto ft2 = std::async(std::launch::async, [&range_bfs] {
+            range_bfs(bitmap_size/ 2, bitmap_size);
         });
 
         ft1.wait();
