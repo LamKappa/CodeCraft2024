@@ -10,10 +10,10 @@
 #include "Position.hpp"
 
 struct Berth {
-    int id;
+    size_t id{};
     Position pos;
-    int transport_time;
-    int loading_speed;
+    int transport_time{};
+    int loading_speed{};
 
     Berth() = default;
 

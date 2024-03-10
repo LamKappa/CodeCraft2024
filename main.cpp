@@ -53,7 +53,7 @@ void Init() {
              << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_time).count() / 1000.L
              << " s"
              << endl;
-    };
+    }
     exit(0);
 }
 
@@ -61,11 +61,12 @@ void Input() {
     cin >> stamp >> money;
     int num;
     cin >> num;
-    while(!items.empty() && items.peek().stamp + Item::OVERDUE < stamp) {
-        items.pop();
+    while(!items.empty() && items.front().stamp + Item::OVERDUE < stamp) {
+        items.pop_back();
     }
     for(int i = 0; i < num; i++) {
-        cin >> items.new_item();
+        items.emplace_back();
+        cin >> items.back();
     }
     for(int i = 0; i < ROBOT_NUM; i++) {
         cin >> robots[i];
@@ -86,6 +87,10 @@ void Resolve() {
 
 void Output() {
     for(int i = 0; i < ROBOT_NUM; i++) {
+        auto next_move = robots[i].mission.next_move;
+        cout << "move " << i << " " << COMMAND.at(next_move) << '\n';
+        cout << "get " << i << '\n';
+        cout << "pull " << i << '\n';
     }
     for(int i = 0; i < BOAT_NUM; i++) {
     }
@@ -93,12 +98,12 @@ void Output() {
 
 int main() {
     start_time = chrono::high_resolution_clock::now();
-    freopen("./test.txt", "r", stdin);
+    DEBUG freopen("./test.txt", "r", stdin);
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
 
     Init();
-    for(int _ = 1; _ <= 15000; _++) {
+    for(int _ = 1; _ <= MAX_FRAME; _++) {
         Input();
         Resolve();
         Output();

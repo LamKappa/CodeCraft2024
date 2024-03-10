@@ -8,5 +8,4 @@ set(CMAKE_C_STANDARD 11)
 link_libraries(pthread rt m)
 
 AUX_SOURCE_DIRECTORY(. src)
-ADD_EXECUTABLE(main ${src}
-        Mission.cpp)
+ADD_EXECUTABLE(main ${src})

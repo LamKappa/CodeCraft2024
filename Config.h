@@ -11,6 +11,7 @@ constexpr int N = 200;
 constexpr int ROBOT_NUM = 10;
 constexpr int BERTH_NUM = 10;
 constexpr int BOAT_NUM = 5;
+constexpr int MAX_FRAME = 15000;
 
 extern int stamp, money;
 

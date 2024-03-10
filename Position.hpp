@@ -5,6 +5,7 @@
 #include <array>
 #include <istream>
 #include <tuple>
+#include <map>
 
 #include "Config.h"
 
@@ -33,10 +34,17 @@ struct Position : public std::pair<u8, u8> {
 
 
 constexpr std::array<Position, 4> Move{
-        Position{1u, 0u},
-        {0u, 1u},
-        {-1u, 0u},
+        Position{0u, 1u},
         {0u, -1u},
+        {-1u, 0u},
+        {1u, 0u},
+};
+
+const std::map<Position, char> COMMAND{
+        {Move[0], '0'},
+        {Move[1], '1'},
+        {Move[2], '2'},
+        {Move[3], '3'},
 };
 
 #endif//CODECRAFTSDK_POSITION_HPP
