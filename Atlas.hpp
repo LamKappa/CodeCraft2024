@@ -11,6 +11,7 @@
 #include <queue>
 #include <set>
 #include <tuple>
+#include <algorithm>
 
 #include "Bitset.hpp"
 #include "Config.h"
@@ -46,11 +47,13 @@ struct Atlas {
     }
 
     auto path(Position A, Position B) {
-        for(auto& move: Move) {
-            auto C = A + move;
+        static std::array<u8, Move.size()> sf = {0, 1, 2, 3};
+        std::shuffle(sf.begin(), sf.end(), eng);
+        for(auto i=0; i<Move.size(); i++){
+            auto C = A + Move[sf[i]];
             if(C.outside() || bitmap.test(C)) { continue; }
             if(distance(C, B) < distance(A, B)) {
-                return move;
+                return Move[sf[i]];
             }
         }
         return Position::npos;
