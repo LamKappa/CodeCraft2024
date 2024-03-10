@@ -4,6 +4,7 @@
 
 #include <deque>
 #include <istream>
+#include <algorithm>
 
 #include "Config.h"
 #include "Position.hpp"
@@ -26,6 +27,9 @@ struct Item {
         it.unique_id = item_cnt++;
         return in >> it.pos >> it.value;
     }
+    bool operator<(const Item&o)const{
+        return unique_id < o.unique_id;
+    }
 };
 
 struct Items : public std::deque<Item> {
@@ -33,6 +37,12 @@ struct Items : public std::deque<Item> {
     static Items items;
 
     Items() = default;
+
+    static Item&find_by_id(long id){
+        return *std::lower_bound(items.begin(), items.end(), id, [](auto&item, auto id){
+            return item.unique_id < id;
+        });
+    }
 };
 
 #endif//CODECRAFTSDK_ITEM_HPP

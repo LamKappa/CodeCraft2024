@@ -33,15 +33,16 @@ struct Atlas {
 
     // C-Array optimize
     static constexpr int bitmap_size = N * N;
-    static constexpr int dist_size = N * N * N * N / 2;
+    static constexpr int dist_size = N * N * (N * N + 3) / 2;
     Bitset<bitmap_size> bitmap;
+//    std::bitset<bitmap_size> bitmap;
     u16 dist[dist_size];
 
     std::future<void> f_lock;
 
     auto& distance(Flatten_Position A, Flatten_Position B) {
-        if(A > B) return dist[B * B / 2 + A];
-        return dist[A * A / 2 + B];
+        if(A < B) std::swap(A, B);
+        return dist[(1 + A) * A / 2 + B];
     }
 
     auto path(Position A, Position B) {
@@ -59,6 +60,7 @@ struct Atlas {
         f_lock = std::async(std::launch::async, [this] {
             std::memset(dist, 0xff, dist_size * sizeof(u16));
         });
+        bitmap.reset(0, bitmap_size);
     }
 
     auto build() {
@@ -87,16 +89,17 @@ struct Atlas {
             }
         };
 
+        range_bfs(0, bitmap_size);
         // parallel by 2-cores
-        auto ft1 = std::async(std::launch::async, [&range_bfs] {
-            range_bfs(0, bitmap_size / 2);
-        });
-        auto ft2 = std::async(std::launch::async, [&range_bfs] {
-            range_bfs(bitmap_size / 2, bitmap_size);
-        });
-
-        ft1.wait();
-        ft2.wait();
+//        auto ft1 = std::async(std::launch::async, [&range_bfs] {
+//            range_bfs(0, bitmap_size / 2);
+//        });
+//        auto ft2 = std::async(std::launch::async, [&range_bfs] {
+//            range_bfs(bitmap_size / 2, bitmap_size);
+//        });
+//
+//        ft1.wait();
+//        ft2.wait();
     }
 };
 

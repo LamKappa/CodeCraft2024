@@ -31,12 +31,12 @@ char buff[256];
 
 void Init() {
     atlas.init();
-    for(int i = 0; i < N; i++) {
-        for(int j = 0; j < N; j++) {
+    for(int x = 0; x < N; x++) {
+        for(int y = 0; y < N; y++) {
             char ch;
             cin >> ch;
             if(static_cast<bool>(BARRIER_SYM.count(ch))) {
-                atlas.bitmap.set(Position{i, j});
+                atlas.bitmap.set(Position{x, y});
             }
         }
     }
@@ -91,6 +91,7 @@ void Resolve() {
 
 void Output() {
     for(int i = 0; i < ROBOT_NUM; i++) {
+//        cerr << i << " " << (int)robots[i].pos.first << " " << (int)robots[i].pos.second << " " << endl;
         if(robots[i].mission.mission_state != Robot::Mission::MISSION_STATE::WAITTING) {
             auto next_move = robots[i].mission.next_move;
             int move_id = COMMAND.at(next_move);
@@ -98,8 +99,8 @@ void Output() {
                 cout << "move " << i << " " << move_id << '\n';
             }
         }
-        cout << "get " << i << '\n';
-        cout << "pull " << i << '\n';
+        if(!robots[i].goods) cout << "get " << i << '\n';
+        else cout << "pull " << i << '\n';
     }
     for(int i = 0; i < SHIP_NUM; i++) {
         if(ships[i].mission.mission_state == Ship::Mission::MISSION_STATE::SAILING) {
@@ -107,7 +108,7 @@ void Output() {
             if(next_move == no_index) {
                 cout << "go " << i << '\n';
             } else {
-                cout << "ship " << i << " " << next_move << '\n';
+                cout << "ship " << i << " " << (int)next_move << '\n';
             }
         }
     }

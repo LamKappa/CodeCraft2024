@@ -27,7 +27,7 @@ struct Robot {
         float reserved_value{0.f};
         std::array<Position, 2> target{Position::npos};
         Position next_move{Position::npos};
-        int item_value;
+        long item_id = -1;
 
         static Mission idle;
         [[nodiscard]] static auto calc_value(const Robot &robot, const Item &item, const Berth &berth) {
@@ -44,7 +44,11 @@ struct Robot {
                 for(auto &berth: Berths::berths) {
                     float value = calc_value(*exec, item, berth);
                     if(value > mission.reserved_value) {
-                        mission.item_value = item.value;
+                        if(mission.item_id >= 0){
+                            Items::find_by_id(mission.item_id).occupied = false;
+                        }
+                        item.occupied = true;
+                        mission.item_id = item.unique_id;
                         mission.reserved_value = value;
                         mission.target = {item.pos, berth.pos};
                     }
@@ -57,36 +61,39 @@ struct Robot {
         [[nodiscard]] inline auto vaccant() const {
             return mission_state == WAITTING || mission_state == IDLING;
         }
-        auto complete() {
+        auto check_complete() {
             if(mission_state == CARRYING &&
                (executor && !executor->goods)) {
                 Berths::berths.find_by_pos(target[1])
-                        .sign(item_value);
+                        .sign(Items::find_by_id(item_id).value);
                 mission_state = IDLING;
             }
         }
         auto update() {
-            if(mission_state != SEARCHING) { return; }
-            for(auto itr = Items::items.rbegin(); itr != Items::items.rend() && itr->stamp == ::stamp; itr++) {
-                auto &item = *itr;
-                if(item.occupied) { continue; }
-                for(auto &berth: Berths::berths) {
-                    float value = calc_value(*executor, item, berth);
-                    if(value > reserved_value) {
-                        item_value = item.value;
-                        reserved_value = value;
-                        target = {item.pos, berth.pos};
-                    }
-                }
-            }
+//            if(mission_state != SEARCHING) { return; }
+//            for(auto itr = Items::items.rbegin(); itr != Items::items.rend() && itr->stamp == ::stamp; itr++) {
+//                auto &item = *itr;
+//                if(item.occupied) { continue; }
+//                for(auto &berth: Berths::berths) {
+//                    float value = calc_value(*executor, item, berth);
+//                    if(value > reserved_value) {
+//                        item_value = item.value;
+//                        reserved_value = value;
+//                        target = {item.pos, berth.pos};
+//                    }
+//                }
+//            }
         }
-        auto forward() {
-            if(!executor) { return; }
-            if(mission_state == SEARCHING && executor->goods) {
+        auto check_carry() {
+            if(mission_state == SEARCHING &&
+               (executor && executor->goods)) {
                 mission_state = CARRYING;
                 Berths::berths.find_by_pos(target[1])
                         .notify(Atlas::atlas.distance(executor->pos, target[1]));
             }
+        }
+        auto forward() {
+            if(!executor) { return; }
             switch(mission_state) {
             case WAITTING: {
             } break;
@@ -98,6 +105,13 @@ struct Robot {
             } break;
             case CARRYING: {
                 next_move = Atlas::atlas.path(executor->pos, target[1]);
+                if(next_move == Position::npos){
+                    Flatten_Position A = executor->pos, B = target[1];
+                    if(A > B) std::swap(A, B);
+                    std::cerr << "from " << executor->pos << " to " << target[1]
+                              << " dis(" << (1 + A) * A / 2 + B << ") = " << Atlas::atlas.dist[(1 + A) * A / 2 + B]
+                              << " dis:" << Atlas::atlas.distance(executor->pos, target[1]) << std::endl;
+                }
             } break;
             }
         }
@@ -121,12 +135,13 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
     std::future<void> resolve() {
         return std::async(std::launch::async, [this] {
             for(auto &robot: robots) {
-                robot.mission.complete();
+                robot.mission.check_complete();
                 if(robot.mission.vaccant()) {
                     robot.mission = Robot::Mission::create(&robot);
                 } else {
                     robot.mission.update();
                 }
+                robot.mission.check_carry();
                 robot.mission.forward();
             }
         });

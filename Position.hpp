@@ -3,9 +3,9 @@
 #define CODECRAFTSDK_POSITION_HPP
 
 #include <array>
-#include <istream>
-#include <tuple>
+#include <iostream>
 #include <map>
+#include <tuple>
 
 #include "Config.h"
 
@@ -16,8 +16,10 @@ struct Position : public std::pair<u8, u8> {
 #define x first
 #define y second
     friend std::istream &operator>>(std::istream &in, Position &pos) {
-        in >> (int &) pos.x >> (int &) pos.y;
-        return in;
+        return in >> (int &) pos.x >> (int &) pos.y;
+    }
+    friend std::ostream &operator<<(std::ostream &out, Position &pos) {
+        return out << "(" << (int) pos.x << "," << (int) pos.y << ")";
     }
     Position(Flatten_Position flatten_pos): pair(flatten_pos / N, flatten_pos % N) {}
     operator Flatten_Position() const {
