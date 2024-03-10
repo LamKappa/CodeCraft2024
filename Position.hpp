@@ -40,11 +40,12 @@ constexpr std::array<Position, 4> Move{
         {1u, 0u},
 };
 
-const std::map<Position, char> COMMAND{
-        {Move[0], '0'},
-        {Move[1], '1'},
-        {Move[2], '2'},
-        {Move[3], '3'},
+const std::map<Position, int> COMMAND{
+        {Position::npos, -1},
+        {Move[0], 0},
+        {Move[1], 1},
+        {Move[2], 2},
+        {Move[3], 3},
 };
 
 #endif//CODECRAFTSDK_POSITION_HPP

@@ -5,6 +5,8 @@
 #include <array>
 #include <future>
 #include <istream>
+#include <numeric>
+#include <algorithm>
 
 #include "Config.h"
 
@@ -26,6 +28,14 @@ struct Ships : public std::array<Ship, BOAT_NUM> {
     static Ships ships;
     Ships() = default;
 
+    std::array<long, BOAT_NUM> sort_id;
+
+    auto sort(){
+        std::iota(sort_id.begin(), sort_id.end(), 0);
+        std::sort(sort_id.begin(), sort_id.end(), [this](auto i, auto j){
+            return ships[i].load <
+        });
+    }
     std::future<void> resolve() {
         return std::async(std::launch::async, [this] {
 

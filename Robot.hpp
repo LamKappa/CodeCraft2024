@@ -17,11 +17,12 @@ struct Robot {
     struct Mission {
         Mission() = default;
         enum MISSION_STATE {
+            VACCANT,
             IDLING,
             SEARCHING,
             CARRYING,
         };
-        MISSION_STATE mission_state{MISSION_STATE::IDLING};
+        MISSION_STATE mission_state{MISSION_STATE::VACCANT};
         Robot *executor{nullptr};
         float reserved_value{0.f};
         std::array<Position, 2> target{Position::npos};
@@ -49,11 +50,17 @@ struct Robot {
             return mission;
         }
 
-        [[nodiscard]] auto complete() {
-            return mission_state == CARRYING &&
-                   (executor && executor->pos == target[1]);
+        [[nodiscard]] inline auto vaccant() {
+            return mission_state == VACCANT;
+        }
+        auto complete() {
+            if(mission_state == CARRYING &&
+               (executor && executor->pos == target[1])) {
+                mission_state = VACCANT;
+            }
         }
         auto update() {
+            if(mission_state != SEARCHING) { return; }
             for(auto itr = Items::items.rbegin(); itr != Items::items.rend() && itr->stamp == ::stamp; itr++) {
                 auto &item = *itr;
                 for(auto &berth: Berths::berths) {
@@ -71,6 +78,8 @@ struct Robot {
                 mission_state = CARRYING;
             }
             switch(mission_state) {
+            case VACCANT:
+                break;
             case IDLING: {
                 /* todo */
             } break;
@@ -104,7 +113,8 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
     std::future<void> resolve() {
         return std::async(std::launch::async, [this] {
             for(auto &robot: robots) {
-                if(robot.mission.complete()) {
+                robot.mission.complete();
+                if(robot.mission.vaccant()) {
                     robot.mission = Robot::Mission::create(&robot);
                 } else {
                     robot.mission.update();
@@ -114,5 +124,15 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
         });
     }
 };
+
+/**
+ * idea:
+ * 1. 设定mission时找value最优的, 之后只做每次增量更新 (now)
+ *  Exception:
+ *      1. 最差情况下1000*10都重置mission的复杂度较差
+ * 2. 将货物挂在最近的码头, 用set维护 (时间优化)
+ *  Exception:
+ *      1. 货物太少, 需要换码头
+ * */
 
 #endif//CODECRAFTSDK_ROBOT_HPP

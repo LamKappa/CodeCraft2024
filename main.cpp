@@ -10,7 +10,8 @@
 #include "Ship.hpp"
 using namespace std;
 
-#ifdef NDEBUG
+//#define DEBUG_
+#ifdef DEBUG_
 #define DEBUG if(true)
 #else
 #define DEBUG if(false)
@@ -53,8 +54,8 @@ void Init() {
              << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_time).count() / 1000.L
              << " s"
              << endl;
+        exit(0);
     }
-    exit(0);
 }
 
 void Input() {
@@ -74,6 +75,7 @@ void Input() {
     for(int i = 0; i < BOAT_NUM; i++) {
         cin >> ships[i];
     }
+    ships.sort();
     cin >> buff;
 }
 
@@ -88,7 +90,10 @@ void Resolve() {
 void Output() {
     for(int i = 0; i < ROBOT_NUM; i++) {
         auto next_move = robots[i].mission.next_move;
-        cout << "move " << i << " " << COMMAND.at(next_move) << '\n';
+        int move_id = COMMAND.at(next_move);
+        if(move_id >= 0){
+            cout << "move " << i << " " << move_id << '\n';
+        }
         cout << "get " << i << '\n';
         cout << "pull " << i << '\n';
     }

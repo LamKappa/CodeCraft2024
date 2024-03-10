@@ -102,4 +102,16 @@ struct Atlas {
     }
 };
 
+/**
+ * idea:
+ * 1. 采用扁平化索引, 省空间 (N^4会爆空间)
+ * 2. BFS n^2 全局最短路
+ *  优化
+ *      1. 双线程, 一半空间, BFS只做向后搜索 (初始化16s)
+ *      2. 自定义Bitset存储bitmap和vised, 支持/w常数的区间赋值 (初始化4.5s)
+ *      3. 采用自定义的循环队列优化BFS的std::queue, 优化掉deque内存分配 (初始化4s)
+ *      4. 将dist的初始化移至读入map之前多线程执行 (初始化3.5s)
+ * 3. 采用四向枚举来确定最短路路径
+ */
+
 #endif//CODECRAFTSDK_ATLAS_HPP
