@@ -71,19 +71,23 @@ struct Robot {
             }
         }
         auto update() {
-//            if(mission_state != SEARCHING) { return; }
-//            for(auto itr = Items::items.rbegin(); itr != Items::items.rend() && itr->stamp == ::stamp; itr++) {
-//                auto &item = *itr;
-//                if(item.occupied) { continue; }
-//                for(auto &berth: Berths::berths) {
-//                    float value = calc_value(*executor, item, berth);
-//                    if(value > reserved_value) {
-//                        item_value = item.value;
-//                        reserved_value = value;
-//                        target = {item.pos, berth.pos};
-//                    }
-//                }
-//            }
+            if(mission_state != SEARCHING) { return; }
+            for(auto itr = Items::items.rbegin(); itr != Items::items.rend() && itr->stamp == ::stamp; itr++) {
+                auto &item = *itr;
+                if(item.occupied) { continue; }
+                for(auto &berth: Berths::berths) {
+                    float value = calc_value(*executor, item, berth);
+                    if(value > reserved_value) {
+                        if(item_id >= 0){
+                            Items::find_by_id(item_id).occupied = false;
+                        }
+                        item.occupied = true;
+                        item_id = item.unique_id;
+                        reserved_value = value;
+                        target = {item.pos, berth.pos};
+                    }
+                }
+            }
         }
         auto check_carry() {
             if(mission_state == SEARCHING &&
