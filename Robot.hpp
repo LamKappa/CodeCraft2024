@@ -45,7 +45,7 @@ struct Robot {
                 for(auto &berth: Berths::berths) {
                     float value = calc_value(*exec, item, berth);
                     if(value > mission.reserved_value) {
-                        if(mission.item_id >= 0){
+                        if(mission.item_id >= 0) {
                             Items::find_by_id(mission.item_id).occupied = false;
                         }
                         item.occupied = true;
@@ -62,9 +62,9 @@ struct Robot {
         [[nodiscard]] inline auto vaccant() const {
             return mission_state == WAITTING || mission_state == IDLING;
         }
-        auto check_item_overdue(){
+        auto check_item_overdue() {
             if(mission_state == SEARCHING &&
-               Items::items.find_by_id(item_id).live_time() < Atlas::atlas.distance(executor->pos, target[0])){
+               Items::items.find_by_id(item_id).live_time() < Atlas::atlas.distance(executor->pos, target[0])) {
                 mission_state = IDLING;
             }
         }
@@ -84,7 +84,7 @@ struct Robot {
                 for(auto &berth: Berths::berths) {
                     float value = calc_value(*executor, item, berth);
                     if(value > reserved_value) {
-                        if(item_id >= 0){
+                        if(item_id >= 0) {
                             Items::find_by_id(item_id).occupied = false;
                         }
                         item.occupied = true;
@@ -107,6 +107,7 @@ struct Robot {
             if(!executor) { return; }
             switch(mission_state) {
             case WAITTING: {
+                next_move = Position::npos;
             } break;
             case IDLING: {
                 next_move = Atlas::atlas.around(executor->pos);
@@ -138,6 +139,24 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
 
     std::future<void> resolve() {
         return std::async(std::launch::async, [this] {
+            std::set<Position> obstacles;
+            auto obstacle_avoiding = [this, &obstacles](Robot &robot) {
+                Position &now = robot.pos;
+                Position &next_move = robot.mission.next_move;
+                if(obstacles.count(now + next_move)) {
+                    if(obstacles.count(now)) {
+                        next_move = Position::npos;
+                    } else {
+                        for(auto &move: Move) {
+                            if(!obstacles.count(now + move)) {
+                                next_move = move;
+                                break;
+                            }
+                        }
+                    }
+                }
+                obstacles.insert({now, now + robot.mission.next_move});
+            };
             for(auto &robot: robots) {
                 robot.mission.check_item_overdue();
                 robot.mission.check_complete();
@@ -148,6 +167,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                 }
                 robot.mission.check_carry();
                 robot.mission.forward();
+                obstacle_avoiding(robot);
             }
         });
     }
@@ -163,7 +183,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
  *      3. 对Item做互斥占有, 目前是维护id二分查找
  *          (优化思路:items改为linked-list/circular-queue存储, 维护迭代器, 可以全On)
  *      4. 没有做避让机制 (next)
- *          4.1 目前idea是维护robot的位置和前进位置的set, 然后判断若出现阻塞则随机换向/不动(除非自身位置也不保)
+ *          4.1 [*已添加] 目前idea是维护robot的位置和前进位置的set, 然后判断若出现阻塞则随机换向/不动(除非自身位置也不保)
  *          4.2 暂时没有考虑每一帧做A*等搜索来实现 (时间似乎能够)
  *          4.3 [*已修复] 若避让或撞击导致抵达时间延期, 可能导致货物消失, 没有做货物消失的update/或选取时预留好误差
  * 2. 将货物挂在最近的码头, 用set维护 (时间优化)
