@@ -46,9 +46,9 @@ void Init() {
     }
     for(int i = 0; i < BERTH_NUM; i++) {
         cin >> berths[i];
-        if(eng() % BERTH_NUM >= SHIP_NUM){
-            berths[i].disabled = true;
-        }
+        // if(eng() % BERTH_NUM >= SHIP_NUM){
+        //     berths[i].disabled = true;
+        // }
     }
     cin >> SHIP_CAPACITY;
     cin >> buff;
