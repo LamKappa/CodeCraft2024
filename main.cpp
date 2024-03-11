@@ -10,7 +10,7 @@
 #include "Ship.hpp"
 using namespace std;
 
-//#define DEBUG_
+#define DEBUG_
 #ifdef DEBUG_
 #define DEBUG if(true)
 #else

@@ -70,4 +70,15 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
     }
 };
 
+/**
+ * idea:
+ * 1. notify机制提醒需要使用此泊位, 目前提醒后是即刻响应并更新occupied的, 并且robot只在拿起物品时提醒
+ *  优化
+ *      1. 可以做成提醒后回调更新, ship处可以设置若没有空余船进入等待队列等
+ *          优点是船的调度逻辑是独立的, 且每次notify都表明有一个新物品要送达
+ *          (参数value也是预备此功能添加的)
+ * 2. wanted回调用于寻求船, 至于几艘船或者是否响应, 交给回调方处理
+ * 3. sign/get_load记录货物运到/上船 (目前好像没有实际作用)
+ * */
+
 #endif//CODECRAFTSDK_BERTH_HPP

@@ -92,17 +92,16 @@ struct Atlas {
             }
         };
 
-        range_bfs(0, bitmap_size);
         // parallel by 2-cores
-//        auto ft1 = std::async(std::launch::async, [&range_bfs] {
-//            range_bfs(0, bitmap_size / 2);
-//        });
-//        auto ft2 = std::async(std::launch::async, [&range_bfs] {
-//            range_bfs(bitmap_size / 2, bitmap_size);
-//        });
-//
-//        ft1.wait();
-//        ft2.wait();
+        auto ft1 = std::async(std::launch::async, [&range_bfs] {
+            range_bfs(0, bitmap_size / 2);
+        });
+        auto ft2 = std::async(std::launch::async, [&range_bfs] {
+            range_bfs(bitmap_size / 2, bitmap_size);
+        });
+
+        ft1.wait();
+        ft2.wait();
     }
 };
 
@@ -113,9 +112,11 @@ struct Atlas {
  *  优化
  *      1. 双线程, 一半空间, BFS只做向后搜索 (初始化16s)
  *      2. 自定义Bitset存储bitmap和vised, 支持/w常数的区间赋值 (初始化4.5s)
- *      3. 采用自定义的循环队列优化BFS的std::queue, 优化掉deque内存分配 (初始化4s)
- *      4. 将dist的初始化移至读入map之前多线程执行 (初始化3.5s)
+ *      3. 采用自定义的循环队列优化BFS的std::queue, 优化掉deque内存分配 (初始化3.5s)
+ *      4. 将dist的初始化移至读入map之前多线程执行 (初始化1.5s)
  * 3. 采用四向枚举来确定最短路路径
+ *  优化
+ *      1. path采用随机枚举顺序(避让优化)
  */
 
 #endif//CODECRAFTSDK_ATLAS_HPP

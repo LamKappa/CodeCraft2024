@@ -109,13 +109,24 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
         return std::async(std::launch::async, [this] {
             for(auto &ship: ships) {
                 ship.mission.check_waiting();
+                ship.mission.check_loading();
                 ship.mission.check_queueing();
                 ship.mission.forward();
-                ship.mission.check_loading();
                 ship.mission.check_overload();
             }
         });
     }
 };
+
+/**
+ * idea:
+ * 1. 设定mission, 当泊位回调wanted时分配
+ *  状态机模型: SAILING -> WAITING / LOADING / QUEUEING; LOADING -> SAILING; QUEUEING -> LOADING
+ *  Exception:
+ *      1. 没有多船只等候分配的优化
+ *      2. 没有船只提前分配的优化
+ *      3. 目前状态机转移比较混乱, 主要依靠每帧的输入判断 (潜在的BUG)
+ * */
+
 
 #endif//CODECRAFTSDK_SHIP_HPP

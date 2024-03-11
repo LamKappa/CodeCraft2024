@@ -149,11 +149,19 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
 /**
  * idea:
  * 1. 设定mission时找value最优的, 之后只做每次增量更新 (now)
+ *  状态机模型: WAITING/IDLING -> SEARCHING; SEARCHING -> CARRYING; CARRYING -> IDLING
  *  Exception:
  *      1. 最差情况下1000*10都重置mission的复杂度较差
+ *      2. 没有按泊位信息(运输时间、装载速度)优化
+ *      3. 对Item做互斥占有, 目前是维护id二分查找
+ *          (优化思路:items改为linked-list/circular-queue存储, 维护迭代器, 可以全On)
+ *      4. 没有做避让机制 (next)
+ *          4.1 目前idea是维护robot的位置和前进位置的set, 然后判断若出现阻塞则随机换向/不动(除非自身位置也不保)
+ *          4.2 暂时没有考虑每一帧做A*等搜索来实现 (时间似乎能够)
+ *          4.3 若避让导致抵达时间延期, 可能导致货物消失, 没有做货物消失的update/或选取时预留好误差
  * 2. 将货物挂在最近的码头, 用set维护 (时间优化)
  *  Exception:
- *      1. 货物太少, 需要换码头
+ *      1. 货物太少, 需要换码头, 远的码头可能更差
  * */
 
 #endif//CODECRAFTSDK_ROBOT_HPP
