@@ -18,12 +18,13 @@ struct Item {
     bool occupied{};
 
     static long item_cnt;
+    static Item noItem;
 
     static constexpr int MAX_ITEM_PER_STAMP = 10;
     static constexpr int OVERDUE = 1000;
 
     [[nodiscard]] auto live_time()const{
-        return ::stamp - stamp;
+        return OVERDUE - (::stamp - stamp);
     }
     friend std::istream &operator>>(std::istream &in, Item &it) {
         it.stamp = ::stamp;
@@ -42,9 +43,10 @@ struct Items : public std::deque<Item> {
     Items() = default;
 
     static Item&find_by_id(long id){
-        return *std::lower_bound(items.begin(), items.end(), id, [](auto&item, auto id){
+        auto res = std::lower_bound(items.begin(), items.end(), id, [](auto&item, auto id){
             return item.unique_id < id;
         });
+        return res == items.end() ? Item::noItem : *res;
     }
 };
 
