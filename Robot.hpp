@@ -62,6 +62,12 @@ struct Robot {
         [[nodiscard]] inline auto vaccant() const {
             return mission_state == WAITTING || mission_state == IDLING;
         }
+        auto check_item_overdue(){
+            if(mission_state == SEARCHING &&
+               Items::items.find_by_id(item_id).live_time() < Atlas::atlas.distance(executor->pos, target[0])){
+                mission_state = IDLING;
+            }
+        }
         auto check_complete() {
             if(mission_state == CARRYING &&
                (executor && !executor->goods)) {
@@ -103,7 +109,7 @@ struct Robot {
             case WAITTING: {
             } break;
             case IDLING: {
-                next_move = Move[eng() % 4];
+                next_move = Atlas::atlas.around(executor->pos);
             } break;
             case SEARCHING: {
                 next_move = Atlas::atlas.path(executor->pos, target[0]);
@@ -133,6 +139,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
     std::future<void> resolve() {
         return std::async(std::launch::async, [this] {
             for(auto &robot: robots) {
+                robot.mission.check_item_overdue();
                 robot.mission.check_complete();
                 if(robot.mission.vaccant()) {
                     robot.mission = Robot::Mission::create(&robot);
@@ -158,7 +165,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
  *      4. 没有做避让机制 (next)
  *          4.1 目前idea是维护robot的位置和前进位置的set, 然后判断若出现阻塞则随机换向/不动(除非自身位置也不保)
  *          4.2 暂时没有考虑每一帧做A*等搜索来实现 (时间似乎能够)
- *          4.3 若避让导致抵达时间延期, 可能导致货物消失, 没有做货物消失的update/或选取时预留好误差
+ *          4.3 [*已修复] 若避让或撞击导致抵达时间延期, 可能导致货物消失, 没有做货物消失的update/或选取时预留好误差
  * 2. 将货物挂在最近的码头, 用set维护 (时间优化)
  *  Exception:
  *      1. 货物太少, 需要换码头, 远的码头可能更差

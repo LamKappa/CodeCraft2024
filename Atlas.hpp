@@ -39,6 +39,7 @@ struct Atlas {
     u16 dist[dist_size];
 
     std::future<void> f_lock;
+    std::array<u8, Move.size()> sf = {0, 1, 2, 3};
 
     inline auto& distance(Flatten_Position A, Flatten_Position B) {
         if(A < B) return dist[(1 + B) * B / 2 + A];
@@ -46,7 +47,6 @@ struct Atlas {
     }
 
     auto path(Position A, Position B) {
-        static std::array<u8, Move.size()> sf = {0, 1, 2, 3};
         std::shuffle(sf.begin(), sf.end(), eng);
         for(auto i = 0; i < Move.size(); i++) {
             auto C = A + Move[sf[i]];
@@ -54,6 +54,16 @@ struct Atlas {
             if(distance(C, B) < distance(A, B)) {
                 return Move[sf[i]];
             }
+        }
+        return Position::npos;
+    }
+
+    auto around(Position p){
+        std::shuffle(sf.begin(), sf.end(), eng);
+        for(auto i = 0; i < Move.size(); i++) {
+            auto C = p + Move[sf[i]];
+            if(C.outside() || bitmap.test(C)) { continue; }
+            return Move[sf[i]];
         }
         return Position::npos;
     }
