@@ -10,10 +10,10 @@
 #include "Ship.hpp"
 using namespace std;
 
+int obstacle_cnt = 0;
 #define DEBUG_
 #ifdef DEBUG_
 #define DEBUG if(true)
-int obstacle_cnt = 0;
 #else
 #define DEBUG if(false)
 #endif
@@ -39,6 +39,8 @@ void Init() {
             cin >> ch;
             if(static_cast<bool>(BARRIER_SYM.count(ch))) {
                 atlas.bitmap.set(Position{x, y});
+            }else{
+                atlas.bitmap.reset(Position{x, y});
             }
         }
     }
@@ -99,16 +101,17 @@ void Resolve() {
 
 void Output() {
     for(int i = 0; i < ROBOT_NUM; i++) {
-        if(robots[i].mission.mission_state != Robot::Mission::MISSION_STATE::WAITTING) {
-            auto next_move = robots[i].mission.next_move;
-            int move_id = COMMAND.at(next_move);
-            if(move_id >= 0) {
-                cout << "move " << i << " " << move_id << '\n';
-            }
+        auto next_move = robots[i].mission.next_move;
+        int move_id = COMMAND.at(next_move);
+        if(move_id >= 0) {
+            cout << "move " << i << " " << move_id << '\n';
         }
-        if(!robots[i].goods) cout << "get " << i << '\n';
-        else
+
+        if(!robots[i].goods) {
+            cout << "get " << i << '\n';
+        } else {
             cout << "pull " << i << '\n';
+        }
     }
     for(int i = 0; i < SHIP_NUM; i++) {
         if(ships[i].berth_id != no_index &&

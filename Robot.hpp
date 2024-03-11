@@ -17,12 +17,12 @@ struct Robot {
     struct Mission {
         Mission() = default;
         enum MISSION_STATE {
-            WAITTING,
+            WAITING,
             IDLING,
             SEARCHING,
             CARRYING,
         };
-        MISSION_STATE mission_state{MISSION_STATE::WAITTING};
+        MISSION_STATE mission_state{MISSION_STATE::WAITING};
         Robot *executor{nullptr};
         float reserved_value{0.f};
         std::array<Position, 2> target{Position::npos};
@@ -61,7 +61,7 @@ struct Robot {
         }
 
         [[nodiscard]] inline auto vaccant() const {
-            return mission_state == WAITTING || mission_state == IDLING;
+            return mission_state == WAITING || mission_state == IDLING;
         }
         auto check_item_overdue() {
             if(mission_state == SEARCHING &&
@@ -108,7 +108,7 @@ struct Robot {
         auto forward() {
             if(!executor) { return; }
             switch(mission_state) {
-            case WAITTING: {
+            case WAITING: {
                 next_move = Position::npos;
             } break;
             case IDLING: {
@@ -193,6 +193,9 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
  * 2. 将货物挂在最近的码头, 用set维护 (时间优化)
  *  Exception:
  *      1. 货物太少, 需要换码头, 远的码头可能更差
+ *
+ * BUGS:
+ * 1. 有时候机器人取到货物后在某个地方傻住不动
  * */
 
 #endif//CODECRAFTSDK_ROBOT_HPP

@@ -58,7 +58,7 @@ struct Atlas {
         return Position::npos;
     }
 
-    auto around(Position p){
+    auto around(Position p) {
         std::shuffle(sf.begin(), sf.end(), eng);
         for(auto i = 0; i < Move.size(); i++) {
             auto C = p + Move[sf[i]];
@@ -79,11 +79,9 @@ struct Atlas {
 
         auto range_bfs = [this](u16 l, u16 r) {
             Queue<Position, 3 * N> q;
-            auto vised = bitmap;
-            vised.set(0, l);
             for(auto i = l; i < r; i++) {
                 if(bitmap.test(i)) { continue; }
-                vised.reset(i + 1, bitmap_size);
+                auto vised = bitmap;
                 vised.set(i);
                 distance(i, i) = 0;
                 q.push(i);
@@ -91,7 +89,7 @@ struct Atlas {
                     auto u = q.pop();
                     for(auto& move: Move) {
                         auto v = u + move;
-                        if(v.outside() || bitmap.test(v) || vised.test(v)) { continue; }
+                        if(v.outside() || vised.test(v)) { continue; }
                         vised.set(v);
                         distance(i, v) = distance(i, u) + 1;
                         q.push(v);
