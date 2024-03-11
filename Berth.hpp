@@ -25,16 +25,13 @@ struct Berth {
 
     Berth() = default;
 
-    static std::function<void(index_t,std::function<void()>)> wanted;
+    static std::function<bool(index_t)> wanted;
 
     auto notify(u16 time) {
         notified++;
         if(occupied * SHIP_CAPACITY > cargo.size() + notified) { return; }
         if(!wanted) { return; }
-        static auto recall = [this]{
-            occupied++;
-        };
-        wanted(this->id, recall);
+        wanted(this->id);
     }
 
     auto sign(int value) {

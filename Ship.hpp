@@ -5,7 +5,7 @@
 #include <array>
 #include <future>
 #include <istream>
-#include <map>
+#include <set>
 
 #include "Berth.hpp"
 #include "Config.h"
@@ -29,6 +29,7 @@ struct Ship {
         index_t target = no_index;
 
         static Mission create(decltype(executor) exec, index_t target) {
+            Berths::berths[target].occupied++;
             return Mission{SAILING, exec, target};
         }
         auto check_waiting() {
@@ -62,9 +63,10 @@ struct Ship {
             if(executor->load >= SHIP_CAPACITY) {
                 mission_state = SAILING;
                 target = no_index;
+                Berths::berths[executor->berth_id].occupied--;
             }
         }
-        auto forward() {
+        auto forward() const {
             if(!executor) { return; }
             switch(mission_state) {
             case WAITING: {
@@ -94,27 +96,23 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
     static Ships ships;
     Ships() = default;
 
-    static std::map<index_t, std::reference_wrapper<const std::function<void()>>> waitlist;
+    static std::set<index_t> waitlist;
 
-    static auto wanted(index_t berth_id, const std::function<void()> &recall) {
+    static auto wanted(index_t berth_id) {
         for(int i = 0; i < SHIP_NUM; i++) {
             auto &ship = ships[i];
             if(ship.mission.mission_state != Ship::Mission::MISSION_STATE::WAITING) { continue; }
             ship.mission = Ship::Mission::create(&ship, berth_id);
             ship.status = 3;
-            return (void) recall();
+            return waitlist.erase(berth_id), true;
         }
-        waitlist.insert({berth_id, recall});
+        return waitlist.insert(berth_id), false;
     }
 
     std::future<void> resolve() {
         return std::async(std::launch::async, [this] {
             for(auto itr = waitlist.begin(); itr != waitlist.end();) {
-                auto [berth_id, recall] = *itr++;
-                wanted(berth_id, [itr, recall] {
-                    recall.get()();
-                    waitlist.erase(itr);
-                });
+                wanted(*itr++);
             }
             for(auto &ship: ships) {
                 ship.mission.check_waiting();
