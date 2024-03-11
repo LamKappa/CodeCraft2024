@@ -10,7 +10,7 @@
 #include "Ship.hpp"
 using namespace std;
 
-#define DEBUG_
+//#define DEBUG_
 #ifdef DEBUG_
 #define DEBUG if(true)
 #else
@@ -125,8 +125,8 @@ void Output() {
 }
 
 int main() {
-    start_time = chrono::high_resolution_clock::now();
     DEBUG freopen("../test.txt", "r", stdin);
+    start_time = chrono::high_resolution_clock::now();
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
 

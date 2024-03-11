@@ -2,6 +2,7 @@
 #ifndef CODECRAFTSDK_ATLAS_HPP
 #define CODECRAFTSDK_ATLAS_HPP
 
+#include <algorithm>
 #include <array>
 #include <bitset>
 #include <cstring>
@@ -11,7 +12,6 @@
 #include <queue>
 #include <set>
 #include <tuple>
-#include <algorithm>
 
 #include "Bitset.hpp"
 #include "Config.h"
@@ -36,20 +36,19 @@ struct Atlas {
     static constexpr int bitmap_size = N * N;
     static constexpr int dist_size = N * N * (N * N + 3) / 2;
     Bitset<bitmap_size> bitmap;
-//    std::bitset<bitmap_size> bitmap;
     u16 dist[dist_size];
 
     std::future<void> f_lock;
 
-    auto& distance(Flatten_Position A, Flatten_Position B) {
-        if(A < B) std::swap(A, B);
+    inline auto& distance(Flatten_Position A, Flatten_Position B) {
+        if(A < B) return dist[(1 + B) * B / 2 + A];
         return dist[(1 + A) * A / 2 + B];
     }
 
     auto path(Position A, Position B) {
         static std::array<u8, Move.size()> sf = {0, 1, 2, 3};
         std::shuffle(sf.begin(), sf.end(), eng);
-        for(auto i=0; i<Move.size(); i++){
+        for(auto i = 0; i < Move.size(); i++) {
             auto C = A + Move[sf[i]];
             if(C.outside() || bitmap.test(C)) { continue; }
             if(distance(C, B) < distance(A, B)) {
@@ -63,17 +62,16 @@ struct Atlas {
         f_lock = std::async(std::launch::async, [this] {
             std::memset(dist, 0xff, dist_size * sizeof(u16));
         });
-        bitmap.reset(0, bitmap_size);
     }
 
     auto build() {
         f_lock.wait();
 
         auto range_bfs = [this](u16 l, u16 r) {
-            Queue<Flatten_Position, 3 * N> q;
+            Queue<Position, 3 * N> q;
             auto vised = bitmap;
             vised.set(0, l);
-            for(int i = l; i < r; i++) {
+            for(auto i = l; i < r; i++) {
                 if(bitmap.test(i)) { continue; }
                 vised.reset(i + 1, bitmap_size);
                 vised.set(i);
@@ -82,7 +80,7 @@ struct Atlas {
                 while(!q.empty()) {
                     auto u = q.pop();
                     for(auto& move: Move) {
-                        auto v = Position{u} + move;
+                        auto v = u + move;
                         if(v.outside() || bitmap.test(v) || vised.test(v)) { continue; }
                         vised.set(v);
                         distance(i, v) = distance(i, u) + 1;
@@ -94,14 +92,26 @@ struct Atlas {
 
         // parallel by 2-cores
         auto ft1 = std::async(std::launch::async, [&range_bfs] {
-            range_bfs(0, bitmap_size / 2);
+            range_bfs(0, bitmap_size * 0.2);
         });
         auto ft2 = std::async(std::launch::async, [&range_bfs] {
-            range_bfs(bitmap_size / 2, bitmap_size);
+            range_bfs(bitmap_size * 0.2, bitmap_size * 0.4);
+        });
+        auto ft3 = std::async(std::launch::async, [&range_bfs] {
+            range_bfs(bitmap_size * 0.4, bitmap_size * 0.6);
+        });
+        auto ft4 = std::async(std::launch::async, [&range_bfs] {
+            range_bfs(bitmap_size * 0.6, bitmap_size * 0.8);
+        });
+        auto ft5 = std::async(std::launch::async, [&range_bfs] {
+            range_bfs(bitmap_size * 0.8, bitmap_size);
         });
 
         ft1.wait();
         ft2.wait();
+        ft3.wait();
+        ft4.wait();
+        ft5.wait();
     }
 };
 
@@ -112,8 +122,8 @@ struct Atlas {
  *  优化
  *      1. 双线程, 一半空间, BFS只做向后搜索 (初始化16s)
  *      2. 自定义Bitset存储bitmap和vised, 支持/w常数的区间赋值 (初始化4.5s)
- *      3. 采用自定义的循环队列优化BFS的std::queue, 优化掉deque内存分配 (初始化3.5s)
- *      4. 将dist的初始化移至读入map之前多线程执行 (初始化1.5s)
+ *      3. 采用自定义的循环队列优化BFS的std::queue, 优化掉deque内存分配 (初始化4.0s)
+ *      4. 将dist的初始化移至读入map之前多线程执行, distance不用swap (初始化3.5s)
  * 3. 采用四向枚举来确定最短路路径
  *  优化
  *      1. path采用随机枚举顺序(避让优化)
