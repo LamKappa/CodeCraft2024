@@ -144,7 +144,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                 Position &now = robot.pos;
                 Position &next_move = robot.mission.next_move;
                 if(obstacles.count(now + next_move)) {
-                    if(obstacles.count(now)) {
+                    if(!obstacles.count(now)) {
                         next_move = Position::npos;
                     } else {
                         for(auto &move: Move) {
@@ -155,7 +155,8 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                         }
                     }
                 }
-                obstacles.insert({now, now + robot.mission.next_move});
+                obstacles.insert(now);
+                obstacles.insert(now + next_move);
             };
             for(auto &robot: robots) {
                 robot.mission.check_item_overdue();
