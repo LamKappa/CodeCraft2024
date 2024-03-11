@@ -21,6 +21,7 @@ struct Berth {
 
     int notified = 0;
     int occupied = 0;
+    bool disabled = false;
     std::priority_queue<int> cargo;
 
     Berth() = default;
@@ -29,7 +30,7 @@ struct Berth {
 
     auto notify(u16 time) {
         notified++;
-        if(occupied * SHIP_CAPACITY > cargo.size() + notified) { return; }
+        if(occupied > 0) { return; }
         if(!wanted) { return; }
         wanted(this->id);
     }

@@ -10,9 +10,10 @@
 #include "Ship.hpp"
 using namespace std;
 
-//#define DEBUG_
+#define DEBUG_
 #ifdef DEBUG_
 #define DEBUG if(true)
+int obstacle_cnt = 0;
 #else
 #define DEBUG if(false)
 #endif
@@ -43,6 +44,9 @@ void Init() {
     }
     for(int i = 0; i < BERTH_NUM; i++) {
         cin >> berths[i];
+        // if(i >= SHIP_NUM){
+        //     berths[i].disabled = true;
+        // }
     }
     cin >> SHIP_CAPACITY;
     cin >> buff;
@@ -58,7 +62,7 @@ void Init() {
              << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_time).count() / 1000.L
              << " s"
              << endl;
-        exit(0);
+        // exit(0);
     }
 }
 
@@ -75,8 +79,8 @@ void Input() {
     }
     for(int i = 0; i < ROBOT_NUM; i++) {
         cin >> robots[i];
-        if(robots[i].status == 0){
-            std::cerr << "obstacle occurred\n";
+        DEBUG if(robots[i].status == 0) {
+            obstacle_cnt++;
         }
     }
     for(int i = 0; i < SHIP_NUM; i++) {
@@ -117,19 +121,19 @@ void Output() {
             auto next_move = ships[i].mission.target;
             if(next_move == no_index) {
                 cout << "go " << i << '\n';
-//                cerr << "go " << i << endl;
+                // cerr << "go " << i << endl;
             } else {
                 cout << "ship " << i << " " << (int) next_move << '\n';
-//                cerr << "ship " << i << " " << (int)next_move << endl;
+                // cerr << "ship " << i << " " << (int)next_move << endl;
             }
             ships[i].sail_out = true;
         }
-//        if(stamp == 1) cout << "ship " << i << " " << (int)(i) << '\n';
+        // if(stamp == 1) cout << "ship " << i << " " << (int)(i) << '\n';
     }
 }
 
 int main() {
-    DEBUG freopen("../test.txt", "r", stdin);
+    // DEBUG freopen("../test.txt", "r", stdin);
     start_time = chrono::high_resolution_clock::now();
     ios::sync_with_stdio(false);
     cin.tie(nullptr);
@@ -140,6 +144,9 @@ int main() {
         Resolve();
         Output();
         cout << "OK" << endl;
+    }
+    DEBUG {
+        cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
     }
 
     return 0;

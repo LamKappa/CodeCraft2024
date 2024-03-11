@@ -13,7 +13,7 @@
 struct Ship {
     int load = 0;
     int status{};
-    index_t berth_id{};
+    index_t berth_id = no_index;
     bool sail_out = false;
 
     struct Mission {
@@ -111,9 +111,10 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
 
     std::future<void> resolve() {
         return std::async(std::launch::async, [this] {
-            for(auto itr = waitlist.begin(); itr != waitlist.end();) {
-                wanted(*itr++);
-            }
+            auto waitlist_copy = waitlist;
+            // for(auto berth_id : waitlist_copy){
+            //     wanted(berth_id);
+            // }
             for(auto &ship: ships) {
                 ship.mission.check_waiting();
                 ship.mission.check_loading();
