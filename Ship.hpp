@@ -5,6 +5,7 @@
 #include <array>
 #include <future>
 #include <istream>
+#include <map>
 
 #include "Berth.hpp"
 #include "Config.h"
@@ -13,7 +14,6 @@ struct Ship {
     int load = 0;
     int status{};
     index_t berth_id{};
-    static int CAPACITY;
     bool sail_out = false;
 
     struct Mission {
@@ -59,7 +59,7 @@ struct Ship {
         auto check_overload() {
             if(!executor) { return; }
             if(mission_state != LOADING) { return; }
-            if(executor->load >= CAPACITY) {
+            if(executor->load >= SHIP_CAPACITY) {
                 mission_state = SAILING;
                 target = no_index;
             }
@@ -94,19 +94,28 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
     static Ships ships;
     Ships() = default;
 
-    static auto wanted(index_t berth_id) {
+    static std::map<index_t, std::reference_wrapper<const std::function<void()>>> waitlist;
+
+    static auto wanted(index_t berth_id, const std::function<void()> &recall) {
         for(int i = 0; i < SHIP_NUM; i++) {
             auto &ship = ships[i];
             if(ship.mission.mission_state != Ship::Mission::MISSION_STATE::WAITING) { continue; }
             ship.mission = Ship::Mission::create(&ship, berth_id);
             ship.status = 3;
-            return (index_t) i;
+            return (void) recall();
         }
-        return no_index;
+        waitlist.insert({berth_id, recall});
     }
 
     std::future<void> resolve() {
         return std::async(std::launch::async, [this] {
+            for(auto itr = waitlist.begin(); itr != waitlist.end();) {
+                auto [berth_id, recall] = *itr++;
+                wanted(berth_id, [itr, recall] {
+                    recall.get()();
+                    waitlist.erase(itr);
+                });
+            }
             for(auto &ship: ships) {
                 ship.mission.check_waiting();
                 ship.mission.check_loading();

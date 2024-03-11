@@ -20,5 +20,6 @@ constexpr int MAX_FRAME = 15000;
 
 extern int stamp, money;
 extern std::mt19937 eng;
+extern int SHIP_CAPACITY;
 
 #endif//CODECRAFTSDK_CONFIG_H

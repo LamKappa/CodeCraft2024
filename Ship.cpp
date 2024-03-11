@@ -1,4 +1,4 @@
 #include "Ship.hpp"
 
-int Ship::CAPACITY;
 Ships Ships::ships;
+std::map<index_t, std::reference_wrapper<const std::function<void()>>> Ships::waitlist;

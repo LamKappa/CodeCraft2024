@@ -143,7 +143,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
             auto obstacle_avoiding = [this, &obstacles](Robot &robot) {
                 Position &now = robot.pos;
                 Position &next_move = robot.mission.next_move;
-                if(obstacles.count(now + next_move) || obstacles.count(now)) {
+                if(obstacles.count(now + next_move)) {
                     if(!obstacles.count(now)) {
                         next_move = Position::npos;
                     } else {

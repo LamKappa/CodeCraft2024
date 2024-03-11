@@ -1,5 +1,5 @@
 #include "Berth.hpp"
 
 
-std::function<bool(index_t)> Berth::wanted = nullptr;
+std::function<void(index_t,std::function<void()>)> Berth::wanted = nullptr;
 Berths Berths::berths;

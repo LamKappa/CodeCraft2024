@@ -26,6 +26,7 @@ auto &items = Items::items;
 auto &atlas = Atlas::atlas;
 
 std::mt19937 eng(random_device{}());
+int SHIP_CAPACITY;
 int stamp, money;
 char buff[256];
 
@@ -43,7 +44,7 @@ void Init() {
     for(int i = 0; i < BERTH_NUM; i++) {
         cin >> berths[i];
     }
-    cin >> Ship::CAPACITY;
+    cin >> SHIP_CAPACITY;
     cin >> buff;
 
     atlas.build();
