@@ -74,6 +74,9 @@ void Input() {
     }
     for(int i = 0; i < ROBOT_NUM; i++) {
         cin >> robots[i];
+        if(robots[i].status == 0){
+            std::cerr << "obstacle occurred\n";
+        }
     }
     for(int i = 0; i < SHIP_NUM; i++) {
         cin >> ships[i];
