@@ -90,8 +90,8 @@ struct Atlas {
                     for(auto& move: Move) {
                         auto v = u + move;
                         if(v.outside() || vised.test(v)) { continue; }
+                        if(v > i) { distance(i, v) = distance(i, u) + 1; }
                         vised.set(v);
-                        distance(i, v) = distance(i, u) + 1;
                         q.push(v);
                     }
                 }
