@@ -49,11 +49,11 @@ struct Atlas {
 
     auto path(Position A, Position B) {
         std::shuffle(sf.begin(), sf.end(), eng);
-        for(auto i = 0; i < Move.size(); i++) {
-            auto C = A + Move[sf[i]];
+        for(auto sf_i : sf) {
+            auto C = A + Move[sf_i];
             if(C.outside() || bitmap.test(C)) { continue; }
             if(distance(C, B) < distance(A, B)) {
-                return Move[sf[i]];
+                return Move[sf_i];
             }
         }
         return Position::npos;
@@ -61,10 +61,10 @@ struct Atlas {
 
     auto around(Position p) {
         std::shuffle(sf.begin(), sf.end(), eng);
-        for(auto i = 0; i < Move.size(); i++) {
-            auto C = p + Move[sf[i]];
+        for(auto sf_i : sf) {
+            auto C = p + Move[sf_i];
             if(C.outside() || bitmap.test(C)) { continue; }
-            return Move[sf[i]];
+            return Move[sf_i];
         }
         return Position::npos;
     }
