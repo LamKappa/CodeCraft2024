@@ -19,15 +19,16 @@ struct Berth {
     int transport_time{};
     int loading_speed{};
 
+    bool disabled = false;
     int notified = 0;
     int occupied = 0;
-    bool disabled = false;
     std::priority_queue<int> cargo;
 
     Berth() = default;
 
     static std::function<bool(index_t)> wanted;
     static constexpr int TRANSPORT_TIME = 500;
+    static Berth virtual_berth;
 
     auto notify(u16 time) {
         notified++;
@@ -61,6 +62,11 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
     Berths() = default;
 
     std::map<Flatten_Position, index_t> pos_mapping;
+
+    auto &operator[](index_t i) {
+        if(i == no_index) return Berth::virtual_berth;
+        return array::operator[](i);
+    }
 
     auto init() {
         for(int i = 0; i < BERTH_NUM; i++) {
