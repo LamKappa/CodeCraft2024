@@ -47,7 +47,7 @@ struct Robot {
                 if(item.occupied) { continue; }
                 if(item.live_time() < Atlas::atlas.distance(exec->pos, item.pos)) { continue; }
                 for(auto &berth: Berths::berths) {
-                    if(berth.disabled) { continue; }
+                    if(berth.disabled || Atlas::atlas.distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
                     float value = calc_value(*exec, item, berth);
                     if(value > mission.reserved_value) {
                         if(mission.item_id >= 0) {
@@ -87,7 +87,7 @@ struct Robot {
                 auto &item = *itr;
                 if(item.occupied) { continue; }
                 for(auto &berth: Berths::berths) {
-                    if(berth.disabled) { continue; }
+                    if(berth.disabled || Atlas::atlas.distance(executor->pos, berth.pos) == Atlas::INF_DIS) { continue; }
                     float value = calc_value(*executor, item, berth);
                     if(value > reserved_value) {
                         if(item_id >= 0) {
