@@ -89,20 +89,19 @@ struct Ship {
 
     Ship() = default;
 
-    static index_t transport(index_t s, index_t t) {
-        return t;
+    static auto transport(index_t s, index_t t) {
         if(s != no_index && t != no_index) {
             return Berth::TRANSPORT_TIME < Berths::berths[s].transport_time + Berths::berths[t].transport_time ? t : no_index;
         }
-        if(s == no_index) { std::swap(s, t); }
-        std::array<index_t, BERTH_NUM> rk{};
-        std::iota(rk.begin(), rk.end(), 0);
+        std::array<index_t, BERTH_NUM+1> rk{};
+        std::iota(rk.begin(), rk.end(), -1);
         auto calc = [&](int i) {
-            return (i == s ? 0 : Berth::TRANSPORT_TIME) + Berths::berths[i].transport_time;
+            return (i == s || i == t ? 0 : Berth::TRANSPORT_TIME) + Berths::berths[i].transport_time;
         };
-        return *std::min_element(rk.begin(), rk.end(), [&calc](auto i, auto j) {
+        auto best_i =  *std::min_element(rk.begin(), rk.end(), [&calc](auto i, auto j) {
             return calc(i) < calc(j);
         });
+        return best_i == s ? t : best_i;
     }
 
     friend auto &operator>>(std::istream &in, Ship &b) {
