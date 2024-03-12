@@ -122,12 +122,13 @@ void Output() {
         if(ships[i].mission.mission_state == Ship::Mission::MISSION_STATE::SAILING) {
             if(ships[i].sail_out) { continue; }
             auto next_move = Ship::transport(ships[i].berth_id, ships[i].mission.target);
+            // cerr << "transport " << i << " " << (int) ships[i].berth_id << " to " << (int) ships[i].mission.target << endl;
             if(next_move == no_index) {
                 cout << "go " << i << '\n';
                 // cerr << "go " << i << endl;
             } else {
                 cout << "ship " << i << " " << (int) next_move << '\n';
-                // cerr << "ship " << i << " " << (int)next_move << endl;
+                // cerr << "ship " << i << " " << (int) next_move << endl;
             }
             ships[i].sail_out = true;
         }

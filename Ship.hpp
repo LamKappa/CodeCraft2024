@@ -32,28 +32,31 @@ struct Ship {
             Berths::berths[target].occupied++;
             return Mission{SAILING, exec, target};
         }
+        auto check_arrival() {
+            if(!executor) { return; }
+            if(executor->status != 0) {
+                executor->sail_out = false;
+            }
+        }
         auto check_waiting() {
             if(!executor) { return; }
-            if(executor->status == 1 && executor->berth_id == no_index) {
+            if(executor->status == 1 && executor->berth_id == no_index && target == no_index) {
                 mission_state = WAITING;
-                executor->sail_out = false;
                 executor->load = 0;
                 executor->status = 3;
             }
         }
         auto check_loading() {
             if(!executor) { return; }
-            if(executor->status == 1 && executor->berth_id != no_index) {
+            if(executor->status == 1 && executor->berth_id == target && target != no_index) {
                 mission_state = LOADING;
-                executor->sail_out = false;
                 executor->status = 1;
             }
         }
         auto check_queueing() {
             if(!executor) { return; }
-            if(executor->status == 2 && executor->berth_id != no_index) {
+            if(executor->status == 2 && executor->berth_id != target && target != no_index) {
                 mission_state = QUEUEING;
-                executor->sail_out = false;
                 executor->status = 1;
             }
         }
@@ -87,6 +90,7 @@ struct Ship {
     Ship() = default;
 
     static index_t transport(index_t s, index_t t) {
+        return t;
         if(s != no_index && t != no_index) {
             return Berth::TRANSPORT_TIME < Berths::berths[s].transport_time + Berths::berths[t].transport_time ? t : no_index;
         }
@@ -131,6 +135,7 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
             //     wanted(berth_id);
             // }
             for(auto &ship: ships) {
+                ship.mission.check_arrival();
                 ship.mission.check_waiting();
                 ship.mission.check_loading();
                 ship.mission.check_queueing();
