@@ -26,8 +26,7 @@ auto &ships = Ships::ships;
 auto &items = Items::items;
 auto &atlas = Atlas::atlas;
 
-// std::mt19937 eng(random_device{}());
-std::mt19937 eng(1);
+std::mt19937 eng(random_device{}());
 int SHIP_CAPACITY;
 int stamp, money;
 char buff[256];
@@ -94,9 +93,9 @@ void Input() {
 
 void Resolve() {
     auto f1 = robots.resolve();
-    auto f2 = ships.resolve();
-
     f1.wait();
+
+    auto f2 = ships.resolve();
     f2.wait();
 }
 
