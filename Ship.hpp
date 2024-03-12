@@ -86,15 +86,17 @@ struct Ship {
 
     Ship() = default;
 
-    static index_t transport(index_t s, index_t t){
-        if(s != no_index && t != no_index) { return t; }
+    static index_t transport(index_t s, index_t t) {
+        if(s != no_index && t != no_index) {
+            return Berth::TRANSPORT_TIME < Berths::berths[s].transport_time + Berths::berths[t].transport_time ? t : no_index;
+        }
         if(s == no_index) { std::swap(s, t); }
         std::array<index_t, BERTH_NUM> rk{};
         std::iota(rk.begin(), rk.end(), 0);
-        auto calc = [&](int i){
+        auto calc = [&](int i) {
             return (i == s ? 0 : Berth::TRANSPORT_TIME) + Berths::berths[i].transport_time;
         };
-        return *std::min_element(rk.begin(), rk.end(), [&calc](auto i, auto j){
+        return *std::min_element(rk.begin(), rk.end(), [&calc](auto i, auto j) {
             return calc(i) < calc(j);
         });
     }
@@ -147,6 +149,7 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
  *      1. 没有多船只等候分配的优化
  *      2. 没有船只提前分配的优化
  *      3. 目前状态机转移比较混乱, 主要依靠每帧的输入判断 (潜在的BUG)
+ * 2. transport, 用于计算从s到t的最优寻路, 此情景下最多中转一次
  * */
 
 
