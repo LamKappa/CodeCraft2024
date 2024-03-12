@@ -119,8 +119,8 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
                 ship.mission.check_waiting();
                 ship.mission.check_loading();
                 ship.mission.check_queueing();
-                ship.mission.forward();
                 ship.mission.check_overload();
+                ship.mission.forward();
             }
         });
     }

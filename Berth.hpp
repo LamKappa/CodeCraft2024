@@ -27,6 +27,7 @@ struct Berth {
     Berth() = default;
 
     static std::function<bool(index_t)> wanted;
+    static constexpr int TRANSPORT_TIME = 500;
 
     auto notify(u16 time) {
         notified++;

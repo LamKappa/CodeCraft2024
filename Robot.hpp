@@ -36,7 +36,7 @@ struct Robot {
             // value / (2*tans + cap / ld_t + dis)
             float value = (float) (item.value) /
                           (float) (!berth.occupied * (2 * berth.transport_time +
-                                                     (float)SHIP_CAPACITY / berth.loading_speed) +
+                                                      (float) SHIP_CAPACITY / berth.loading_speed) +
                                    atlas.distance(robot.pos, item.pos) +
                                    atlas.distance(item.pos, berth.pos));
             return value;
@@ -133,6 +133,8 @@ struct Robot {
     bool goods{};
     bool status{};
 
+    static constexpr int ROBOT_DISABLE_TIME = 20;
+
     friend auto &operator>>(std::istream &in, Robot &r) {
         return in >> r.goods >> r.pos >> r.status;
     }
@@ -146,7 +148,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
     auto resolve() {
         return std::async(std::launch::async, [this] {
             std::set<Position> obstacles;
-            auto obstacle_avoiding = [this, &obstacles](Robot &robot) {
+            auto obstacle_avoiding = [&obstacles](Robot &robot) {
                 Position &now = robot.pos;
                 Position &next_move = robot.mission.next_move;
                 if(obstacles.count(now + next_move)) {
@@ -156,7 +158,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                         for(auto &move: Move) {
                             if((now + move).outside() || Atlas::atlas.bitmap.test(now + move)) { continue; }
                             if(!obstacles.count(now + move)) {
-                                // next_move = move;
+                                next_move = move;
                                 break;
                             }
                         }
@@ -166,6 +168,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                 obstacles.insert(now + next_move);
             };
             for(auto &robot: robots) {
+                robot.mission.next_move = Position::npos;
                 robot.mission.check_item_overdue();
                 robot.mission.check_complete();
                 if(robot.mission.vaccant()) {
