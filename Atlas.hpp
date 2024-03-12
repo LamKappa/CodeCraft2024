@@ -11,6 +11,7 @@
 #include <istream>
 #include <queue>
 #include <set>
+#include <thread>
 #include <tuple>
 
 #include "Bitset.hpp"
@@ -75,7 +76,7 @@ struct Atlas {
     }
 
     auto build() {
-        f_lock.wait();
+        // f_lock.wait();
 
         auto range_bfs = [this](u16 l, u16 r) {
             Queue<Position, 3 * N> q;
@@ -99,27 +100,23 @@ struct Atlas {
         };
 
         // parallel by 2-cores
-        auto ft1 = std::async(std::launch::async, [&range_bfs] {
+        std::thread([&range_bfs] {
             range_bfs(0, bitmap_size * 0.2);
-        });
-        auto ft2 = std::async(std::launch::async, [&range_bfs] {
+        }).detach();
+        std::thread([&range_bfs] {
             range_bfs(bitmap_size * 0.2, bitmap_size * 0.4);
-        });
-        auto ft3 = std::async(std::launch::async, [&range_bfs] {
+        }).detach();
+        std::thread([&range_bfs] {
             range_bfs(bitmap_size * 0.4, bitmap_size * 0.6);
-        });
-        auto ft4 = std::async(std::launch::async, [&range_bfs] {
+        }).detach();
+        std::thread([&range_bfs] {
             range_bfs(bitmap_size * 0.6, bitmap_size * 0.8);
-        });
-        auto ft5 = std::async(std::launch::async, [&range_bfs] {
+        }).detach();
+        std::thread([&range_bfs] {
             range_bfs(bitmap_size * 0.8, bitmap_size);
-        });
+        }).detach();
 
-        ft1.wait();
-        ft2.wait();
-        ft3.wait();
-        ft4.wait();
-        ft5.wait();
+        std::this_thread::sleep_for(std::chrono::milliseconds(4990));
     }
 };
 
