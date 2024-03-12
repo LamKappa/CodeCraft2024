@@ -26,7 +26,8 @@ auto &ships = Ships::ships;
 auto &items = Items::items;
 auto &atlas = Atlas::atlas;
 
-std::mt19937 eng(random_device{}());
+// std::mt19937 eng(random_device{}());
+std::mt19937 eng(1);
 int SHIP_CAPACITY;
 int stamp, money;
 char buff[256];
@@ -39,7 +40,7 @@ void Init() {
             cin >> ch;
             if(static_cast<bool>(BARRIER_SYM.count(ch))) {
                 atlas.bitmap.set(Position{x, y});
-            }else{
+            } else {
                 atlas.bitmap.reset(Position{x, y});
             }
         }
@@ -135,8 +136,11 @@ void Output() {
     }
 }
 
-int main() {
-    // DEBUG freopen("../test.txt", "r", stdin);
+int main(int argc, char *argv[]) {
+    if(argc > 1 && string(argv[1]) == "DEBUG") {
+        freopen("../output.txt", "r", stdin);
+        freopen("/dev/null", "w", stdout);
+    }
     start_time = chrono::high_resolution_clock::now();
     ios::sync_with_stdio(false);
     cin.tie(nullptr);

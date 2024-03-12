@@ -109,7 +109,7 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
         return waitlist.insert(berth_id), false;
     }
 
-    std::future<void> resolve() {
+    auto resolve() {
         return std::async(std::launch::async, [this] {
             // auto waitlist_copy = waitlist;
             // for(auto berth_id : waitlist_copy){

@@ -139,7 +139,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
     static Robots robots;
     Robots() = default;
 
-    std::future<void> resolve() {
+    auto resolve() {
         return std::async(std::launch::async, [this] {
             std::set<Position> obstacles;
             auto obstacle_avoiding = [this, &obstacles](Robot &robot) {
@@ -150,9 +150,9 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                         next_move = Position::npos;
                     } else {
                         for(auto &move: Move) {
-                            if(Atlas::atlas.bitmap.test(now + move)) { continue; }
+                            if((now + move).outside() || Atlas::atlas.bitmap.test(now + move)) { continue; }
                             if(!obstacles.count(now + move)) {
-                                next_move = move;
+                                // next_move = move;
                                 break;
                             }
                         }
@@ -196,6 +196,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
  *
  * BUGS:
  * 1. 有时候机器人取到货物后在某个地方傻住不动
+ * 2. [稳定复现] segment-fault: map-3.12 seed=6 eng=1 Robot避障开启next_move=move
  * */
 
 #endif//CODECRAFTSDK_ROBOT_HPP

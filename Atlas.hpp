@@ -76,7 +76,7 @@ struct Atlas {
     }
 
     auto build() {
-        // f_lock.wait();
+        f_lock.wait();
 
         auto range_bfs = [this](u16 l, u16 r) {
             Queue<Position, 3 * N> q;
@@ -116,7 +116,8 @@ struct Atlas {
             range_bfs(bitmap_size * 0.8, bitmap_size);
         }).detach();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(4990));
+        std::this_thread::sleep_for(std::chrono::milliseconds(4500));
+        // range_bfs(0, bitmap_size);
     }
 };
 

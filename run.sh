@@ -2,10 +2,10 @@
 
 echo "start"
 
-choice=-3.11
+choice=-3.12
 
-../PreliminaryJudge -l ERR -f 0 \
-"export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64 && ../cmake-build-release/main" \
+../PreliminaryJudge -s 6 -l ERR -f 0 \
+"export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64 && ./main" \
 -m ../maps/map$choice.txt
 
 
