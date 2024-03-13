@@ -119,7 +119,6 @@ struct Atlas {
         }).detach();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(4500));
-        // range_bfs(0, bitmap_size);
     }
 };
 

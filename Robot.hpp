@@ -118,8 +118,8 @@ struct Robot {
                 next_move = Position::npos;
             } break;
             case IDLING: {
-                // auto move = Atlas::atlas.around(executor->pos);
-                // next_move = move[eng() % move.size()];
+                auto move = Atlas::atlas.around(executor->pos);
+                next_move = move[eng() % move.size()];
             } break;
             case SEARCHING: {
                 next_move = Atlas::atlas.path(executor->pos, target[0]);
