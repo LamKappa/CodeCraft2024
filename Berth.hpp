@@ -31,6 +31,9 @@ struct Berth {
     static constexpr int MAX_TRANSPORT_TIME = 3000;
     static Berth virtual_berth;
 
+    [[nodiscard]] auto evaluate() const {
+        return 2.f * transport_time + (float) SHIP_CAPACITY / loading_speed;
+    }
     auto notify(u16 time) {
         notified++;
         if(occupied > 0) { return; }
@@ -63,6 +66,7 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
     static Berths berths;
     Berths() = default;
 
+    std::array<index_t, BERTH_NUM> srb{};
     std::map<Flatten_Position, index_t> pos_mapping;
 
     auto &operator[](index_t i) {
@@ -71,6 +75,10 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
     }
 
     auto init() {
+        std::iota(srb.begin(), srb.end(), 0);
+        std::sort(srb.begin(), srb.end(), [](auto i, auto j) {
+            return berths[i].evaluate() < berths[j].evaluate();
+        });
         for(int i = 0; i < BERTH_NUM; i++) {
             pos_mapping[berths[i].pos] = i;
         }

@@ -34,11 +34,11 @@ struct Robot {
             // item.value / distance(robot -> item -> berth)
             Atlas &atlas = Atlas::atlas;
             // value / (2*tans + cap / ld_t + dis)
-            float value = 1e5f - (float) (2.f * berth.transport_time / SHIP_CAPACITY +
-                                          1.f / berth.loading_speed +
-                                          atlas.distance(robot.pos, item.pos) +
-                                          atlas.distance(item.pos, berth.pos)) /
-                                         (float) (item.value);
+            float value = (float) (item.value) /
+                          (float) (2.f * berth.transport_time / SHIP_CAPACITY +
+                                   1.f / berth.loading_speed +
+                                   atlas.distance(robot.pos, item.pos) +
+                                   atlas.distance(item.pos, berth.pos));
             return value;
         }
         static Mission create(decltype(executor) exec) {
@@ -64,12 +64,12 @@ struct Robot {
             return mission;
         }
 
-        [[nodiscard]] inline auto vaccant() const {
+        [[nodiscard]] inline auto vacant() const {
             return mission_state == WAITING || mission_state == IDLING;
         }
         auto check_item_overdue() {
             if(mission_state == SEARCHING &&
-               Items::items.find_by_id(item_id).live_time() < Atlas::atlas.distance(executor->pos, target[0])) {
+               Items::find_by_id(item_id).live_time() < Atlas::atlas.distance(executor->pos, target[0])) {
                 mission_state = IDLING;
             }
         }
@@ -146,7 +146,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
     Robots() = default;
 
     auto resolve() {
-        return std::async(std::launch::async, [this] {
+        return std::async(std::launch::async, [] {
             std::set<Position> obstacles;
             auto obstacle_avoiding = [&obstacles](Robot &robot) {
                 Position &now = robot.pos;
@@ -171,7 +171,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                 robot.mission.next_move = Position::npos;
                 robot.mission.check_item_overdue();
                 robot.mission.check_complete();
-                if(robot.mission.vaccant()) {
+                if(robot.mission.vacant()) {
                     robot.mission = Robot::Mission::create(&robot);
                 } else {
                     robot.mission.update();
