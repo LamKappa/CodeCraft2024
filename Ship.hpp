@@ -64,7 +64,7 @@ struct Ship {
                     mission.target = berth.id;
                 }
             }
-            if(mission.reserved_value < NOT_VALUABLE) {
+            if(mission.reserved_value < NOT_VALUABLE && exec->berth_id != no_index) {
                 if(exec->berth_id == no_index) { return waiting; }
                 mission = exec->mission;
                 mission.mission_state = LOADING;

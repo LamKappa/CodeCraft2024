@@ -16,8 +16,10 @@ int tot_score = 0;
 #define DEBUG_
 #ifdef DEBUG_
 #define DEBUG if(true)
+u32 RANDOM_SEED = 42;
 #else
 #define DEBUG if(false)
+u32 RANDOM_SEED = random_device{}();
 #endif
 
 chrono::high_resolution_clock::time_point start_time;
@@ -28,8 +30,7 @@ auto &ships = Ships::ships;
 auto &items = Items::items;
 auto &atlas = Atlas::atlas;
 
-// std::mt19937 eng(random_device{}());
-std::mt19937 eng(42);
+std::mt19937 eng(RANDOM_SEED);
 int SHIP_CAPACITY;
 int stamp, money;
 char buff[256];
@@ -149,7 +150,6 @@ int main(int argc, char *argv[]) {
         Resolve();
         Output();
         cout << "OK" << endl;
-        DEBUG cerr << "score: " << tot_score << endl;
     }
     DEBUG {
         int last_items = 0, last_value = 0;
