@@ -36,10 +36,7 @@ struct Robot {
             Atlas &atlas = Atlas::atlas;
             // value / (2*tans + cap / ld_t + dis)
             float value = (float) (item.value) /
-                          (float) (
-                                  // 2.f * berth.transport_time / SHIP_CAPACITY +
-                                  // 1.f / berth.loading_speed +
-                                  (float) atlas.distance(robot.pos, item.pos) +
+                          (float) ((float) atlas.distance(robot.pos, item.pos) +
                                   (float) atlas.distance(item.pos, berth.pos));
             return value;
         }
@@ -108,7 +105,7 @@ struct Robot {
                (executor && executor->goods)) {
                 mission_state = CARRYING;
                 Berths::berths.find_by_pos(target[1])
-                        .notify(Atlas::atlas.distance(executor->pos, target[1]));
+                        .notify(Items::find_by_id(item_id).value);
             }
         }
         auto forward() {

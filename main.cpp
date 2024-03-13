@@ -27,7 +27,8 @@ auto &ships = Ships::ships;
 auto &items = Items::items;
 auto &atlas = Atlas::atlas;
 
-std::mt19937 eng(random_device{}());
+// std::mt19937 eng(random_device{}());
+std::mt19937 eng(42);
 int SHIP_CAPACITY;
 int stamp, money;
 char buff[256];
@@ -53,12 +54,8 @@ void Init() {
 
     atlas.build();
     berths.init();
-    Berth::wanted = Ships::wanted;
-    DEBUG for(int i = 5; i < BERTH_NUM; i++) {
+    DEBUG for(int i = BERTH_NUM - 0; i < BERTH_NUM; i++) {
         berths[berths.srb[i]].disabled = true;
-    }
-    DEBUG for(int i = 0; i < 5; i++) {
-        berths[berths.srb[i]].wanted(berths.srb[i]);
     }
 
     cout << "OK" << endl;
@@ -123,10 +120,13 @@ void Output() {
         }
     }
     for(int i = 0; i < SHIP_NUM; i++) {
-        if(ships[i].berth_id != no_index &&
-           berths[ships[i].berth_id].transport_time + 1 >= MAX_FRAME - stamp) {
-            cout << "go " << i << '\n';
-            continue;
+        if(ships[i].berth_id != no_index){
+            if(berths[ships[i].berth_id].transport_time + 1 == MAX_FRAME - stamp) {
+               cout << "go " << i << '\n';
+               continue;
+           }else if(berths[ships[i].berth_id].transport_time + 1 > MAX_FRAME - stamp){
+                continue;
+           }
         }
         if(ships[i].mission.mission_state == Ship::Mission::MISSION_STATE::SAILING) {
             if(ships[i].sail_out) { continue; }
@@ -162,9 +162,16 @@ int main(int argc, char *argv[]) {
         cout << "OK" << endl;
     }
     DEBUG {
+        int last_items = 0, last_value = 0;
         for(auto &berth: berths) {
-            cerr << "last items: " << berth.cargo.size() << endl;
+            last_items += (int) berth.cargo.size();
+            while(!berth.cargo.empty()){
+                last_value += berth.cargo.front();
+                berth.cargo.pop();
+            }
         }
+        cerr << "tot_last_items: " << last_items << '\n';
+        cerr << "tot_last_values: " << last_value << '\n';
         cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
         cerr << "idle occurred: " << idle_cnt << " times\n";
     }

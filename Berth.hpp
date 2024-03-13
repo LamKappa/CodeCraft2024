@@ -26,20 +26,15 @@ struct Berth {
 
     Berth() = default;
 
-    static std::function<bool(index_t)> wanted;
     static constexpr int TRANSPORT_TIME = 500;
     static constexpr int MAX_TRANSPORT_TIME = 3000;
     static Berth virtual_berth;
 
     [[nodiscard]] auto evaluate() const {
-        return 2.f * transport_time;// + (float) SHIP_CAPACITY / loading_speed;
+        return 2.f * (float) transport_time;// + (float) SHIP_CAPACITY / loading_speed;
     }
-    auto notify(u16 time) {
+    auto notify(int value) {
         notified++;
-        if(occupied > 0) { return; }
-        // if(occupied * SHIP_CAPACITY > cargo.size() + notified) { return; }
-        if(!wanted) { return; }
-        wanted(this->id);
     }
 
     auto sign(int value) {

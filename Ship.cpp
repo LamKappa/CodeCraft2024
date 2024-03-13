@@ -1,4 +1,4 @@
 #include "Ship.hpp"
 
 Ships Ships::ships;
-std::set<index_t> Ships::waitlist;
+Ship::Mission Ship::Mission::waiting {WAITING, nullptr, no_index, 0};

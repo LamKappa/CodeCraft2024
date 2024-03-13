@@ -24,13 +24,35 @@ struct Ship {
             LOADING,
             QUEUEING,
         };
+        static Mission waiting;
+
         MISSION_STATE mission_state{MISSION_STATE::WAITING};
         Ship *executor{nullptr};
         index_t target = no_index;
+        float reserved_value = 0;
 
-        static Mission create(decltype(executor) exec, index_t target) {
-            Berths::berths[target].occupied++;
-            return Mission{SAILING, exec, target};
+        static Mission create(decltype(executor) exec) {
+            static const float NOT_VALUABLE = (float) SHIP_CAPACITY / 50.f;
+            Mission mission = {SAILING, exec};
+            for(auto &berth: Berths::berths) {
+                if(berth.disabled || berth.occupied) { continue; }
+                float cnt = (float) (berth.notified + berth.cargo.size()) / (float) berth.loading_speed;
+                if(cnt > mission.reserved_value) {
+                    mission.reserved_value = cnt;
+                    mission.target = berth.id;
+                }
+            }
+            if(mission.reserved_value < NOT_VALUABLE) {
+                if(exec->berth_id == no_index) { return waiting; }
+                mission = exec->mission;
+                mission.mission_state = LOADING;
+            }
+            Berths::berths[mission.target].occupied++;
+            return mission;
+        }
+
+        [[nodiscard]] auto vacant() const {
+            return mission_state == WAITING;
         }
         auto check_arrival() const {
             if(!executor) { return; }
@@ -66,6 +88,14 @@ struct Ship {
             if(executor->load == SHIP_CAPACITY) {
                 mission_state = SAILING;
                 target = no_index;
+                Berths::berths[executor->berth_id].occupied--;
+            }
+        }
+        auto check_emptyload() {
+            if(!executor) { return; }
+            if(mission_state != LOADING) { return; }
+            if(Berths::berths[executor->berth_id].cargo.empty()) {
+                mission_state = WAITING;
                 Berths::berths[executor->berth_id].occupied--;
             }
         }
@@ -115,26 +145,13 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
     static Ships ships;
     Ships() = default;
 
-    static std::set<index_t> waitlist;
-
-    static auto wanted(index_t berth_id) {
-        for(int i = 0; i < SHIP_NUM; i++) {
-            auto &ship = ships[i];
-            if(ship.mission.mission_state != Ship::Mission::MISSION_STATE::WAITING) { continue; }
-            ship.mission = Ship::Mission::create(&ship, berth_id);
-            ship.status = 3;
-            return waitlist.erase(berth_id), true;
-        }
-        return waitlist.insert(berth_id), false;
-    }
-
     auto resolve() {
         return std::async(std::launch::async, [this] {
-            // auto waitlist_copy = waitlist;
-            // for(auto berth_id : waitlist_copy){
-            //     wanted(berth_id);
-            // }
             for(auto &ship: ships) {
+                ship.mission.check_emptyload();
+                if(ship.mission.vacant()) {
+                    ship.mission = Ship::Mission::create(&ship);
+                }
                 ship.mission.check_arrival();
                 ship.mission.check_waiting();
                 ship.mission.check_loading();
