@@ -12,9 +12,28 @@
 
 struct Ship {
     int load = 0;
+    int value = 0;
     int status{};
     index_t berth_id = no_index;
     bool sail_out = false;
+
+    static auto transport(index_t s, index_t t) {
+        if(s == t) { return std::make_pair(0, s); }
+        if(s != no_index && t != no_index) {
+            return std::min<std::pair<int, index_t>>(
+                    {Berth::TRANSPORT_TIME, t},
+                    {Berths::berths[s].transport_time + Berths::berths[t].transport_time, no_index});
+        }
+        std::array<index_t, BERTH_NUM> rk{};
+        std::iota(rk.begin(), rk.end(), 0);
+        auto calc = [&](int i) {
+            return (i == s || i == t ? 0 : Berth::TRANSPORT_TIME) + Berths::berths[i].transport_time;
+        };
+        auto best_i = *std::min_element(rk.begin(), rk.end(), [&calc](auto i, auto j) {
+            return calc(i) < calc(j);
+        });
+        return std::make_pair(calc(best_i), best_i == s ? t : best_i);
+    }
 
     struct Mission {
         Mission() = default;
@@ -30,12 +49,15 @@ struct Ship {
         Ship *executor{nullptr};
         index_t target = no_index;
         float reserved_value = 0;
+        index_t next_move = no_index;
 
         static Mission create(decltype(executor) exec) {
             static const float NOT_VALUABLE = (float) SHIP_CAPACITY / 50.f;
             Mission mission = {SAILING, exec};
             for(auto &berth: Berths::berths) {
                 if(berth.disabled || berth.occupied) { continue; }
+                auto time = transport(exec->berth_id, berth.id).first + transport(berth.id, no_index).first;
+                if(stamp + time > MAX_FRAME - 1) { continue; }
                 float cnt = (float) (berth.notified + berth.cargo.size()) / (float) berth.loading_speed;
                 if(cnt > mission.reserved_value) {
                     mission.reserved_value = cnt;
@@ -64,7 +86,9 @@ struct Ship {
             if(!executor) { return; }
             if(executor->status == 1 && executor->berth_id == no_index && target == no_index) {
                 mission_state = WAITING;
+                ::tot_score += executor->value;
                 executor->load = 0;
+                executor->value = 0;
                 executor->status = 3;
             }
         }
@@ -99,7 +123,17 @@ struct Ship {
                 Berths::berths[executor->berth_id].occupied--;
             }
         }
-        auto forward() const {
+        auto check_forceback() {
+            if(!executor) { return; }
+            if(mission_state == SAILING) { return; }
+            auto [time, _] = transport(executor->berth_id, no_index);
+            if(stamp + time == MAX_FRAME - 1) {
+                mission_state = SAILING;
+                target = no_index;
+                Berths::berths[executor->berth_id].occupied--;
+            }
+        }
+        auto forward() {
             if(!executor) { return; }
             switch(mission_state) {
             case WAITING: {
@@ -109,31 +143,19 @@ struct Ship {
             case LOADING: {
                 auto [cnt, value] = Berths::berths[executor->berth_id].get_load(SHIP_CAPACITY - executor->load);
                 executor->load += cnt;
-                // std::cerr << "need " << (SHIP_CAPACITY - executor->load) << " get " << cnt << std::endl;
+                executor->value += value;
             } break;
             case QUEUEING: {
             } break;
+            }
+            if(!executor->sail_out) {
+                next_move = transport(executor->berth_id, target).second;
             }
         }
     };
     Mission mission{};
 
     Ship() = default;
-
-    static auto transport(index_t s, index_t t) {
-        if(s != no_index && t != no_index) {
-            return Berth::TRANSPORT_TIME < Berths::berths[s].transport_time + Berths::berths[t].transport_time ? t : no_index;
-        }
-        std::array<index_t, BERTH_NUM> rk{};
-        std::iota(rk.begin(), rk.end(), 0);
-        auto calc = [&](int i) {
-            return (i == s || i == t ? 0 : Berth::TRANSPORT_TIME) + Berths::berths[i].transport_time;
-        };
-        auto best_i = *std::min_element(rk.begin(), rk.end(), [&calc](auto i, auto j) {
-            return calc(i) < calc(j);
-        });
-        return best_i == s ? t : best_i;
-    }
 
     friend auto &operator>>(std::istream &in, Ship &b) {
         return in >> b.status >> b.berth_id;
@@ -157,6 +179,7 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
                 ship.mission.check_loading();
                 ship.mission.check_queueing();
                 ship.mission.check_overload();
+                ship.mission.check_forceback();
                 ship.mission.forward();
             }
         });
@@ -176,6 +199,7 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
  *
  * BUGS:
  *  1. [*已解决] Ship每次load最多loading_speed个货物, 但是要看berth够不够
+ *  2. [*已修复] Ship在结束前返回的策略不够精确
  * */
 
 

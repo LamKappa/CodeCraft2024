@@ -12,6 +12,7 @@ using namespace std;
 
 int obstacle_cnt = 0;
 int idle_cnt = 0;
+int tot_score = 0;
 #define DEBUG_
 #ifdef DEBUG_
 #define DEBUG if(true)
@@ -120,28 +121,16 @@ void Output() {
         }
     }
     for(int i = 0; i < SHIP_NUM; i++) {
-        if(ships[i].berth_id != no_index){
-            if(berths[ships[i].berth_id].transport_time + 1 == MAX_FRAME - stamp) {
-               cout << "go " << i << '\n';
-               continue;
-           }else if(berths[ships[i].berth_id].transport_time + 1 > MAX_FRAME - stamp){
-                continue;
-           }
-        }
         if(ships[i].mission.mission_state == Ship::Mission::MISSION_STATE::SAILING) {
             if(ships[i].sail_out) { continue; }
-            auto next_move = Ship::transport(ships[i].berth_id, ships[i].mission.target);
-            // cerr << "transport " << i << " " << (int) ships[i].berth_id << " to " << (int) ships[i].mission.target << endl;
+            auto next_move = ships[i].mission.next_move;
             if(next_move == no_index) {
                 cout << "go " << i << '\n';
-                // cerr << "go " << i << endl;
             } else {
                 cout << "ship " << i << " " << (int) next_move << '\n';
-                // cerr << "ship " << i << " " << (int) next_move << endl;
             }
             ships[i].sail_out = true;
         }
-        // if(stamp == 1) cout << "ship " << i << " " << (int)(i) << '\n';
     }
 }
 
@@ -160,12 +149,14 @@ int main(int argc, char *argv[]) {
         Resolve();
         Output();
         cout << "OK" << endl;
+        DEBUG cerr << "score: " << tot_score << endl;
     }
     DEBUG {
         int last_items = 0, last_value = 0;
         for(auto &berth: berths) {
+            cerr << "last_items: " << berth.cargo.size() << '\n';
             last_items += (int) berth.cargo.size();
-            while(!berth.cargo.empty()){
+            while(!berth.cargo.empty()) {
                 last_value += berth.cargo.front();
                 berth.cargo.pop();
             }
@@ -174,6 +165,7 @@ int main(int argc, char *argv[]) {
         cerr << "tot_last_values: " << last_value << '\n';
         cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
         cerr << "idle occurred: " << idle_cnt << " times\n";
+        cerr << "tot_score: " << tot_score << '\n';
     }
 
     return 0;

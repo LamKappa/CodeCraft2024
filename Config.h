@@ -22,4 +22,6 @@ extern int stamp, money;
 extern std::mt19937 eng;
 extern int SHIP_CAPACITY;
 
+extern int tot_score;
+
 #endif//CODECRAFTSDK_CONFIG_H
