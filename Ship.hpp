@@ -55,7 +55,7 @@ struct Ship {
         }
         auto check_queueing() {
             if(!executor) { return; }
-            if(executor->status == 2 && executor->berth_id != target && target != no_index) {
+            if(executor->status == 2 && executor->berth_id == target && target != no_index) {
                 mission_state = QUEUEING;
                 executor->status = 1;
             }

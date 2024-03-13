@@ -37,12 +37,13 @@ struct Berth {
     auto notify(u16 time) {
         notified++;
         if(occupied > 0) { return; }
-        // if(occupied * SHIP_CAPACITY > notified) { return; }
+        // if(occupied * SHIP_CAPACITY > cargo.size() + notified) { return; }
         if(!wanted) { return; }
         wanted(this->id);
     }
 
     auto sign(int value) {
+        notified--;
         cargo.emplace(value);
     }
 
