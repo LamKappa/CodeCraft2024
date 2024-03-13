@@ -53,9 +53,9 @@ void Init() {
 
     atlas.build();
     berths.init();
-    for(int i = SHIP_NUM; i < BERTH_NUM; i++) {
-        berths[i].disabled = true;
-    }
+    // for(int i = SHIP_NUM; i < BERTH_NUM; i++) {
+    //     berths[berths.srb[i]].disabled = true;
+    // }
     Berth::wanted = Ships::wanted;
 
     cout << "OK" << endl;
@@ -157,6 +157,9 @@ int main(int argc, char *argv[]) {
         cout << "OK" << endl;
     }
     DEBUG {
+        for(auto&berth : berths){
+            cerr << "last items: " << berth.cargo.size() << endl;
+        }
         cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
         cerr << "idle occurred: " << idle_cnt << " times\n";
     }

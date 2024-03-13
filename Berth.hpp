@@ -22,7 +22,7 @@ struct Berth {
     bool disabled = false;
     int notified = 0;
     int occupied = 0;
-    std::priority_queue<int> cargo;
+    std::queue<int> cargo;
 
     Berth() = default;
 
@@ -46,12 +46,14 @@ struct Berth {
         cargo.emplace(value);
     }
 
-    int get_load() {
-        int load_item_value = 0;
-        if(cargo.empty()) { return load_item_value; }
-        load_item_value = cargo.top();
-        cargo.pop();
-        return load_item_value;
+    auto get_load(int requirement) {
+        int load_item_cnt = 0, load_item_value = 0;
+        while(!cargo.empty() && load_item_cnt < loading_speed) {
+            load_item_value += cargo.front();
+            cargo.pop();
+            load_item_cnt++;
+        }
+        return std::make_pair(load_item_cnt, load_item_value);
     }
 
     friend auto &operator>>(std::istream &in, Berth &b) {

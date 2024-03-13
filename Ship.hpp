@@ -63,7 +63,7 @@ struct Ship {
         auto check_overload() {
             if(!executor) { return; }
             if(mission_state != LOADING) { return; }
-            if(executor->load >= SHIP_CAPACITY) {
+            if(executor->load == SHIP_CAPACITY) {
                 mission_state = SAILING;
                 target = no_index;
                 Berths::berths[executor->berth_id].occupied--;
@@ -77,8 +77,8 @@ struct Ship {
             case SAILING: {
             } break;
             case LOADING: {
-                executor->load++;
-                Berths::berths[executor->berth_id].get_load();
+                auto [cnt, value] = Berths::berths[executor->berth_id].get_load(SHIP_CAPACITY - executor->load);
+                executor->load += cnt;
             } break;
             case QUEUEING: {
             } break;
@@ -154,6 +154,8 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
  *      2. 没有船只提前分配的优化
  *      3. 目前状态机转移比较混乱, 主要依靠每帧的输入判断 (潜在的BUG)
  * 2. transport, 用于计算从s到t的最优寻路, 此情景下最多中转一次
+ * BUGS:
+ *  1. [*已解决] Ship每次load最多loading_speed个货物, 但是要看berth够不够
  * */
 
 
