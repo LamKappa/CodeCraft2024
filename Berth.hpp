@@ -56,9 +56,14 @@ struct Berth {
         return std::make_pair(load_item_cnt, load_item_value);
     }
 
+    [[nodiscard]] auto inside(Position p){
+        return pos.first <= p.first && p.first <= pos.first + 3 &&
+               pos.second <= p.second && p.second <= pos.second + 3;
+    }
+
     friend auto &operator>>(std::istream &in, Berth &b) {
         in >> b.id >> b.pos >> b.transport_time >> b.loading_speed;
-        b.pos = b.pos + Position{1, 1};
+        // b.pos = b.pos + Position{1, 1};
         return in;
     }
 };
@@ -100,6 +105,8 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
  *          (参数value也是预备此功能添加的)
  * 2. wanted回调用于寻求船, 至于几艘船或者是否响应, 交给回调方处理
  * 3. sign/get_load记录货物运到/上船 (目前好像没有实际作用)
+ * BUGS
+ *  1. [*已修改] robot.pull如果每帧都执行, 可能中途路过一个berth放进去
  * */
 
 #endif//CODECRAFTSDK_BERTH_HPP

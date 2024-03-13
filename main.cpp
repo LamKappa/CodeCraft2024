@@ -53,7 +53,7 @@ void Init() {
 
     atlas.build();
     berths.init();
-    DEBUG for(int i = 1; i < BERTH_NUM; i++) {
+    DEBUG for(int i = 5; i < BERTH_NUM; i++) {
         berths[berths.srb[i]].disabled = true;
     }
     Berth::wanted = Ships::wanted;
@@ -102,18 +102,20 @@ void Resolve() {
 
 void Output() {
     for(int i = 0; i < ROBOT_NUM; i++) {
-        auto next_move = robots[i].mission.next_move;
+        auto&robot = robots[i];
+
+        auto next_move = robot.mission.next_move;
         int move_id = COMMAND.at(next_move);
         if(move_id >= 0) {
             cout << "move " << i << " " << move_id << '\n';
         }
 
-        if(robots[i].pos + robots[i].mission.next_move == robots[i].mission.target[0]) {
+        if(robot.pos + robot.mission.next_move == robot.mission.target[0]) {
             cout << "get " << i << '\n';
-        } else if(robots[i].goods) {
+        } else if(robot.goods && berths.find_by_pos(robot.mission.target[1]).inside(robot.pos)) {
             cout << "pull " << i << '\n';
         }
-        DEBUG if(robots[i].mission.mission_state == Robot::Mission::MISSION_STATE::IDLING) {
+        DEBUG if(robot.mission.mission_state == Robot::Mission::MISSION_STATE::IDLING) {
             idle_cnt++;
         }
     }
