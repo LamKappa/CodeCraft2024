@@ -167,7 +167,6 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
             }
 
             std::function<bool()> obstacle_avoiding = [&] {
-                // if(n <= 0) return;
                 std::array<Position, ROBOT_NUM> best_move;
                 std::map<Position, index_t> obstacles;
                 for(int i=0; i<ROBOT_NUM; i++) {
@@ -181,7 +180,6 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                             }
                         }
                         if(obstacles.count(now + next_move)) {
-                            // std::swap(prior[obstacles[now+next_move]], prior[i]);
                             std::shuffle(prior.begin(), prior.end(), eng);
                             return false;
                         }
