@@ -32,6 +32,7 @@ struct Robot {
         static Mission idle;
         [[nodiscard]] static auto calc_value(const Robot &robot, const Item &item, const Berth &berth) {
             // item.value / distance(robot -> item -> berth)
+
             Atlas &atlas = Atlas::atlas;
             // value / (2*tans + cap / ld_t + dis)
             float value = (float) (item.value) /

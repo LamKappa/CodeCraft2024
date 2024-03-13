@@ -22,6 +22,7 @@ struct Item {
 
     static constexpr int MAX_ITEM_PER_STAMP = 10;
     static constexpr int OVERDUE = 1000;
+    static constexpr int MAX_ITEM_VALUE = 200;
 
     [[nodiscard]] auto live_time()const{
         return OVERDUE - (::stamp - stamp);
