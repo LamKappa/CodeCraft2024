@@ -32,7 +32,7 @@ struct Berth {
     static Berth virtual_berth;
 
     [[nodiscard]] auto evaluate() const {
-        return 2.f * transport_time + (float) SHIP_CAPACITY / loading_speed;
+        return 2.f * transport_time;// + (float) SHIP_CAPACITY / loading_speed;
     }
     auto notify(u16 time) {
         notified++;

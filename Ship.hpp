@@ -79,6 +79,7 @@ struct Ship {
             case LOADING: {
                 auto [cnt, value] = Berths::berths[executor->berth_id].get_load(SHIP_CAPACITY - executor->load);
                 executor->load += cnt;
+                std::cerr << "need " << (SHIP_CAPACITY - executor->load) << " get " << cnt << std::endl;
             } break;
             case QUEUEING: {
             } break;

@@ -53,9 +53,9 @@ void Init() {
 
     atlas.build();
     berths.init();
-    // for(int i = SHIP_NUM; i < BERTH_NUM; i++) {
-    //     berths[berths.srb[i]].disabled = true;
-    // }
+    DEBUG for(int i = 1; i < BERTH_NUM; i++) {
+        berths[berths.srb[i]].disabled = true;
+    }
     Berth::wanted = Ships::wanted;
 
     cout << "OK" << endl;
@@ -110,10 +110,10 @@ void Output() {
 
         if(robots[i].pos + robots[i].mission.next_move == robots[i].mission.target[0]) {
             cout << "get " << i << '\n';
-        } else if(robots[i].goods){
+        } else if(robots[i].goods) {
             cout << "pull " << i << '\n';
         }
-        DEBUG if(robots[i].mission.mission_state == Robot::Mission::MISSION_STATE::IDLING){
+        DEBUG if(robots[i].mission.mission_state == Robot::Mission::MISSION_STATE::IDLING) {
             idle_cnt++;
         }
     }
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
         cout << "OK" << endl;
     }
     DEBUG {
-        for(auto&berth : berths){
+        for(auto &berth: berths) {
             cerr << "last items: " << berth.cargo.size() << endl;
         }
         cerr << "obstacle occurred: " << obstacle_cnt << " times\n";

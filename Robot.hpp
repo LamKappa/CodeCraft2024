@@ -36,7 +36,7 @@ struct Robot {
             // value / (2*tans + cap / ld_t + dis)
             float value = (float) (item.value) /
                           (float) (2.f * berth.transport_time / SHIP_CAPACITY +
-                                   1.f / berth.loading_speed +
+                                   // 1.f / berth.loading_speed +
                                    (float) atlas.distance(robot.pos, item.pos) +
                                    (float) atlas.distance(item.pos, berth.pos));
             return value;
@@ -196,6 +196,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
  *          4.1 [*已添加] 目前idea是维护robot的位置和前进位置的set, 然后判断若出现阻塞则随机换向/不动(除非自身位置也不保)
  *          4.2 暂时没有考虑每一帧做A*等搜索来实现 (时间似乎能够)
  *          4.3 [*已修复] 若避让或撞击导致抵达时间延期, 可能导致货物消失, 没有做货物消失的update/或选取时预留好误差
+ *      5. [*已修改] 其实运货不够快, 以至于装货都来不及, 所以不需要loading_speed调参
  * 2. 将货物挂在最近的码头, 用set维护 (时间优化)
  *  Exception:
  *      1. 货物太少, 需要换码头, 远的码头可能更差
