@@ -34,11 +34,11 @@ struct Robot {
             // item.value / distance(robot -> item -> berth)
             Atlas &atlas = Atlas::atlas;
             // value / (2*tans + cap / ld_t + dis)
-            float value = (float) (item.value) /
-                          (float) (!berth.occupied * (2 * berth.transport_time +
-                                                      (float) SHIP_CAPACITY / berth.loading_speed) +
-                                   atlas.distance(robot.pos, item.pos) +
-                                   atlas.distance(item.pos, berth.pos));
+            float value = 1e5f - (float) (2.f * berth.transport_time / SHIP_CAPACITY +
+                                          1.f / berth.loading_speed +
+                                          atlas.distance(robot.pos, item.pos) +
+                                          atlas.distance(item.pos, berth.pos)) /
+                                         (float) (item.value);
             return value;
         }
         static Mission create(decltype(executor) exec) {

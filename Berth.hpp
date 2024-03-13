@@ -28,11 +28,13 @@ struct Berth {
 
     static std::function<bool(index_t)> wanted;
     static constexpr int TRANSPORT_TIME = 500;
+    static constexpr int MAX_TRANSPORT_TIME = 3000;
     static Berth virtual_berth;
 
     auto notify(u16 time) {
         notified++;
         if(occupied > 0) { return; }
+        // if(occupied * SHIP_CAPACITY > notified) { return; }
         if(!wanted) { return; }
         wanted(this->id);
     }

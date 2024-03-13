@@ -2,7 +2,7 @@
 
 echo "start"
 
-choice=-3.12
+choice=-3.13
 
 ../PreliminaryJudge -l ERR -f 0 \
 "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64 && ./main" \

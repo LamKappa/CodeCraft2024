@@ -32,7 +32,7 @@ struct Ship {
             Berths::berths[target].occupied++;
             return Mission{SAILING, exec, target};
         }
-        auto check_arrival() {
+        auto check_arrival() const {
             if(!executor) { return; }
             if(executor->status != 0) {
                 executor->sail_out = false;
@@ -93,12 +93,12 @@ struct Ship {
         if(s != no_index && t != no_index) {
             return Berth::TRANSPORT_TIME < Berths::berths[s].transport_time + Berths::berths[t].transport_time ? t : no_index;
         }
-        std::array<index_t, BERTH_NUM+1> rk{};
-        std::iota(rk.begin(), rk.end(), -1);
+        std::array<index_t, BERTH_NUM> rk{};
+        std::iota(rk.begin(), rk.end(), 0);
         auto calc = [&](int i) {
             return (i == s || i == t ? 0 : Berth::TRANSPORT_TIME) + Berths::berths[i].transport_time;
         };
-        auto best_i =  *std::min_element(rk.begin(), rk.end(), [&calc](auto i, auto j) {
+        auto best_i = *std::min_element(rk.begin(), rk.end(), [&calc](auto i, auto j) {
             return calc(i) < calc(j);
         });
         return best_i == s ? t : best_i;
