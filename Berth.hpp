@@ -48,7 +48,7 @@ struct Berth {
 
     auto get_load(int requirement) {
         int load_item_cnt = 0, load_item_value = 0;
-        while(!cargo.empty() && load_item_cnt < loading_speed) {
+        while(!cargo.empty() && load_item_cnt < requirement && load_item_cnt < loading_speed) {
             load_item_value += cargo.front();
             cargo.pop();
             load_item_cnt++;
