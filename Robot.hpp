@@ -204,6 +204,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
  * 1. [*已修复] 有时候机器人取到货物后在某个地方傻住不动, 原因:有些机器人路过把他的item拿了
  * 2. [稳定复现] segment-fault: map-3.12 seed=6 eng=1 Robot避障开启next_move=move
  * 3. 被拿起的item如果被杀死, notify的value会不正确 (无害)
+ * 4. 避障算法在3个不同优先级的robot在一条线时还是会卡死
  * */
 
 #endif//CODECRAFTSDK_ROBOT_HPP
