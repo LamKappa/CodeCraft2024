@@ -36,10 +36,11 @@ struct Robot {
             Atlas &atlas = Atlas::atlas;
             // value / (2*tans + cap / ld_t + dis)
             float value = (float) (item.value) /
-                          (float) (2.f * berth.transport_time / SHIP_CAPACITY +
-                                   // 1.f / berth.loading_speed +
-                                   (float) atlas.distance(robot.pos, item.pos) +
-                                   (float) atlas.distance(item.pos, berth.pos));
+                          (float) (
+                                  // 2.f * berth.transport_time / SHIP_CAPACITY +
+                                  // 1.f / berth.loading_speed +
+                                  (float) atlas.distance(robot.pos, item.pos) +
+                                  (float) atlas.distance(item.pos, berth.pos));
             return value;
         }
         static Mission create(decltype(executor) exec) {
@@ -117,7 +118,8 @@ struct Robot {
                 next_move = Position::npos;
             } break;
             case IDLING: {
-                next_move = Atlas::atlas.around(executor->pos);
+                // auto move = Atlas::atlas.around(executor->pos);
+                // next_move = move[eng() % move.size()];
             } break;
             case SEARCHING: {
                 next_move = Atlas::atlas.path(executor->pos, target[0]);
@@ -144,30 +146,14 @@ struct Robot {
 struct Robots : public std::array<Robot, ROBOT_NUM> {
     using array::array;
     static Robots robots;
-    Robots() = default;
+    Robots() {
+        std::iota(prior.begin(), prior.end(), 0);
+    };
+
+    std::array<index_t, ROBOT_NUM> prior{};
 
     auto resolve() {
-        return std::async(std::launch::async, [] {
-            std::set<Position> obstacles;
-            auto obstacle_avoiding = [&obstacles](Robot &robot) {
-                Position &now = robot.pos;
-                Position &next_move = robot.mission.next_move;
-                if(obstacles.count(now + next_move)) {
-                    if(!obstacles.count(now)) {
-                        next_move = Position::npos;
-                    } else {
-                        for(auto &move: Move) {
-                            if((now + move).outside() || Atlas::atlas.bitmap.test(now + move)) { continue; }
-                            if(!obstacles.count(now + move)) {
-                                next_move = move;
-                                break;
-                            }
-                        }
-                    }
-                }
-                obstacles.insert(now);
-                obstacles.insert(now + next_move);
-            };
+        return std::async(std::launch::async, [this] {
             for(auto &robot: robots) {
                 robot.mission.next_move = Position::npos;
                 robot.mission.check_item_overdue();
@@ -178,8 +164,38 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                 robot.mission.check_carry();
                 robot.mission.update();
                 robot.mission.forward();
-                obstacle_avoiding(robot);
             }
+
+            std::function<bool()> obstacle_avoiding = [&] {
+                // if(n <= 0) return;
+                std::array<Position, ROBOT_NUM> best_move;
+                std::map<Position, index_t> obstacles;
+                for(int i=0; i<ROBOT_NUM; i++) {
+                    auto &robot = robots[prior[i]];
+                    Position now = robot.pos, next_move = robot.mission.next_move;
+                    if(obstacles.count(now + next_move)) {
+                        for(const auto&move: Atlas::atlas.around(now)) {
+                            if(!obstacles.count(now + move)) {
+                                next_move = move;
+                                break;
+                            }
+                        }
+                        if(obstacles.count(now + next_move)) {
+                            // std::swap(prior[obstacles[now+next_move]], prior[i]);
+                            std::shuffle(prior.begin(), prior.end(), eng);
+                            return false;
+                        }
+                    }
+                    obstacles.insert({now, i});
+                    obstacles.insert({now + next_move, i});
+                    best_move[prior[i]] = next_move;
+                }
+                for(int i=0; i<ROBOT_NUM; i++) {
+                    robots[i].mission.next_move = best_move[i];
+                }
+                return true;
+            };
+            while(!obstacle_avoiding());
         });
     }
 };
@@ -197,6 +213,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
  *          4.1 [*已添加] 目前idea是维护robot的位置和前进位置的set, 然后判断若出现阻塞则随机换向/不动(除非自身位置也不保)
  *          4.2 暂时没有考虑每一帧做A*等搜索来实现 (时间似乎能够)
  *          4.3 [*已修复] 若避让或撞击导致抵达时间延期, 可能导致货物消失, 没有做货物消失的update/或选取时预留好误差
+ *          4.4 Lamkappa: 采用shuffle优先级避障
  *      5. [*已修改] 其实运货不够快, 以至于装货都来不及, 所以不需要loading_speed调参
  * 2. 将货物挂在最近的码头, 用set维护 (时间优化)
  *  Exception:
@@ -206,7 +223,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
  * 1. [*已修复] 有时候机器人取到货物后在某个地方傻住不动, 原因:有些机器人路过把他的item拿了
  * 2. [稳定复现] segment-fault: map-3.12 seed=6 eng=1 Robot避障开启next_move=move
  * 3. 被拿起的item如果被杀死, notify的value会不正确 (无害)
- * 4. 避障算法在3个不同优先级的robot在一条线时还是会卡死
+ * 4. [*已解决] 避障算法在3个不同优先级的robot在一条线时还是会卡死
  * */
 
 #endif//CODECRAFTSDK_ROBOT_HPP

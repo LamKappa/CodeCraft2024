@@ -53,10 +53,13 @@ void Init() {
 
     atlas.build();
     berths.init();
+    Berth::wanted = Ships::wanted;
     DEBUG for(int i = 5; i < BERTH_NUM; i++) {
         berths[berths.srb[i]].disabled = true;
     }
-    Berth::wanted = Ships::wanted;
+    DEBUG for(int i = 0; i < 5; i++) {
+        berths[berths.srb[i]].wanted(berths.srb[i]);
+    }
 
     cout << "OK" << endl;
     DEBUG {
@@ -102,7 +105,7 @@ void Resolve() {
 
 void Output() {
     for(int i = 0; i < ROBOT_NUM; i++) {
-        auto&robot = robots[i];
+        auto &robot = robots[i];
 
         auto next_move = robot.mission.next_move;
         int move_id = COMMAND.at(next_move);
