@@ -22,7 +22,7 @@ struct Robot {
             SEARCHING,
             CARRYING,
         };
-        MISSION_STATE mission_state{MISSION_STATE::WAITING};
+        MISSION_STATE mission_state{MISSION_STATE::IDLING};
         Robot *executor{nullptr};
         float reserved_value{0.f};
         std::array<Position, 2> target{Position::npos};
@@ -37,8 +37,8 @@ struct Robot {
             float value = (float) (item.value) /
                           (float) (2.f * berth.transport_time / SHIP_CAPACITY +
                                    1.f / berth.loading_speed +
-                                   atlas.distance(robot.pos, item.pos) +
-                                   atlas.distance(item.pos, berth.pos));
+                                   (float) atlas.distance(robot.pos, item.pos) +
+                                   (float) atlas.distance(item.pos, berth.pos));
             return value;
         }
         static Mission create(decltype(executor) exec) {
@@ -173,10 +173,9 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                 robot.mission.check_complete();
                 if(robot.mission.vacant()) {
                     robot.mission = Robot::Mission::create(&robot);
-                } else {
-                    robot.mission.update();
                 }
                 robot.mission.check_carry();
+                robot.mission.update();
                 robot.mission.forward();
                 obstacle_avoiding(robot);
             }
@@ -202,7 +201,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
  *      1. 货物太少, 需要换码头, 远的码头可能更差
  *
  * BUGS:
- * 1. 有时候机器人取到货物后在某个地方傻住不动
+ * 1. [*已修复] 有时候机器人取到货物后在某个地方傻住不动, 原因:有些机器人路过把他的item拿了
  * 2. [稳定复现] segment-fault: map-3.12 seed=6 eng=1 Robot避障开启next_move=move
  * 3. 被拿起的item如果被杀死, notify的value会不正确 (无害)
  * */

@@ -11,6 +11,7 @@
 using namespace std;
 
 int obstacle_cnt = 0;
+int idle_cnt = 0;
 #define DEBUG_
 #ifdef DEBUG_
 #define DEBUG if(true)
@@ -52,6 +53,9 @@ void Init() {
 
     atlas.build();
     berths.init();
+    for(int i = SHIP_NUM; i < BERTH_NUM; i++) {
+        berths[i].disabled = true;
+    }
     Berth::wanted = Ships::wanted;
 
     cout << "OK" << endl;
@@ -104,10 +108,13 @@ void Output() {
             cout << "move " << i << " " << move_id << '\n';
         }
 
-        if(!robots[i].goods) {
+        if(robots[i].pos + robots[i].mission.next_move == robots[i].mission.target[0]) {
             cout << "get " << i << '\n';
-        } else {
+        } else if(robots[i].goods){
             cout << "pull " << i << '\n';
+        }
+        DEBUG if(robots[i].mission.mission_state == Robot::Mission::MISSION_STATE::IDLING){
+            idle_cnt++;
         }
     }
     for(int i = 0; i < SHIP_NUM; i++) {
@@ -151,6 +158,7 @@ int main(int argc, char *argv[]) {
     }
     DEBUG {
         cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
+        cerr << "idle occurred: " << idle_cnt << " times\n";
     }
 
     return 0;
