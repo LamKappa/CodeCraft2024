@@ -22,13 +22,14 @@ struct Robot {
             SEARCHING,
             CARRYING,
         };
+        static Mission idle;
+
         MISSION_STATE mission_state{MISSION_STATE::IDLING};
         Robot *executor{nullptr};
         float reserved_value{0.f};
         std::pair<long, index_t> target{Item::noItem.unique_id, no_index};
         Position next_move{Position::npos};
 
-        static Mission idle;
         [[nodiscard]] static auto calc_value(const Robot &robot, const Item &item, const Berth &berth) {
             // item.value / distance(robot -> item -> berth)
 
@@ -57,7 +58,7 @@ struct Robot {
                     }
                 }
             }
-            if(mission.reserved_value <= 0.f) { return idle; }
+            if(mission.target == idle.target) { return idle; }
             return mission;
         }
 

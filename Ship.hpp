@@ -48,7 +48,7 @@ struct Ship {
         MISSION_STATE mission_state{MISSION_STATE::WAITING};
         Ship *executor{nullptr};
         index_t target = no_index;
-        float reserved_value = 0;
+        float reserved_value = 0.f;
         index_t next_move = no_index;
 
         static Mission create(decltype(executor) exec) {
