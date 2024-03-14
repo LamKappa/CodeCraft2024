@@ -6,7 +6,7 @@ choice=-3.13
 
 ../PreliminaryJudge -s 2 -l INFO -f 0 -d ../output.txt \
 "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64 && ./main" \
--m ../maps/map$choice.txt
+-m ../maps/map$choice.txt 2> ../log.txt
 
 
 echo "end"

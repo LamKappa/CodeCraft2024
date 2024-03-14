@@ -61,15 +61,14 @@ struct Robot {
 
         static Mission create(decltype(executor) exec) {
             Mission mission{SEARCHING, exec, 0.f};
-            auto &items = Items::items;
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
             for(auto &berth: Berths::berths) {
-                if(berth.disabled) { continue; }
-                std::vector<int> dp(3 * Item::OVERDUE, 0);
-                std::vector<long> last_item(dp.size(), Item::noItem.unique_id);
-                for(auto &item: items) {
+                if(berth.disabled || distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
+                std::vector dp(3 * Item::OVERDUE, 0);
+                std::vector last_item(dp.size(), Item::noItem.unique_id);
+                for(auto &item: Items::items) {
                     if(item.occupied) { continue; }
-                    auto transition = [&item, &dp, &last_item](auto x, auto y) {
+                    auto update = [&item, &dp, &last_item](auto x, auto y) {
                         if(x >= dp.size()) { return; }
                         if(dp[y] + item.value > dp[x]) {
                             dp[x] = dp[y] + item.value;
@@ -81,11 +80,11 @@ struct Robot {
                     auto robot_to_item = distance(exec->pos, item.pos);
                     if(robot_to_item > live_time) { continue; }
                     int max_t = live_time - berth_to_item;
-                    for(int j = max_t; j > 0; j--) {
-                        if(dp[j] == 0) { continue; }
-                        transition(j + 2 * berth_to_item, j);
-                    }
-                    transition(robot_to_item + berth_to_item, 0);
+                    // for(int j = max_t; j > 0; j--) {
+                    //     if(dp[j] == 0) { continue; }
+                    //     update(j + 2 * berth_to_item, j);
+                    // }
+                    update(robot_to_item + berth_to_item, 0);
                 }
                 int best_last_j = 0;
                 float best_value = 0.f;
@@ -100,16 +99,18 @@ struct Robot {
                     mission.reserved_value = best_value;
                     mission.targets.clear();
                     while(best_last_j > 0 && last_item[best_last_j] != Item::noItem.unique_id) {
-                        int approximate_time = 2 * distance(berth.pos, items.find_by_id(last_item[best_last_j]).pos);
-                        if(best_last_j < approximate_time) { break; }
-                        mission.targets.emplace_front(last_item[best_last_j], berth.id);
-                        best_last_j -= approximate_time;
+                        auto &item = Items::items.find_by_id(last_item[best_last_j]);
+                        auto berth_to_item = distance(berth.pos, item.pos);
+                        auto robot_to_item = distance(exec->pos, item.pos);
+                        mission.targets.emplace_front(item.unique_id, berth.id);
+                        if(best_last_j == berth_to_item + robot_to_item) { break; }
+                        best_last_j -= 2 * berth_to_item;
                     }
                 }
             }
             if(mission.targets.empty()) { return idle; }
             for(auto [id, _]: mission.targets) {
-                items.find_by_id(id).occupied = true;
+                Items::items.find_by_id(id).occupied = true;
             }
             return mission;
         }
@@ -247,8 +248,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                 }
                 return true;
             };
-            while(!obstacle_avoiding())
-                ;
+            while(!obstacle_avoiding()) {}
         });
     }
 };
