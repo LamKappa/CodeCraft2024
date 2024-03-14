@@ -29,7 +29,7 @@ struct Item {
     }
     friend std::istream &operator>>(std::istream &in, Item &it) {
         it.stamp = ::stamp;
-        it.unique_id = item_cnt++;
+        it.unique_id = ++item_cnt;
         return in >> it.pos >> it.value;
     }
     bool operator<(const Item &o) const {
