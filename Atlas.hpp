@@ -102,24 +102,13 @@ struct Atlas {
         };
 
         // parallel by 2-cores
-        std::thread([&range_bfs] {
-            range_bfs(0, bitmap_size * 0.2);
-        }).detach();
-        std::thread([&range_bfs] {
-            range_bfs(bitmap_size * 0.2, bitmap_size * 0.4);
-        }).detach();
-        std::thread([&range_bfs] {
-            range_bfs(bitmap_size * 0.4, bitmap_size * 0.6);
-        }).detach();
-        std::thread([&range_bfs] {
-            range_bfs(bitmap_size * 0.6, bitmap_size * 0.8);
-        }).detach();
-        std::thread([&range_bfs] {
-            range_bfs(bitmap_size * 0.8, bitmap_size);
-        }).detach();
-
-        std::this_thread::sleep_for(std::chrono::milliseconds (4999) -
-                                    (std::chrono::high_resolution_clock::now() - start_time));
+        constexpr int PN = 5;
+        for(auto i = 0; i < PN; i++) {
+            async_pool.emplace_back(std::move(
+                    std::async(std::launch::async, [&range_bfs, i] {
+                        range_bfs(bitmap_size * i / PN, bitmap_size * (i + 1) / PN);
+                    })));
+        }
     }
 };
 

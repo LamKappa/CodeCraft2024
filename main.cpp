@@ -30,6 +30,7 @@ auto &ships = Ships::ships;
 auto &items = Items::items;
 auto &atlas = Atlas::atlas;
 
+std::vector<std::future<void>> async_pool;
 std::mt19937 eng(RANDOM_SEED);
 int SHIP_CAPACITY;
 int stamp, money;
@@ -59,7 +60,10 @@ void Init() {
     DEBUG for(int i = BERTH_NUM - 0; i < BERTH_NUM; i++) {
         berths[berths.srb[i]].disabled = true;
     }
+    robots.init();
 
+    std::this_thread::sleep_for(std::chrono::milliseconds(4999) -
+                                (std::chrono::high_resolution_clock::now() - start_time));
     cout << "OK" << endl;
     DEBUG {
         cerr << "build time: "
@@ -167,6 +171,10 @@ int main(int argc, char *argv[]) {
         cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
         cerr << "idle occurred: " << idle_cnt << " times\n";
         cerr << "tot_score: " << tot_score << '\n';
+    }
+
+    for(auto&ft : async_pool){
+        ft.wait();
     }
 
     return 0;

@@ -4,6 +4,7 @@
 
 #include <random>
 #include <chrono>
+#include <future>
 
 using u8 = u_int8_t;
 using u16 = u_int16_t;
@@ -23,6 +24,7 @@ extern int stamp, money;
 extern std::mt19937 eng;
 extern int SHIP_CAPACITY;
 extern std::chrono::high_resolution_clock::time_point start_time;
+extern std::vector<std::future<void>> async_pool;
 
 extern int tot_score;
 

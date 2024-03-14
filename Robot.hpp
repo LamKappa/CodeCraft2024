@@ -65,7 +65,7 @@ struct Robot {
             return mission_state == WAITING || mission_state == IDLING;
         }
         auto check_item_overdue() {
-            if(auto&item = Items::items.find_by_id(target.first);
+            if(auto &item = Items::items.find_by_id(target.first);
                mission_state == SEARCHING &&
                item.live_time() < Atlas::atlas.distance(executor->pos, item.pos)) {
                 mission_state = IDLING;
@@ -146,6 +146,24 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
     };
 
     std::array<index_t, ROBOT_NUM> prior{};
+
+    auto init() {
+        // for(auto &berth: Berths::berths) {
+        //     Robot::Mission mission{
+        //             Robot::Mission::MISSION_STATE::CARRYING,
+        //             nullptr,
+        //             0,
+        //             {Item::noItem.unique_id, berth.id},
+        //             Position::npos};
+        //     mission.executor = std::min_element(begin(), end(), [&berth](auto&x, auto&y){
+        //         if(x.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING || y.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING){
+        //             return y.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING;
+        //         }
+        //         return Atlas::atlas.distance(x.pos, berth.pos) < Atlas::atlas.distance(y.pos, berth.pos);
+        //     });
+        //     mission.executor->mission = mission;
+        // }
+    }
 
     auto resolve() {
         return std::async(std::launch::async, [this] {

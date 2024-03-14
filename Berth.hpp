@@ -33,11 +33,13 @@ struct Berth {
     [[nodiscard]] auto evaluate() const {
         return 2.f * (float) transport_time;// + (float) SHIP_CAPACITY / loading_speed;
     }
-    auto notify([[maybe_unused]] int value) {
+    auto notify(int value) {
+        if(value <= 0) { return; }
         notified++;
     }
 
     auto sign(int value) {
+        if(value <= 0) { return; }
         notified--;
         cargo.emplace(value);
     }
