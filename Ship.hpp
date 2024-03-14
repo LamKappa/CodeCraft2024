@@ -55,21 +55,22 @@ struct Ship {
             static const float NOT_VALUABLE = (float) SHIP_CAPACITY / 50.f;
             Mission mission = {SAILING, exec};
             for(auto &berth: Berths::berths) {
-                if(berth.disabled || berth.occupied) { continue; }
+                if(berth.disabled || berth.occupied || berth.id == exec->berth_id) { continue; }
                 auto time = transport(exec->berth_id, berth.id).first + transport(berth.id, no_index).first;
                 if(stamp + time > MAX_FRAME - 1) { continue; }
                 float cnt = (float) (berth.notified + berth.cargo.size()) / (float) berth.loading_speed;
-                if(cnt > mission.reserved_value) {
+                if(cnt >= mission.reserved_value) {
                     mission.reserved_value = cnt;
                     mission.target = berth.id;
                 }
             }
             if(exec->berth_id != no_index) {
                 if(mission.reserved_value < NOT_VALUABLE) {
-                    if(exec->berth_id == no_index) { return waiting; }
                     mission = exec->mission;
                     mission.mission_state = LOADING;
                 }
+            } else if(mission.target == no_index) {
+                return waiting;
             }
             Berths::berths[mission.target].occupied++;
             return mission;

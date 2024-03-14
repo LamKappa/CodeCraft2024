@@ -117,10 +117,12 @@ void Output() {
         }
 
         Position dest = robot.pos + robot.mission.next_move;
-        if(dest == Items::items.find_by_id(robot.mission.target.first).pos) {
-            cout << "get " << i << '\n';
-        } else if(robot.goods && berths[robot.mission.target.second].inside(dest)) {
-            cout << "pull " << i << '\n';
+        if(!robot.mission.targets.empty()) {
+            if(dest == Items::items.find_by_id(robot.mission.targets.front().first).pos) {
+                cout << "get " << i << '\n';
+            } else if(robot.goods && berths[robot.mission.targets.front().second].inside(dest)) {
+                cout << "pull " << i << '\n';
+            }
         }
         DEBUG if(robot.mission.mission_state == Robot::Mission::MISSION_STATE::IDLING) {
             idle_cnt++;
@@ -173,7 +175,7 @@ int main(int argc, char *argv[]) {
         cerr << "tot_score: " << tot_score << '\n';
     }
 
-    for(auto&ft : async_pool){
+    for(auto &ft: async_pool) {
         ft.wait();
     }
 
