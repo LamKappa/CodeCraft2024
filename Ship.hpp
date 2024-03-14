@@ -88,9 +88,6 @@ struct Ship {
             if(!executor) { return; }
             if(executor->status == 1 && executor->berth_id == no_index && target == no_index) {
                 mission_state = WAITING;
-                ::tot_score += executor->value;
-                executor->load = 0;
-                executor->value = 0;
                 executor->status = 3;
             }
         }
@@ -140,13 +137,16 @@ struct Ship {
             if(!executor) { return; }
             switch(mission_state) {
             case WAITING: {
+                ::tot_score += executor->value;
+                executor->load = 0;
+                executor->value = 0;
             } break;
             case SAILING: {
             } break;
             case LOADING: {
-                auto [cnt, value] = Berths::berths[executor->berth_id].get_load(SHIP_CAPACITY - executor->load);
+                auto [cnt, load_value] = Berths::berths[executor->berth_id].get_load(SHIP_CAPACITY - executor->load);
                 executor->load += cnt;
-                executor->value += value;
+                executor->value += load_value;
             } break;
             case QUEUEING: {
             } break;
@@ -172,7 +172,7 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
 
     auto resolve() {
         return std::async(std::launch::async, [this] {
-            for(auto &ship: ships) {
+            for(auto &ship: *this) {
                 ship.mission.check_emptyload();
                 if(ship.mission.vacant()) {
                     ship.mission = Ship::Mission::create(&ship);

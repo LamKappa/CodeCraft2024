@@ -131,7 +131,7 @@ struct Robot {
     bool goods{};
     bool status{};
 
-    static constexpr int ROBOT_DISABLE_TIME = 20;
+    [[maybe_unused]] static constexpr int ROBOT_DISABLE_TIME = 20;
 
     friend auto &operator>>(std::istream &in, Robot &r) {
         return in >> r.goods >> r.pos >> r.status;

@@ -20,11 +20,11 @@
 #include "Queue.hpp"
 
 enum MAP_SYMBOLS {
-    GROUND = ' ',
+    GROUND [[maybe_unused]] = ' ',
     SEA = '*',
     WALL = '#',
-    ROBOT = 'A',
-    BERTH = 'B'
+    ROBOT [[maybe_unused]] = 'A',
+    BERTH [[maybe_unused]] = 'B'
 };
 
 const std::set<char> BARRIER_SYM{MAP_SYMBOLS::SEA, MAP_SYMBOLS::WALL};
