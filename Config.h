@@ -3,6 +3,7 @@
 #define CODECRAFTSDK_CONFIG_H
 
 #include <random>
+#include <chrono>
 
 using u8 = u_int8_t;
 using u16 = u_int16_t;
@@ -21,6 +22,7 @@ constexpr int MAX_FRAME = 15000;
 extern int stamp, money;
 extern std::mt19937 eng;
 extern int SHIP_CAPACITY;
+extern std::chrono::high_resolution_clock::time_point start_time;
 
 extern int tot_score;
 

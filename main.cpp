@@ -137,7 +137,7 @@ void Output() {
 }
 
 int main(int argc, char *argv[]) {
-    if(argc > 1 && string(argv[1]) == "DEBUG") {
+    DEBUG if(argc > 1 && string(argv[1]) == "DEBUG") {
         freopen("../output.txt", "r", stdin);
         freopen("/dev/null", "w", stdout);
     }
