@@ -30,48 +30,35 @@ struct Robot {
         std::deque<std::pair<long, index_t>> targets;
         Position next_move{Position::npos};
 
-        static Mission create(decltype(executor) exec) {
-            auto test = create2(exec);
-            Mission mission = {SEARCHING, exec};
-            auto calc_value = [](const Robot &robot, const Item &item, const Berth &berth) {
-                Atlas &atlas = Atlas::atlas;
-                return (float) (item.value) /
-                       ((float) atlas.distance(robot.pos, item.pos) +
-                        (float) atlas.distance(item.pos, berth.pos));
-            };
-            for(auto &berth: Berths::berths) {
-                if(berth.disabled || Atlas::atlas.distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
-                for(auto &item: Items::items) {
-                    if(item.occupied) { continue; }
-                    if(item.live_time() < Atlas::atlas.distance(exec->pos, item.pos)) { continue; }
-                    float value = calc_value(*exec, item, berth);
-                    if(value > mission.reserved_value) {
-                        mission.reserved_value = value;
-                        if(mission.targets.empty()) { mission.targets.emplace_back(); }
-                        mission.targets.front() = {item.unique_id, berth.id};
-                    }
-                }
-            }
-            if(mission.targets.empty()) { return idle; }
-            for(auto [id, _]: mission.targets) {
-                Items::items.find_by_id(id).occupied = true;
-            }
-            if(test.targets != mission.targets) {
-                std::cerr << "*not equal!!! \n";
-                std::cerr << mission.reserved_value << ' ' << test.reserved_value << '\n';
-                for(auto [a, b]: mission.targets) {
-                    std::cerr << a << ' ' << (int) b << ' ' << calc_value(*exec, Items::items.find_by_id(a), Berths::berths[b]) << '\n';
-                }
-                std::cerr << "*compared with: \n";
-                for(auto [a, b]: test.targets) {
-                    std::cerr << a << ' ' << (int) b << ' ' << calc_value(*exec, Items::items.find_by_id(a), Berths::berths[b]) << '\n';
-                }
-                std::cerr << '\n';
-            }
-            return mission;
-        }
+        // static Mission create(decltype(executor) exec) {
+        //     Mission mission = {SEARCHING, exec};
+        //     auto calc_value = [](const Robot &robot, const Item &item, const Berth &berth) {
+        //         Atlas &atlas = Atlas::atlas;
+        //         return (float) (item.value) /
+        //                ((float) atlas.distance(robot.pos, item.pos) +
+        //                 (float) atlas.distance(item.pos, berth.pos));
+        //     };
+        //     for(auto &berth: Berths::berths) {
+        //         if(berth.disabled || Atlas::atlas.distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
+        //         for(auto &item: Items::items) {
+        //             if(item.occupied) { continue; }
+        //             if(item.live_time() < Atlas::atlas.distance(exec->pos, item.pos)) { continue; }
+        //             float value = calc_value(*exec, item, berth);
+        //             if(value > mission.reserved_value) {
+        //                 mission.reserved_value = value;
+        //                 if(mission.targets.empty()) { mission.targets.emplace_back(); }
+        //                 mission.targets.front() = {item.unique_id, berth.id};
+        //             }
+        //         }
+        //     }
+        //     if(mission.targets.empty()) { return idle; }
+        //     for(auto [id, _]: mission.targets) {
+        //         Items::items.find_by_id(id).occupied = true;
+        //     }
+        //     return mission;
+        // }
 
-        static Mission create2(decltype(executor) exec) {
+        static Mission create(decltype(executor) exec) {
             Mission mission{SEARCHING, exec, 0.f};
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
             for(auto &berth: Berths::berths) {
@@ -92,10 +79,10 @@ struct Robot {
                     auto robot_to_item = distance(exec->pos, item.pos);
                     if(robot_to_item > live_time || berth_to_item == Atlas::INF_DIS) { continue; }
                     int max_t = live_time - berth_to_item;
-                    // for(int j = max_t; j > 0; j--) {
-                    //     if(dp[j] == 0) { continue; }
-                    //     update(j + 2 * berth_to_item, j);
-                    // }
+                    for(int j = max_t; j > 0; j--) {
+                        if(dp[j] == 0) { continue; }
+                        update(j + 2 * berth_to_item, j);
+                    }
                     update(robot_to_item + berth_to_item, 0);
                 }
                 int best_last_j = 0;
@@ -121,9 +108,9 @@ struct Robot {
                 }
             }
             if(mission.targets.empty()) { return idle; }
-            // for(auto [id, _]: mission.targets) {
-            //     Items::items.find_by_id(id).occupied = true;
-            // }
+            for(auto [id, _]: mission.targets) {
+                Items::items.find_by_id(id).occupied = true;
+            }
             return mission;
         }
 
