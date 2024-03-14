@@ -25,9 +25,8 @@ struct Robot {
         MISSION_STATE mission_state{MISSION_STATE::IDLING};
         Robot *executor{nullptr};
         float reserved_value{0.f};
-        std::array<Position, 2> target{Position::npos};
+        std::pair<long, index_t> target{Item::noItem.unique_id, no_index};
         Position next_move{Position::npos};
-        long item_id = -1;
 
         static Mission idle;
         [[nodiscard]] static auto calc_value(const Robot &robot, const Item &item, const Berth &berth) {
@@ -37,7 +36,7 @@ struct Robot {
             // value / (2*tans + cap / ld_t + dis)
             float value = (float) (item.value) /
                           (float) ((float) atlas.distance(robot.pos, item.pos) +
-                                  (float) atlas.distance(item.pos, berth.pos));
+                                   (float) atlas.distance(item.pos, berth.pos));
             return value;
         }
         static Mission create(decltype(executor) exec) {
@@ -49,13 +48,12 @@ struct Robot {
                     if(berth.disabled || Atlas::atlas.distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
                     float value = calc_value(*exec, item, berth);
                     if(value > mission.reserved_value) {
-                        if(mission.item_id >= 0) {
-                            Items::find_by_id(mission.item_id).occupied = false;
+                        if(mission.target.first != Item::noItem.unique_id) {
+                            Items::items.find_by_id(mission.target.first).occupied = false;
                         }
                         item.occupied = true;
-                        mission.item_id = item.unique_id;
                         mission.reserved_value = value;
-                        mission.target = {item.pos, berth.pos};
+                        mission.target = {item.unique_id, berth.id};
                     }
                 }
             }
@@ -67,16 +65,17 @@ struct Robot {
             return mission_state == WAITING || mission_state == IDLING;
         }
         auto check_item_overdue() {
-            if(mission_state == SEARCHING &&
-               Items::find_by_id(item_id).live_time() < Atlas::atlas.distance(executor->pos, target[0])) {
+            if(auto&item = Items::items.find_by_id(target.first);
+               mission_state == SEARCHING &&
+               item.live_time() < Atlas::atlas.distance(executor->pos, item.pos)) {
                 mission_state = IDLING;
             }
         }
         auto check_complete() {
             if(mission_state == CARRYING &&
-               (executor && !executor->goods)) {
-                Berths::berths.find_by_pos(target[1])
-                        .sign(Items::find_by_id(item_id).value);
+               executor && Berths::berths[target.second].inside(executor->pos)) {
+                Berths::berths[target.second]
+                        .sign(Items::items.find_by_id(target.first).value);
                 mission_state = IDLING;
             }
         }
@@ -89,13 +88,12 @@ struct Robot {
                     if(berth.disabled || Atlas::atlas.distance(executor->pos, berth.pos) == Atlas::INF_DIS) { continue; }
                     float value = calc_value(*executor, item, berth);
                     if(value > reserved_value) {
-                        if(item_id >= 0) {
-                            Items::find_by_id(item_id).occupied = false;
+                        if(target.first != Item::noItem.unique_id) {
+                            Items::items.find_by_id(target.first).occupied = false;
                         }
                         item.occupied = true;
-                        item_id = item.unique_id;
                         reserved_value = value;
-                        target = {item.pos, berth.pos};
+                        target = {item.unique_id, berth.id};
                     }
                 }
             }
@@ -104,8 +102,8 @@ struct Robot {
             if(mission_state == SEARCHING &&
                (executor && executor->goods)) {
                 mission_state = CARRYING;
-                Berths::berths.find_by_pos(target[1])
-                        .notify(Items::find_by_id(item_id).value);
+                Berths::berths[target.second]
+                        .notify(Items::items.find_by_id(target.first).value);
             }
         }
         auto forward() {
@@ -119,10 +117,10 @@ struct Robot {
                 next_move = move[eng() % move.size()];
             } break;
             case SEARCHING: {
-                next_move = Atlas::atlas.path(executor->pos, target[0]);
+                next_move = Atlas::atlas.path(executor->pos, Items::items.find_by_id(target.first).pos);
             } break;
             case CARRYING: {
-                next_move = Atlas::atlas.path(executor->pos, target[1]);
+                next_move = Atlas::atlas.path(executor->pos, Berths::berths[target.second].pos);
             } break;
             }
         }
@@ -166,11 +164,11 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
             std::function<bool()> obstacle_avoiding = [&] {
                 std::array<Position, ROBOT_NUM> best_move;
                 std::map<Position, index_t> obstacles;
-                for(int i=0; i<ROBOT_NUM; i++) {
+                for(int i = 0; i < ROBOT_NUM; i++) {
                     auto &robot = robots[prior[i]];
                     Position now = robot.pos, next_move = robot.mission.next_move;
                     if(obstacles.count(now + next_move)) {
-                        for(const auto&move: Atlas::atlas.around(now)) {
+                        for(const auto &move: Atlas::atlas.around(now)) {
                             if(!obstacles.count(now + move)) {
                                 next_move = move;
                                 break;
@@ -185,12 +183,13 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                     obstacles.insert({now + next_move, i});
                     best_move[prior[i]] = next_move;
                 }
-                for(int i=0; i<ROBOT_NUM; i++) {
+                for(int i = 0; i < ROBOT_NUM; i++) {
                     robots[i].mission.next_move = best_move[i];
                 }
                 return true;
             };
-            while(!obstacle_avoiding());
+            while(!obstacle_avoiding())
+                ;
         });
     }
 };

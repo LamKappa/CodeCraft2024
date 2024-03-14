@@ -70,7 +70,6 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
     Berths() = default;
 
     std::array<index_t, BERTH_NUM> srb{};
-    std::map<Flatten_Position, index_t> pos_mapping;
 
     auto &operator[](index_t i) {
         if(i == no_index) return Berth::virtual_berth;
@@ -82,13 +81,6 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
         std::sort(srb.begin(), srb.end(), [](auto i, auto j) {
             return berths[i].evaluate() < berths[j].evaluate();
         });
-        for(int i = 0; i < BERTH_NUM; i++) {
-            pos_mapping[berths[i].pos] = i;
-        }
-    }
-
-    auto &find_by_pos(Flatten_Position pos) {
-        return this->operator[](pos_mapping[pos]);
     }
 };
 

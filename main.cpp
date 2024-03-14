@@ -112,9 +112,10 @@ void Output() {
             cout << "move " << i << " " << move_id << '\n';
         }
 
-        if(robot.pos + robot.mission.next_move == robot.mission.target[0]) {
+        Position dest = robot.pos + robot.mission.next_move;
+        if(dest == Items::items.find_by_id(robot.mission.target.first).pos) {
             cout << "get " << i << '\n';
-        } else if(robot.goods && berths.find_by_pos(robot.mission.target[1]).inside(robot.pos)) {
+        } else if(robot.goods && berths[robot.mission.target.second].inside(dest)) {
             cout << "pull " << i << '\n';
         }
         DEBUG if(robot.mission.mission_state == Robot::Mission::MISSION_STATE::IDLING) {
