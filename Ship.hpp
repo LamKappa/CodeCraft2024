@@ -127,7 +127,7 @@ struct Ship {
             if(!executor) { return; }
             if(mission_state == SAILING) { return; }
             auto [time, _] = transport(executor->berth_id, no_index);
-            if(stamp + time == MAX_FRAME - 1) {
+            if(time == MAX_FRAME - stamp - 1) {
                 mission_state = SAILING;
                 target = no_index;
                 Berths::berths[executor->berth_id].disabled = true;
