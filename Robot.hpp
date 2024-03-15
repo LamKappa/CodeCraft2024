@@ -58,7 +58,8 @@ struct Robot {
             }
             return mission;
         }
-#elifdef idea_3
+#endif
+#ifdef idea_3
         static Mission create(decltype(executor) exec) {
             Mission mission{SEARCHING, exec, 0.f};
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
@@ -120,12 +121,13 @@ struct Robot {
             }
             return mission;
         }
-#elifdef idea_4
+#endif
+#ifdef idea_4
         static Mission create(decltype(executor) exec) {
             Mission mission{SEARCHING, exec, 0.f};
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
             std::array<std::array<int, 3 * Item::OVERDUE>, BERTH_NUM> dp{};
-            std::array<std::unordered_map<int, decltype(targets)>, BERTH_NUM> item_list;
+            std::array<std::unordered_map<int, decltype(mission.targets)>, BERTH_NUM> item_list;
             for(auto &item: Items::items) {
                 if(item.occupied) { continue; }
                 auto live_time = item.live_time();

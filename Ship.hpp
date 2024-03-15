@@ -79,7 +79,8 @@ struct Ship {
             Berths::berths[mission.target].occupied++;
             return mission;
         }
-#elifdef idea_4
+#endif
+#ifdef idea_4
         static Mission create(decltype(executor) exec) {
             static const float NOT_VALUABLE = 0.f;
             Mission mission = {SAILING, exec, 0.f, exec->berth_id};
