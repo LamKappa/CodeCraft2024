@@ -79,8 +79,8 @@ void Input() {
     cin >> stamp >> money;
     int num;
     cin >> num;
-    while(!items.empty() && items.front().stamp + Item::OVERDUE < stamp) {
-        items.pop_back();
+    while(!items.empty() && !items.front().occupied && items.front().stamp + Item::OVERDUE < stamp) {
+        items.pop_front();
     }
     for(int i = 0; i < num; i++) {
         items.emplace_back();
