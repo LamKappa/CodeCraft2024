@@ -58,19 +58,21 @@ struct Robot {
 
         static Mission create(decltype(executor) exec) {
             Mission mission{SEARCHING, exec, 0.f};
-            decltype(mission.targets) targets;
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
             for(auto &berth: Berths::berths) {
                 if(berth.disabled || distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
                 std::vector dp(3 * Item::OVERDUE, 0);
-                std::unordered_map<int, long> last_item;
+                // std::unordered_map<int, long> last_item;
+                std::unordered_map<int, std::vector<long>> item_list;
                 for(auto &item: Items::items) {
                     if(item.occupied) { continue; }
-                    auto update = [&item, &dp, &last_item](auto x, auto y) {
+                    auto update = [&item, &dp, &item_list](auto x, auto y) {
                         if(x >= dp.size()) { return; }
                         if(dp[y] + item.value > dp[x]) {
                             dp[x] = dp[y] + item.value;
-                            last_item[x] = item.unique_id;
+                            // last_item[x] = item.unique_id;
+                            item_list[x] = item_list[y];
+                            item_list[x].emplace_back(item.unique_id);
                         }
                     };
                     auto live_time = item.live_time();
@@ -95,29 +97,24 @@ struct Robot {
                 }
                 if(best_value > mission.reserved_value) {
                     mission.reserved_value = best_value;
-                    targets.clear();
-                    while(best_last_j > 0 && last_item[best_last_j] != Item::noItem.unique_id) {
-                        auto &item = Items::items.find_by_id(last_item[best_last_j]);
-                        auto berth_to_item = distance(berth.pos, item.pos);
-                        auto robot_to_item = distance(exec->pos, item.pos);
-                        targets.emplace_front(item.unique_id, berth.id);
-                        if(best_last_j == berth_to_item + robot_to_item) { break; }
-                        best_last_j -= 2 * berth_to_item;
+                    mission.targets.clear();
+                    for(auto id : item_list[best_last_j]){
+                        mission.targets.emplace_back(id, berth.id);
                     }
+                    // while(best_last_j > 0 && last_item[best_last_j] != Item::noItem.unique_id) {
+                    //     auto &item = Items::items.find_by_id(last_item[best_last_j]);
+                    //     auto berth_to_item = distance(berth.pos, item.pos);
+                    //     auto robot_to_item = distance(exec->pos, item.pos);
+                    //     mission.targets.emplace_front(item.unique_id, berth.id);
+                    //     if(best_last_j == berth_to_item + robot_to_item) { break; }
+                    //     best_last_j -= 2 * berth_to_item;
+                    // }
                 }
             }
-            if(targets.empty()) { return idle; }
-            std::cerr << "targets.size(): " << targets.size() << '\n';
-            std::set<long> uniq;
-            for(auto [item_id, berth_id]: targets) {
-                if(!uniq.insert(item_id).second) {
-                    // std::cerr << "targets repeat: " << item_id << '\n';
-                } else {
-                    Items::items.find_by_id(item_id).occupied = true;
-                    mission.targets.emplace_back(item_id, berth_id);
-                }
+            if(mission.targets.empty()) { return idle; }
+            for(auto [id, _] : mission.targets){
+                Items::items.find_by_id(id).occupied = true;
             }
-            std::cerr << "mission.targets.size(): " << mission.targets.size() << '\n';
             return mission;
         }
 
