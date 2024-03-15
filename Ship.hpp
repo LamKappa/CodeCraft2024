@@ -10,6 +10,8 @@
 #include "Berth.hpp"
 #include "Config.h"
 
+#define idea_4
+
 struct Ship {
     int load = 0;
     int value = 0;
@@ -51,6 +53,33 @@ struct Ship {
         index_t target = no_index;
         index_t next_move = no_index;
 
+#ifdef idea_3
+        static Mission create(decltype(executor) exec) {
+            static const float NOT_VALUABLE = 0.f;
+            Mission mission = {SAILING, exec, 0.f, exec->berth_id};
+            for(auto &berth: Berths::berths) {
+                if(berth.disabled || berth.occupied) { continue; }
+                auto time = transport(exec->berth_id, berth.id).first + transport(berth.id, no_index).first;
+                if(stamp + time > MAX_FRAME) { continue; }
+                int berth_hold = berth.notified + (int) berth.cargo.size();
+                float value = (float) berth_hold / (float) berth.loading_speed;
+                if(value >= mission.reserved_value) {
+                    mission.reserved_value = value;
+                    mission.target = berth.id;
+                }
+            }
+            if(exec->berth_id != no_index) {
+                if(mission.target == exec->berth_id || mission.reserved_value < NOT_VALUABLE) {
+                    mission = exec->mission;
+                    mission.mission_state = SAILING;
+                }
+            } else if(mission.target == no_index) {
+                return waiting;
+            }
+            Berths::berths[mission.target].occupied++;
+            return mission;
+        }
+#elifdef idea_4
         static Mission create(decltype(executor) exec) {
             static const float NOT_VALUABLE = 0.f;
             Mission mission = {SAILING, exec, 0.f, exec->berth_id};
@@ -77,6 +106,7 @@ struct Ship {
             Berths::berths[mission.target].occupied++;
             return mission;
         }
+#endif
 
         [[nodiscard]] auto vacant() const {
             return mission_state == WAITING;
