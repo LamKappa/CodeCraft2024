@@ -10,7 +10,7 @@
 #include "Berth.hpp"
 #include "Config.h"
 
-#define idea_4
+#define Ship_idea_3
 
 struct Ship {
     int load = 0;
@@ -53,7 +53,7 @@ struct Ship {
         index_t target = no_index;
         index_t next_move = no_index;
 
-#ifdef idea_3
+#ifdef Ship_idea_3
         static Mission create(decltype(executor) exec) {
             static const float NOT_VALUABLE = 0.f;
             Mission mission = {SAILING, exec, 0.f, exec->berth_id};
@@ -80,7 +80,7 @@ struct Ship {
             return mission;
         }
 #endif
-#ifdef idea_4
+#ifdef Ship_idea_4
         static Mission create(decltype(executor) exec) {
             static const float NOT_VALUABLE = 0.f;
             Mission mission = {SAILING, exec, 0.f, exec->berth_id};

@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_C_STANDARD 11)
 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
-#add_definitions(-DDEBUG_)
+add_definitions(-DDEBUG_)
 link_libraries(pthread rt m)
 
 AUX_SOURCE_DIRECTORY(. src)

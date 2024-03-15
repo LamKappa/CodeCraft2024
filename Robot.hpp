@@ -12,7 +12,7 @@
 #include "Item.hpp"
 #include "Position.hpp"
 
-#define idea_4
+#define Robot_idea_4
 
 struct Robot {
     Robot() = default;
@@ -32,7 +32,7 @@ struct Robot {
         std::deque<std::pair<long, index_t>> targets;
         Position next_move{Position::npos};
 
-#ifdef idea_1
+#ifdef Robot_idea_1
         static Mission create(decltype(executor) exec) {
             Mission mission = {SEARCHING, exec};
             auto calc_value = [](const Robot &robot, const Item &item, const Berth &berth) {
@@ -59,7 +59,7 @@ struct Robot {
             return mission;
         }
 #endif
-#ifdef idea_3
+#ifdef Robot_idea_3
         static Mission create(decltype(executor) exec) {
             Mission mission{SEARCHING, exec, 0.f};
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
@@ -122,7 +122,7 @@ struct Robot {
             return mission;
         }
 #endif
-#ifdef idea_4
+#ifdef Robot_idea_4
         static Mission create(decltype(executor) exec) {
             Mission mission{SEARCHING, exec, 0.f};
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };

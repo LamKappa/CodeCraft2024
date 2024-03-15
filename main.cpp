@@ -54,7 +54,7 @@ void Init() {
     }
     robots.init();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(4990) -
+    std::this_thread::sleep_for(std::chrono::milliseconds(4950) -
                                 (std::chrono::high_resolution_clock::now() - start_time));
     cout << "OK" << endl;
     DEBUG {
