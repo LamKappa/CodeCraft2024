@@ -56,63 +56,117 @@ struct Robot {
         //     return mission;
         // }
 
+        // static Mission create(decltype(executor) exec) {
+        //     Mission mission{SEARCHING, exec, 0.f};
+        //     auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
+        //     for(auto &berth: Berths::berths) {
+        //         if(berth.disabled || distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
+        //         std::vector dp(3 * Item::OVERDUE, 0);
+        //         // std::unordered_map<int, long> last_item;
+        //         std::unordered_map<int, std::vector<long>> item_list;
+        //         for(auto &item: Items::items) {
+        //             if(item.occupied) { continue; }
+        //             auto update = [&item, &dp, &item_list](auto x, auto y) {
+        //                 if(x >= dp.size()) { return; }
+        //                 if(dp[y] + item.value > dp[x]) {
+        //                     dp[x] = dp[y] + item.value;
+        //                     // last_item[x] = item.unique_id;
+        //                     item_list[x] = item_list[y];
+        //                     item_list[x].emplace_back(item.unique_id);
+        //                 }
+        //             };
+        //             auto live_time = item.live_time();
+        //             auto berth_to_item = distance(berth.pos, item.pos);
+        //             auto robot_to_item = distance(exec->pos, item.pos);
+        //             int max_t = live_time - berth_to_item;
+        //             for(int j = max_t; j > 0; j--) {
+        //                 if(dp[j] == 0) { continue; }
+        //                 update(j + 2 * berth_to_item, j);
+        //             }
+        //             if(robot_to_item > live_time) { continue; }
+        //             update(robot_to_item + berth_to_item, 0);
+        //         }
+        //         int best_last_j = 0;
+        //         float best_value = 0.f;
+        //         for(int j = 1; j < dp.size(); j++) {
+        //             float value = (float) dp[j] / (float) j;
+        //             if(value > best_value) {
+        //                 best_value = value;
+        //                 best_last_j = j;
+        //             }
+        //         }
+        //         if(best_value > mission.reserved_value) {
+        //             mission.reserved_value = best_value;
+        //             mission.targets.clear();
+        //             for(auto id : item_list[best_last_j]){
+        //                 mission.targets.emplace_back(id, berth.id);
+        //             }
+        //             // while(best_last_j > 0 && last_item[best_last_j] != Item::noItem.unique_id) {
+        //             //     auto &item = Items::items.find_by_id(last_item[best_last_j]);
+        //             //     auto berth_to_item = distance(berth.pos, item.pos);
+        //             //     auto robot_to_item = distance(exec->pos, item.pos);
+        //             //     mission.targets.emplace_front(item.unique_id, berth.id);
+        //             //     if(best_last_j == berth_to_item + robot_to_item) { break; }
+        //             //     best_last_j -= 2 * berth_to_item;
+        //             // }
+        //         }
+        //     }
+        //     if(mission.targets.empty()) { return idle; }
+        //     for(auto [id, _] : mission.targets){
+        //         Items::items.find_by_id(id).occupied = true;
+        //     }
+        //     return mission;
+        // }
+
         static Mission create(decltype(executor) exec) {
             Mission mission{SEARCHING, exec, 0.f};
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
-            for(auto &berth: Berths::berths) {
-                if(berth.disabled || distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
-                std::vector dp(3 * Item::OVERDUE, 0);
-                // std::unordered_map<int, long> last_item;
-                std::unordered_map<int, std::vector<long>> item_list;
-                for(auto &item: Items::items) {
-                    if(item.occupied) { continue; }
-                    auto update = [&item, &dp, &item_list](auto x, auto y) {
-                        if(x >= dp.size()) { return; }
-                        if(dp[y] + item.value > dp[x]) {
-                            dp[x] = dp[y] + item.value;
-                            // last_item[x] = item.unique_id;
-                            item_list[x] = item_list[y];
-                            item_list[x].emplace_back(item.unique_id);
+            std::array<std::array<int, 3 * Item::OVERDUE>, BERTH_NUM> dp{};
+            std::array<std::unordered_map<int, decltype(targets)>, BERTH_NUM> item_list;
+            for(auto &item: Items::items) {
+                if(item.occupied) { continue; }
+                auto live_time = item.live_time();
+                auto robot_to_item = distance(exec->pos, item.pos);
+                if(robot_to_item > live_time) { continue; }
+
+                auto g = dp;
+                for(auto &to_berth: Berths::berths) {
+                    if(to_berth.disabled || distance(exec->pos, to_berth.pos) == Atlas::INF_DIS) { continue; }
+                    auto update = [&item, &to_berth, &dp, &g, &item_list](auto x, auto i, auto j) {
+                        if(x >= dp[to_berth.id].size()) { return; }
+                        if(g[i][j] + item.value > dp[to_berth.id][x]) {
+                            dp[to_berth.id][x] = g[i][j] + item.value;
+                            item_list[to_berth.id][x] = item_list[i][j];
+                            item_list[to_berth.id][x].emplace_back(item.unique_id, to_berth.id);
                         }
                     };
-                    auto live_time = item.live_time();
-                    auto berth_to_item = distance(berth.pos, item.pos);
-                    auto robot_to_item = distance(exec->pos, item.pos);
-                    int max_t = live_time - berth_to_item;
-                    for(int j = max_t; j > 0; j--) {
-                        if(dp[j] == 0) { continue; }
-                        update(j + 2 * berth_to_item, j);
+                    auto to_berth_to_item = distance(to_berth.pos, item.pos);
+                    for(auto &from_berth : Berths::berths) {
+                        if(from_berth.disabled || distance(exec->pos, from_berth.pos) == Atlas::INF_DIS) { continue; }
+                        auto from_berth_to_item = distance(from_berth.pos, item.pos);
+                        for(int j = live_time - from_berth_to_item; j > 0; j--) {
+                            if(g[from_berth.id][j] == 0) { continue; }
+                            update(j + from_berth_to_item + to_berth_to_item, from_berth.id, j);
+                        }
                     }
-                    if(robot_to_item > live_time) { continue; }
-                    update(robot_to_item + berth_to_item, 0);
-                }
-                int best_last_j = 0;
-                float best_value = 0.f;
-                for(int j = 1; j < dp.size(); j++) {
-                    float value = (float) dp[j] / (float) j;
-                    if(value > best_value) {
-                        best_value = value;
-                        best_last_j = j;
-                    }
-                }
-                if(best_value > mission.reserved_value) {
-                    mission.reserved_value = best_value;
-                    mission.targets.clear();
-                    for(auto id : item_list[best_last_j]){
-                        mission.targets.emplace_back(id, berth.id);
-                    }
-                    // while(best_last_j > 0 && last_item[best_last_j] != Item::noItem.unique_id) {
-                    //     auto &item = Items::items.find_by_id(last_item[best_last_j]);
-                    //     auto berth_to_item = distance(berth.pos, item.pos);
-                    //     auto robot_to_item = distance(exec->pos, item.pos);
-                    //     mission.targets.emplace_front(item.unique_id, berth.id);
-                    //     if(best_last_j == berth_to_item + robot_to_item) { break; }
-                    //     best_last_j -= 2 * berth_to_item;
-                    // }
+                    update(robot_to_item + to_berth_to_item, 0, 0);
                 }
             }
+            std::pair<index_t, int> best_idx;
+            for(auto &berth : Berths::berths) {
+                if(berth.disabled) {continue;}
+                for(int j = 1; j < dp[berth.id].size(); j++) {
+                    float value = (float) dp[berth.id][j] / (float) j;
+                    if(value > mission.reserved_value){
+                        mission.reserved_value = value;
+                        best_idx = {berth.id, j};
+                    }
+                }
+            }
+            mission.targets = item_list[best_idx.first][best_idx.second];
+
             if(mission.targets.empty()) { return idle; }
-            for(auto [id, _] : mission.targets){
+            for(auto [id, _]: mission.targets) {
                 Items::items.find_by_id(id).occupied = true;
             }
             return mission;
@@ -143,7 +197,7 @@ struct Robot {
                 targets.pop_front();
                 if(targets.empty()) {
                     mission_state = IDLING;
-                }else{
+                } else {
                     mission_state = SEARCHING;
                 }
             }
@@ -279,6 +333,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
  *  Exception:
  *      1. 货物太少, 需要换码头, 远的码头可能更差
  * 3. [*已添加] 注意到泊位附近的物品总是不太够的, 考虑物品生命周期进行调度, 对一个序列的物品做背包即可
+ * 4. [*已添加] 对物品的调度, 考虑可以在不同泊位附近变换, 做一个高维背包
  *
  * BUGS:
  * 1. [*已修复] 有时候机器人取到货物后在某个地方傻住不动, 原因:有些机器人路过把他的item拿了

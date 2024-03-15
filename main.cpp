@@ -173,6 +173,10 @@ int main(int argc, char *argv[]) {
                 berth.cargo.pop();
             }
         }
+        for(auto &ship : ships){
+            tot_score += ship.value;
+            ship.value = ship.load = 0;
+        }
         cerr << "tot_left_items: " << left_items << '\n';
         cerr << "tot_left_values: " << left_value << '\n';
         cerr << "obstacle occurred: " << obstacle_cnt << " times\n";

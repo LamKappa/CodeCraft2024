@@ -47,25 +47,27 @@ struct Ship {
 
         MISSION_STATE mission_state{MISSION_STATE::WAITING};
         Ship *executor{nullptr};
-        index_t target = no_index;
         float reserved_value = 0.f;
+        index_t target = no_index;
         index_t next_move = no_index;
 
         static Mission create(decltype(executor) exec) {
-            static const float NOT_VALUABLE = (float) SHIP_CAPACITY / 10.f;
-            Mission mission = {SAILING, exec};
+            static const float NOT_VALUABLE = 0.f;
+            Mission mission = {SAILING, exec, 0.f, exec->berth_id};
             for(auto &berth: Berths::berths) {
-                if(berth.disabled || berth.occupied || berth.id == exec->berth_id) { continue; }
+                if(berth.disabled || berth.occupied) { continue; }
                 auto time = transport(exec->berth_id, berth.id).first + transport(berth.id, no_index).first;
-                if(stamp + time > MAX_FRAME - 1) { continue; }
-                float value = (float) (berth.notified + berth.cargo.size()) / (float) berth.loading_speed;
+                if(stamp + time > MAX_FRAME) { continue; }
+                int berth_hold = berth.notified + (int) berth.cargo.size();
+                float cost = std::min((float) (MAX_FRAME - time - stamp), (float) berth_hold / (float) berth.loading_speed);
+                float value = cost * (float) berth.loading_speed / (cost + (float) time);
                 if(value >= mission.reserved_value) {
                     mission.reserved_value = value;
                     mission.target = berth.id;
                 }
             }
             if(exec->berth_id != no_index) {
-                if(mission.reserved_value < NOT_VALUABLE) {
+                if(mission.target == exec->berth_id || mission.reserved_value < NOT_VALUABLE) {
                     mission = exec->mission;
                     mission.mission_state = SAILING;
                 }
@@ -127,7 +129,7 @@ struct Ship {
             if(!executor) { return; }
             if(mission_state == SAILING) { return; }
             auto [time, _] = transport(executor->berth_id, no_index);
-            if(time == MAX_FRAME - stamp - 1) {
+            if(time == MAX_FRAME - stamp) {
                 mission_state = SAILING;
                 target = no_index;
                 Berths::berths[executor->berth_id].disabled = true;
@@ -200,6 +202,7 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
  *      3. 目前状态机转移比较混乱, 主要依靠每帧的输入判断 (潜在的BUG)
  * 2. [*已实现] transport, 用于计算从s到t的最优寻路, 此情景下最多中转一次
  * 3. [*已实现] 调度机制, 货物运到的速度<<装载, 所以动态优先调度船去转载货物 (考虑港口间移动)
+ * 4. [*已实现] 调度添加边界 (当要结束时, 只考虑目标点位能转载的量)
  *
  * BUGS:
  *  1. [*已解决] Ship每次load最多loading_speed个货物, 但是要看berth够不够
