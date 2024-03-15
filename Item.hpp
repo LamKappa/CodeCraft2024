@@ -58,4 +58,9 @@ struct Items : public std::deque<Item> {
     }
 };
 
+/**
+ * idea
+ *  1. occupied和deleted应该改为一个枚举state
+ */
+
 #endif//CODECRAFTSDK_ITEM_HPP

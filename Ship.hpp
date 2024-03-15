@@ -58,16 +58,16 @@ struct Ship {
                 if(berth.disabled || berth.occupied || berth.id == exec->berth_id) { continue; }
                 auto time = transport(exec->berth_id, berth.id).first + transport(berth.id, no_index).first;
                 if(stamp + time > MAX_FRAME - 1) { continue; }
-                float cnt = (float) (berth.notified + berth.cargo.size()) / (float) berth.loading_speed;
-                if(cnt >= mission.reserved_value) {
-                    mission.reserved_value = cnt;
+                float value = (float) (berth.notified + berth.cargo.size()) / (float) berth.loading_speed;
+                if(value >= mission.reserved_value) {
+                    mission.reserved_value = value;
                     mission.target = berth.id;
                 }
             }
             if(exec->berth_id != no_index) {
                 if(mission.reserved_value < NOT_VALUABLE) {
                     mission = exec->mission;
-                    mission.mission_state = LOADING;
+                    mission.mission_state = SAILING;
                 }
             } else if(mission.target == no_index) {
                 return waiting;

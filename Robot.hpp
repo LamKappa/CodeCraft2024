@@ -107,16 +107,17 @@ struct Robot {
                 }
             }
             if(targets.empty()) { return idle; }
-            // std::cerr << "targets.size(): " << mission.targets.size() << '\n';
+            std::cerr << "targets.size(): " << targets.size() << '\n';
             std::set<long> uniq;
             for(auto [item_id, berth_id]: targets) {
                 if(!uniq.insert(item_id).second) {
-                    std::cerr << "targets repeat: " << item_id << '\n';
+                    // std::cerr << "targets repeat: " << item_id << '\n';
                 } else {
                     Items::items.find_by_id(item_id).occupied = true;
                     mission.targets.emplace_back(item_id, berth_id);
                 }
             }
+            std::cerr << "mission.targets.size(): " << mission.targets.size() << '\n';
             return mission;
         }
 
