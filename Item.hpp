@@ -15,8 +15,8 @@ struct Item {
     Position pos;
     int value{};
 
-    bool occupied{};
-    bool deleted{};
+    bool occupied{false};
+    bool deleted{false};
 
     static long item_cnt;
     static Item noItem;

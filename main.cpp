@@ -79,7 +79,7 @@ void Input() {
     cin >> stamp >> money;
     int num;
     cin >> num;
-    while(!items.empty() && (!items.front().occupied || items.front().deleted) && items.front().stamp + Item::OVERDUE < stamp) {
+    while(!items.empty() && (!items.front().occupied || items.front().deleted) && items.front().live_time() < 0) {
         items.pop_front();
     }
     for(int i = 0; i < num; i++) {
