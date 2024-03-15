@@ -36,6 +36,12 @@ struct Item {
     bool operator<(const Item &o) const {
         return unique_id < o.unique_id;
     }
+    bool operator==(const Item &o) const {
+        return unique_id == o.unique_id;
+    }
+    bool operator!=(const Item &o) const {
+        return !operator==(o);
+    }
 };
 
 struct Items : public std::deque<Item> {

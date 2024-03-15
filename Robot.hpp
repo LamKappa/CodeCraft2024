@@ -76,11 +76,11 @@ struct Robot {
                     auto live_time = item.live_time();
                     auto berth_to_item = distance(berth.pos, item.pos);
                     auto robot_to_item = distance(exec->pos, item.pos);
-                    // int max_t = live_time - berth_to_item;
-                    // for(int j = max_t; j > 0; j--) {
-                    //     if(dp[j] == 0) { continue; }
-                    //     update(j + 2 * berth_to_item, j);
-                    // }
+                    int max_t = live_time - berth_to_item;
+                    for(int j = max_t; j > 0; j--) {
+                        if(dp[j] == 0) { continue; }
+                        update(j + 2 * berth_to_item, j);
+                    }
                     if(robot_to_item > live_time) { continue; }
                     update(robot_to_item + berth_to_item, 0);
                 }
@@ -112,7 +112,7 @@ struct Robot {
             for(auto [item_id, berth_id]: targets) {
                 if(!uniq.insert(item_id).second) {
                     std::cerr << "targets repeat: " << item_id << '\n';
-                }else{
+                } else {
                     Items::items.find_by_id(item_id).occupied = true;
                     mission.targets.emplace_back(item_id, berth_id);
                 }
@@ -123,22 +123,25 @@ struct Robot {
         [[nodiscard]] inline auto vacant() const {
             return mission_state == WAITING || mission_state == IDLING;
         }
-        void check_item_overdue() {
-            if(mission_state != SEARCHING) { return; }
-            if(auto &item = Items::items.find_by_id(targets.front().first);
-               item.deleted || item.live_time() < Atlas::atlas.distance(executor->pos, item.pos)) {
-                targets.pop_front();
-                if(targets.empty()) {
-                    mission_state = IDLING;
-                } else {
-                    check_item_overdue();
+        auto check_item_overdue() {
+            if(mission_state == SEARCHING) {
+                if(auto &item = Items::items.find_by_id(targets.front().first);
+                   item == Item::noItem || item.deleted ||
+                   item.live_time() < Atlas::atlas.distance(executor->pos, item.pos)) {
+                    targets.pop_front();
+                    if(targets.empty()) {
+                        mission_state = IDLING;
+                        return true;
+                    }
+                    return false;
                 }
             }
+            return true;
         }
         auto check_complete() {
             if(Item &item = Items::items.find_by_id(targets.front().first);
-               mission_state == CARRYING && executor && !executor->goods && !item.deleted &&
-               Berths::berths[targets.front().second].inside(executor->pos)) {
+               mission_state == CARRYING && item != Item::noItem && !item.deleted &&
+               executor && !executor->goods && Berths::berths[targets.front().second].inside(executor->pos)) {
                 Berths::berths[targets.front().second].sign(item);
                 targets.pop_front();
                 if(targets.empty()) {
@@ -148,6 +151,7 @@ struct Robot {
         }
         auto check_carry() {
             if(Item &item = Items::items.find_by_id(targets.front().first);
+               item != Item::noItem &&
                mission_state == SEARCHING && executor && executor->goods && executor->pos == item.pos) {
                 mission_state = CARRYING;
                 Berths::berths[targets.front().second].notify(item);
@@ -216,7 +220,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
         return std::async(std::launch::async, [this] {
             for(auto &robot: robots) {
                 robot.mission.next_move = Position::npos;
-                robot.mission.check_item_overdue();
+                while(!robot.mission.check_item_overdue()) {}
                 robot.mission.check_complete();
                 if(robot.mission.vacant()) {
                     robot.mission = Robot::Mission::create(&robot);
