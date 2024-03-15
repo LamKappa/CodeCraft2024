@@ -6,6 +6,14 @@
 #include <chrono>
 #include <future>
 
+#ifdef DEBUG_
+#define DEBUG if(true)
+constexpr size_t RANDOM_SEED = 42;
+#else
+#define DEBUG if(false)
+constexpr size_t RANDOM_SEED = random_device{}();
+#endif
+
 using u8 = u_int8_t;
 using u16 = u_int16_t;
 using u32 = u_int32_t;

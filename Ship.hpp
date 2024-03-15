@@ -52,7 +52,7 @@ struct Ship {
         index_t next_move = no_index;
 
         static Mission create(decltype(executor) exec) {
-            static const float NOT_VALUABLE = (float) SHIP_CAPACITY / 50.f;
+            static const float NOT_VALUABLE = (float) SHIP_CAPACITY / 10.f;
             Mission mission = {SAILING, exec};
             for(auto &berth: Berths::berths) {
                 if(berth.disabled || berth.occupied || berth.id == exec->berth_id) { continue; }
@@ -138,7 +138,7 @@ struct Ship {
             if(!executor) { return; }
             switch(mission_state) {
             case WAITING: {
-                ::tot_score += executor->value;
+                DEBUG ::tot_score += executor->value;
                 executor->load = 0;
                 executor->value = 0;
             } break;

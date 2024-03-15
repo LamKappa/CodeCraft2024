@@ -13,14 +13,6 @@ using namespace std;
 int obstacle_cnt = 0;
 int idle_cnt = 0;
 int tot_score = 0;
-#define DEBUG_
-#ifdef DEBUG_
-#define DEBUG if(true)
-u32 RANDOM_SEED = 42;
-#else
-#define DEBUG if(false)
-u32 RANDOM_SEED = random_device{}();
-#endif
 
 chrono::high_resolution_clock::time_point start_time;
 
@@ -159,17 +151,17 @@ int main(int argc, char *argv[]) {
         cout << "OK" << endl;
     }
     DEBUG {
-        int last_items = 0, last_value = 0;
+        int left_items = 0, left_value = 0;
         for(auto &berth: berths) {
-            cerr << "last_items: " << berth.cargo.size() << '\n';
-            last_items += (int) berth.cargo.size();
+            cerr << "left_items: " << berth.cargo.size() << '\n';
+            left_items += (int) berth.cargo.size();
             while(!berth.cargo.empty()) {
-                last_value += berth.cargo.front().value;
+                left_value += berth.cargo.front().value;
                 berth.cargo.pop();
             }
         }
-        cerr << "tot_last_items: " << last_items << '\n';
-        cerr << "tot_last_values: " << last_value << '\n';
+        cerr << "tot_left_items: " << left_items << '\n';
+        cerr << "tot_left_values: " << left_value << '\n';
         cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
         cerr << "idle occurred: " << idle_cnt << " times\n";
         cerr << "tot_score: " << tot_score << '\n';
