@@ -91,6 +91,14 @@ void Input() {
 }
 
 void Resolve() {
+    for(auto &berth: berths) {
+        if(berth.disabled) { continue; }
+        auto [time, _] = Ship::transport(berth.id, Berth::virtual_berth.id);
+        if(time > MAX_FRAME - stamp) {
+            berth.disabled = true;
+        }
+    }
+
     auto f1 = robots.resolve();
     f1.wait();
 
@@ -150,6 +158,11 @@ int main(int argc, char *argv[]) {
         Output();
         cout << "OK" << endl;
     }
+
+    for(auto &ft: async_pool) {
+        ft.wait();
+    }
+
     DEBUG {
         int left_items = 0, left_value = 0;
         for(auto &berth: berths) {
@@ -165,10 +178,6 @@ int main(int argc, char *argv[]) {
         cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
         cerr << "idle occurred: " << idle_cnt << " times\n";
         cerr << "tot_score: " << tot_score << '\n';
-    }
-
-    for(auto &ft: async_pool) {
-        ft.wait();
     }
 
     return 0;

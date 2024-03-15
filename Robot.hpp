@@ -203,7 +203,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
         //             Robot::Mission::MISSION_STATE::CARRYING,
         //             nullptr,
         //             0,
-        //             {Item::noItem.unique_id, berth.id},
+        //             {{Item::noItem.unique_id, berth.id}},
         //             Position::npos};
         //     mission.executor = std::min_element(begin(), end(), [&berth](auto&x, auto&y){
         //         if(x.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING || y.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING){
