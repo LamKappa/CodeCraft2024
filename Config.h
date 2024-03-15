@@ -8,10 +8,10 @@
 
 #ifdef DEBUG_
 #define DEBUG if(true)
-constexpr size_t RANDOM_SEED = 42;
+const size_t RANDOM_SEED = 42;
 #else
 #define DEBUG if(false)
-constexpr size_t RANDOM_SEED = random_device{}();
+const size_t RANDOM_SEED = std::random_device{}();
 #endif
 
 using u8 = u_int8_t;
