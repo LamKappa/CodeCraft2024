@@ -126,8 +126,7 @@ struct Robot {
         auto check_item_overdue() {
             if(mission_state == SEARCHING) {
                 if(auto &item = Items::items.find_by_id(targets.front().first);
-                   item == Item::noItem || item.deleted ||
-                   item.live_time() < Atlas::atlas.distance(executor->pos, item.pos)) {
+                   item.deleted || item.live_time() < Atlas::atlas.distance(executor->pos, item.pos)) {
                     targets.pop_front();
                     if(targets.empty()) {
                         mission_state = IDLING;
@@ -140,12 +139,14 @@ struct Robot {
         }
         auto check_complete() {
             if(Item &item = Items::items.find_by_id(targets.front().first);
-               mission_state == CARRYING && item != Item::noItem && !item.deleted &&
+               mission_state == CARRYING && !item.deleted &&
                executor && !executor->goods && Berths::berths[targets.front().second].inside(executor->pos)) {
                 Berths::berths[targets.front().second].sign(item);
                 targets.pop_front();
                 if(targets.empty()) {
                     mission_state = IDLING;
+                }else{
+                    mission_state = SEARCHING;
                 }
             }
         }
