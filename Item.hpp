@@ -16,6 +16,7 @@ struct Item {
     int value{};
 
     bool occupied{};
+    bool deleted{};
 
     static long item_cnt;
     static Item noItem;

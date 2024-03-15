@@ -12,6 +12,7 @@
 
 #include "Config.h"
 #include "Position.hpp"
+#include "Item.hpp"
 
 struct Berth {
     index_t id{};
@@ -22,7 +23,7 @@ struct Berth {
     bool disabled = false;
     int notified = 0;
     int occupied = 0;
-    std::queue<int> cargo;
+    std::queue<Item> cargo;
 
     Berth() = default;
 
@@ -33,28 +34,29 @@ struct Berth {
     [[nodiscard]] auto evaluate() const {
         return 2.f * (float) transport_time;// + (float) SHIP_CAPACITY / loading_speed;
     }
-    auto notify(int value) {
-        if(value <= 0) { return; }
+    auto notify(Item &item) {
+        if(item.value <= 0) { return; }
         notified++;
     }
 
-    auto sign(int value) {
-        if(value <= 0) { return; }
+    auto sign(Item &item) {
+        if(item.value <= 0) { return; }
+        item.deleted = true;
+        cargo.emplace(item);
         notified--;
-        cargo.emplace(value);
     }
 
     auto get_load(int requirement) {
         int load_item_cnt = 0, load_item_value = 0;
         while(!cargo.empty() && load_item_cnt < requirement && load_item_cnt < loading_speed) {
-            load_item_value += cargo.front();
+            load_item_value += cargo.front().value;
             cargo.pop();
             load_item_cnt++;
         }
         return std::make_pair(load_item_cnt, load_item_value);
     }
 
-    [[nodiscard]] auto inside(Position p){
+    [[nodiscard]] auto inside(Position p) {
         return pos.first <= p.first && p.first <= pos.first + 3 &&
                pos.second <= p.second && p.second <= pos.second + 3;
     }

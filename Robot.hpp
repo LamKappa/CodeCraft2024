@@ -132,7 +132,7 @@ struct Robot {
             if(mission_state == CARRYING &&
                executor && Berths::berths[targets.front().second].inside(executor->pos)) {
                 Berths::berths[targets.front().second]
-                        .sign(Items::items.find_by_id(targets.front().first).value);
+                        .sign(Items::items.find_by_id(targets.front().first));
                 targets.pop_front();
                 if(targets.empty()) {
                     mission_state = IDLING;
@@ -144,7 +144,7 @@ struct Robot {
                (executor && executor->goods)) {
                 mission_state = CARRYING;
                 Berths::berths[targets.front().second]
-                        .notify(Items::items.find_by_id(targets.front().first).value);
+                        .notify(Items::items.find_by_id(targets.front().first));
             }
         }
         auto forward() {

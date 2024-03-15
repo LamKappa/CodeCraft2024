@@ -62,7 +62,7 @@ void Init() {
     }
     robots.init();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(4999) -
+    std::this_thread::sleep_for(std::chrono::milliseconds(4990) -
                                 (std::chrono::high_resolution_clock::now() - start_time));
     cout << "OK" << endl;
     DEBUG {
@@ -79,7 +79,7 @@ void Input() {
     cin >> stamp >> money;
     int num;
     cin >> num;
-    while(!items.empty() && !items.front().occupied && items.front().stamp + Item::OVERDUE < stamp) {
+    while(!items.empty() && (!items.front().occupied || items.front().deleted) && items.front().stamp + Item::OVERDUE < stamp) {
         items.pop_front();
     }
     for(int i = 0; i < num; i++) {
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
             cerr << "last_items: " << berth.cargo.size() << '\n';
             last_items += (int) berth.cargo.size();
             while(!berth.cargo.empty()) {
-                last_value += berth.cargo.front();
+                last_value += berth.cargo.front().value;
                 berth.cargo.pop();
             }
         }
