@@ -10,7 +10,7 @@
 #include "Berth.hpp"
 #include "Config.h"
 
-#define Ship_idea_3
+#define Ship_idea_4
 
 struct Ship {
     int load = 0;

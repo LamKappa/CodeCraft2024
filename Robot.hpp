@@ -126,7 +126,7 @@ struct Robot {
         static Mission create(decltype(executor) exec) {
             Mission mission{SEARCHING, exec, 0.f};
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
-            std::array<std::array<int, 3 * Item::OVERDUE>, BERTH_NUM> dp{};
+            std::array<std::array<float, 3 * Item::OVERDUE>, BERTH_NUM> dp{};
             std::array<std::unordered_map<int, decltype(mission.targets)>, BERTH_NUM> item_list;
             for(auto &item: Items::items) {
                 if(item.occupied) { continue; }
@@ -140,7 +140,7 @@ struct Robot {
                     auto update = [&item, &to_berth, &dp, &g, &item_list](auto x, auto i, auto j) {
                         if(x >= dp[to_berth.id].size()) { return; }
                         if(g[i][j] + item.value > dp[to_berth.id][x]) {
-                            dp[to_berth.id][x] = g[i][j] + item.value;
+                            dp[to_berth.id][x] = g[i][j] + (float) item.value;
                             item_list[to_berth.id][x] = item_list[i][j];
                             item_list[to_berth.id][x].emplace_back(item.unique_id, to_berth.id);
                         }
@@ -161,7 +161,7 @@ struct Robot {
             for(auto &berth : Berths::berths) {
                 if(berth.disabled) {continue;}
                 for(int j = 1; j < dp[berth.id].size(); j++) {
-                    float value = (float) dp[berth.id][j] / (float) j;
+                    float value = dp[berth.id][j] / (float) j;
                     if(value > mission.reserved_value){
                         mission.reserved_value = value;
                         best_idx = {berth.id, j};

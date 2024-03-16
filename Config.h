@@ -9,6 +9,7 @@
 #ifdef DEBUG_
 #define DEBUG if(true)
 const size_t RANDOM_SEED = 42;
+// const size_t RANDOM_SEED = std::random_device{}();
 #else
 #define DEBUG if(false)
 const size_t RANDOM_SEED = std::random_device{}();
