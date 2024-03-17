@@ -15,6 +15,7 @@
 #include "Item.hpp"
 #include "Position.hpp"
 #include "Queue.hpp"
+#include "OrderMap.hpp"
 
 struct Berth {
     index_t id{};
@@ -23,8 +24,9 @@ struct Berth {
     int loading_speed{};
     bool disabled = false;
 
-    std::map<u16, u16> values;
+    OrderMap<u16, u16> values;
 
+    int working_robots = 0;
     int notified = 0;
     int occupied = 0;
     std::queue<Item> cargo;
@@ -80,24 +82,25 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
     }
 
     auto init() {
-        async_pool.emplace_back(std::async(std::launch::async, [this]{
+        return std::async(std::launch::async, [this]{
             for(auto &berth: *this) {
-                Queue<std::pair<Position, u16>, 3 * N> q;
+                Queue<Position, 3 * N> q;
                 auto vised = Atlas::atlas.bitmap;
                 vised.set(berth.pos);
-                q.push({berth.pos, 0});
+                q.push(berth.pos);
                 while(!q.empty()) {
-                    auto [u, dis] = q.pop();
-                    berth.values[dis]++;
+                    auto u = q.pop();
+                    berth.values[Atlas::atlas.distance(berth.pos, u)]++;
                     for(auto &move: Move) {
                         auto v = u + move;
                         if(v.outside() || vised.test(v)) { continue; }
                         vised.set(v);
-                        q.push({v, dis + 1});
+                        Atlas::atlas.distance(berth.pos, v) = Atlas::atlas.distance(berth.pos, u) + 1;
+                        q.push(v);
                     }
                 }
             }
-        }));
+        });
     }
 };
 
@@ -110,6 +113,8 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
  *          (参数value也是预备此功能添加的)
  * 2. wanted回调用于寻求船, 至于几艘船或者是否响应, 交给回调方处理
  * 3. sign/get_load记录货物运到/上船 (目前好像没有实际作用)
+ * 4. init对每个berth做评分, 记录所有格点的分, 用OrderMap做找kth
+ *      4.1 现在先在BFS时更新distance, 以防止robots.init()时distance没有更新 (可优化)
  * BUGS
  *  1. [*已修改] robot.pull如果每帧都执行, 可能中途路过一个berth放进去
  * */

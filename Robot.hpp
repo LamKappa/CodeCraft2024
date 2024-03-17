@@ -39,7 +39,7 @@ struct Robot {
         static Mission create(decltype(executor) exec) {
             if(exec->mission.mission_state == CARRYING) { return exec->mission; }
             if(exec->mission.mission_state == SEARCHING) { return exec->mission; }
-            for(auto [id, _] : exec->mission.targets){
+            for(auto [id, _]: exec->mission.targets) {
                 Items::items.find_by_id(id).occupied = false;
             }
             Mission mission = {SEARCHING, exec};
@@ -71,7 +71,7 @@ struct Robot {
         static Mission create(decltype(executor) exec) {
             if(!exec->mission.vacant()) { return exec->mission; }
             Mission mission{SEARCHING, exec, 0.f};
-            for(auto [id, _] : exec->mission.targets){
+            for(auto [id, _]: exec->mission.targets) {
                 Items::items.find_by_id(id).occupied = false;
             }
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
@@ -138,7 +138,7 @@ struct Robot {
         static Mission create(decltype(executor) exec) {
             if(!exec->mission.vacant()) { return exec->mission; }
             Mission mission{SEARCHING, exec, 0.f};
-            for(auto [id, _] : exec->mission.targets){
+            for(auto [id, _]: exec->mission.targets) {
                 Items::items.find_by_id(id).occupied = false;
             }
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
@@ -271,21 +271,41 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
     std::array<index_t, ROBOT_NUM> prior{};
 
     auto init() {
-        // for(auto &berth: Berths::berths) {
-        //     Robot::Mission mission{
-        //             Robot::Mission::MISSION_STATE::CARRYING,
-        //             nullptr,
-        //             0,
-        //             {{Item::noItem.unique_id, berth.id}},
-        //             Position::npos};
-        //     mission.executor = std::min_element(begin(), end(), [&berth](auto &x, auto &y) {
-        //         if(x.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING || y.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING) {
-        //             return y.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING;
-        //         }
-        //         return Atlas::atlas.distance(x.pos, berth.pos) < Atlas::atlas.distance(y.pos, berth.pos);
-        //     });
-        //     mission.executor->mission = mission;
-        // }
+        return std::async(std::launch::async, [this] {
+            std::set<index_t> robot_set;
+            for(int i = 0; i < ROBOT_NUM; i++) { robot_set.insert(i); }
+            std::priority_queue<std::pair<f80, index_t>> q;
+            for(auto &berth: Berths::berths) {
+                u16 order = (u16) (berth.values.size() + 1) / (berth.working_robots + 1) - 1;
+                auto x = berth.values.find_by_order(order)->second;
+                q.emplace(Item::MAX_ITEM_VALUE / 4.l / x, berth.id);
+            }
+            while(!robot_set.empty()) {
+                auto [_, berth_id] = q.top();
+                q.pop();
+                auto &berth = Berths::berths[berth_id];
+                berth.working_robots++;
+                u16 order = (u16) (berth.values.size() + 1) / (berth.working_robots + 1) - 1;
+                auto x = berth.values.find_by_order(order)->second;
+                q.emplace(Item::MAX_ITEM_VALUE / 4.l / x, berth.id);
+
+                auto robot_id = *std::min_element(robot_set.begin(), robot_set.end(), [&](auto i, auto j) {
+                    return Atlas::atlas.distance(this->operator[](i).pos, berth.pos) <
+                           Atlas::atlas.distance(this->operator[](j).pos, berth.pos);
+                });
+                robot_set.erase(robot_id);
+                auto &robot = this->operator[](robot_id);
+                robot.mission = Robot::Mission{
+                        Robot::Mission::MISSION_STATE::CARRYING,
+                        &robot,
+                        INFINITY,
+                        {{Item::noItem.unique_id, berth_id}}
+                };
+                DEBUG{
+                    std::cerr << "robot " << robot_id << " goto berth " << berth_id << '\n';
+                }
+            }
+        });
     }
 
     auto resolve() {

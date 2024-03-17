@@ -51,10 +51,11 @@ struct Items : public std::deque<Item> {
     Items() = default;
 
     Item &find_by_id(long id) {
+        if(id == Item::noItem.unique_id) { return Item::noItem; }
         auto res = std::lower_bound(begin(), end(), id, [](auto &item, auto id) {
             return item.unique_id < id;
         });
-        return res == end() ? Item::noItem : this->operator[](res - begin());
+        return res->unique_id != id ? Item::noItem : this->operator[](res - begin());
     }
 };
 

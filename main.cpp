@@ -48,8 +48,8 @@ void Init() {
     cin >> buff;
 
     atlas.build();
-    berths.init();
-    robots.init();
+    berths.init().wait();
+    robots.init().wait();
 
     DEBUG {
         for(auto &ft: async_pool) {
@@ -103,11 +103,9 @@ void Resolve() {
         }
     }
 
-    auto f1 = robots.resolve();
-    f1.wait();
+    robots.resolve().wait();
 
-    auto f2 = ships.resolve();
-    f2.wait();
+    ships.resolve().wait();
 }
 
 void Output() {
