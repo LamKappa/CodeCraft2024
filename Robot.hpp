@@ -12,7 +12,7 @@
 #include "Item.hpp"
 #include "Position.hpp"
 
-#define Robot_idea_4
+#define Robot_idea_1
 
 struct Robot {
     Robot() = default;
@@ -32,8 +32,16 @@ struct Robot {
         std::deque<std::pair<long, index_t>> targets;
         Position next_move{Position::npos};
 
+        [[nodiscard]] inline auto vacant() const {
+            return mission_state == WAITING || mission_state == IDLING;
+        }
 #ifdef Robot_idea_1
         static Mission create(decltype(executor) exec) {
+            if(exec->mission.mission_state == CARRYING) { return exec->mission; }
+            if(exec->mission.mission_state == SEARCHING) { return exec->mission; }
+            for(auto [id, _] : exec->mission.targets){
+                Items::items.find_by_id(id).occupied = false;
+            }
             Mission mission = {SEARCHING, exec};
             auto calc_value = [](const Robot &robot, const Item &item, const Berth &berth) {
                 Atlas &atlas = Atlas::atlas;
@@ -41,10 +49,10 @@ struct Robot {
                        ((float) atlas.distance(robot.pos, item.pos) +
                         (float) atlas.distance(item.pos, berth.pos));
             };
-            for(auto &berth: Berths::berths) {
-                if(berth.disabled || Atlas::atlas.distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
-                for(auto &item: Items::items) {
-                    if(item.occupied || item.live_time() < Atlas::atlas.distance(exec->pos, item.pos)) { continue; }
+            for(auto &item: Items::items) {
+                if(item.occupied || item.live_time() < Atlas::atlas.distance(exec->pos, item.pos)) { continue; }
+                for(auto &berth: Berths::berths) {
+                    if(berth.disabled || Atlas::atlas.distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
                     float value = calc_value(*exec, item, berth);
                     if(value > mission.reserved_value) {
                         mission.reserved_value = value;
@@ -61,7 +69,11 @@ struct Robot {
 #endif
 #ifdef Robot_idea_3
         static Mission create(decltype(executor) exec) {
+            if(!exec->mission.vacant()) { return exec->mission; }
             Mission mission{SEARCHING, exec, 0.f};
+            for(auto [id, _] : exec->mission.targets){
+                Items::items.find_by_id(id).occupied = false;
+            }
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
             for(auto &berth: Berths::berths) {
                 if(berth.disabled || distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
@@ -102,7 +114,7 @@ struct Robot {
                 if(best_value > mission.reserved_value) {
                     mission.reserved_value = best_value;
                     mission.targets.clear();
-                    for(auto id : item_list[best_last_j]){
+                    for(auto id: item_list[best_last_j]) {
                         mission.targets.emplace_back(id, berth.id);
                     }
                     // while(best_last_j > 0 && last_item[best_last_j] != Item::noItem.unique_id) {
@@ -116,7 +128,7 @@ struct Robot {
                 }
             }
             if(mission.targets.empty()) { return idle; }
-            for(auto [id, _] : mission.targets){
+            for(auto [id, _]: mission.targets) {
                 Items::items.find_by_id(id).occupied = true;
             }
             return mission;
@@ -124,7 +136,11 @@ struct Robot {
 #endif
 #ifdef Robot_idea_4
         static Mission create(decltype(executor) exec) {
+            if(!exec->mission.vacant()) { return exec->mission; }
             Mission mission{SEARCHING, exec, 0.f};
+            for(auto [id, _] : exec->mission.targets){
+                Items::items.find_by_id(id).occupied = false;
+            }
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
             std::array<std::array<float, 3 * Item::OVERDUE>, BERTH_NUM> dp{};
             std::array<std::unordered_map<int, decltype(mission.targets)>, BERTH_NUM> item_list;
@@ -139,14 +155,15 @@ struct Robot {
                     if(to_berth.disabled || distance(exec->pos, to_berth.pos) == Atlas::INF_DIS) { continue; }
                     auto update = [&item, &to_berth, &dp, &g, &item_list](auto x, auto i, auto j) {
                         if(x >= dp[to_berth.id].size()) { return; }
-                        if(g[i][j] + item.value > dp[to_berth.id][x]) {
-                            dp[to_berth.id][x] = g[i][j] + (float) item.value;
+                        float value = g[i][j] + (float) item.value / Item::MAX_ITEM_VALUE;
+                        if(value > dp[to_berth.id][x]) {
+                            dp[to_berth.id][x] = value;
                             item_list[to_berth.id][x] = item_list[i][j];
                             item_list[to_berth.id][x].emplace_back(item.unique_id, to_berth.id);
                         }
                     };
                     auto to_berth_to_item = distance(to_berth.pos, item.pos);
-                    for(auto &from_berth : Berths::berths) {
+                    for(auto &from_berth: Berths::berths) {
                         if(from_berth.disabled || distance(exec->pos, from_berth.pos) == Atlas::INF_DIS) { continue; }
                         auto from_berth_to_item = distance(from_berth.pos, item.pos);
                         for(int j = live_time - from_berth_to_item; j > 0; j--) {
@@ -158,19 +175,18 @@ struct Robot {
                 }
             }
             std::pair<index_t, int> best_idx;
-            for(auto &berth : Berths::berths) {
-                if(berth.disabled) {continue;}
+            for(auto &berth: Berths::berths) {
+                if(berth.disabled) { continue; }
                 for(int j = 1; j < dp[berth.id].size(); j++) {
                     float value = dp[berth.id][j] / (float) j;
-                    if(value > mission.reserved_value){
+                    if(value > mission.reserved_value) {
                         mission.reserved_value = value;
                         best_idx = {berth.id, j};
                     }
                 }
             }
+            if(item_list[best_idx.first][best_idx.second].empty()) { return idle; }
             mission.targets = item_list[best_idx.first][best_idx.second];
-
-            if(mission.targets.empty()) { return idle; }
             for(auto [id, _]: mission.targets) {
                 Items::items.find_by_id(id).occupied = true;
             }
@@ -178,9 +194,6 @@ struct Robot {
         }
 #endif
 
-        [[nodiscard]] inline auto vacant() const {
-            return mission_state == WAITING || mission_state == IDLING;
-        }
         auto check_item_overdue() {
             if(mission_state == SEARCHING) {
                 if(auto &item = Items::items.find_by_id(targets.front().first);
@@ -265,8 +278,8 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
         //             0,
         //             {{Item::noItem.unique_id, berth.id}},
         //             Position::npos};
-        //     mission.executor = std::min_element(begin(), end(), [&berth](auto&x, auto&y){
-        //         if(x.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING || y.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING){
+        //     mission.executor = std::min_element(begin(), end(), [&berth](auto &x, auto &y) {
+        //         if(x.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING || y.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING) {
         //             return y.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING;
         //         }
         //         return Atlas::atlas.distance(x.pos, berth.pos) < Atlas::atlas.distance(y.pos, berth.pos);
@@ -281,9 +294,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                 robot.mission.next_move = Position::npos;
                 while(!robot.mission.check_item_overdue()) {}
                 robot.mission.check_complete();
-                if(robot.mission.vacant()) {
-                    robot.mission = Robot::Mission::create(&robot);
-                }
+                robot.mission = Robot::Mission::create(&robot);
                 robot.mission.check_carry();
                 robot.mission.forward();
             }

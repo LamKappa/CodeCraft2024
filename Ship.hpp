@@ -10,7 +10,7 @@
 #include "Berth.hpp"
 #include "Config.h"
 
-#define Ship_idea_4
+#define Ship_idea_3
 
 struct Ship {
     int load = 0;
@@ -89,7 +89,8 @@ struct Ship {
                 auto time = transport(exec->berth_id, berth.id).first + transport(berth.id, no_index).first;
                 if(stamp + time > MAX_FRAME) { continue; }
                 int berth_hold = berth.notified + (int) berth.cargo.size();
-                float cost = std::min((float) (MAX_FRAME - time - stamp), (float) berth_hold / (float) berth.loading_speed);
+                float cost = std::min((float) (MAX_FRAME - stamp - time),
+                                      (float) berth_hold / (float) berth.loading_speed);
                 float value = cost * (float) berth.loading_speed / (cost + (float) time);
                 if(value >= mission.reserved_value) {
                     mission.reserved_value = value;

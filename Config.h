@@ -19,6 +19,7 @@ using u8 = u_int8_t;
 using u16 = u_int16_t;
 using u32 = u_int32_t;
 using u64 = u_int64_t;
+using f80 = long double;
 
 using index_t = u16;
 constexpr index_t no_index = -1;

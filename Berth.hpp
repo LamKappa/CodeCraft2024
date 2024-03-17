@@ -10,17 +10,21 @@
 #include <queue>
 #include <tuple>
 
+#include "Atlas.hpp"
 #include "Config.h"
-#include "Position.hpp"
 #include "Item.hpp"
+#include "Position.hpp"
+#include "Queue.hpp"
 
 struct Berth {
     index_t id{};
     Position pos;
     int transport_time{};
     int loading_speed{};
-
     bool disabled = false;
+
+    std::map<u16, u16> values;
+
     int notified = 0;
     int occupied = 0;
     std::queue<Item> cargo;
@@ -31,9 +35,6 @@ struct Berth {
     static constexpr int MAX_TRANSPORT_TIME = 3000;
     static Berth virtual_berth;
 
-    [[nodiscard]] auto evaluate() const {
-        return 2.f * (float) transport_time;// + (float) SHIP_CAPACITY / loading_speed;
-    }
     auto notify(Item &item) {
         if(item.value <= 0) { return; }
         notified++;
@@ -57,13 +58,13 @@ struct Berth {
     }
 
     [[nodiscard]] auto inside(Position p) {
-        return pos.first <= p.first && p.first <= pos.first + 3 &&
-               pos.second <= p.second && p.second <= pos.second + 3;
+        return pos.first - 2 <= p.first && p.first <= pos.first + 1 &&
+               pos.second - 2 <= p.second && p.second <= pos.second + 1;
     }
 
     friend auto &operator>>(std::istream &in, Berth &b) {
         in >> b.id >> b.pos >> b.transport_time >> b.loading_speed;
-        // b.pos = b.pos + Position{1, 1};
+        b.pos = b.pos + Position{2, 2};
         return in;
     }
 };
@@ -73,18 +74,30 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
     static Berths berths;
     Berths() = default;
 
-    std::array<index_t, BERTH_NUM> srb{};
-
     auto &operator[](index_t i) {
         if(i == no_index) return Berth::virtual_berth;
         return array::operator[](i);
     }
 
     auto init() {
-        std::iota(srb.begin(), srb.end(), 0);
-        std::sort(srb.begin(), srb.end(), [](auto i, auto j) {
-            return berths[i].evaluate() < berths[j].evaluate();
-        });
+        async_pool.emplace_back(std::async(std::launch::async, [this]{
+            for(auto &berth: *this) {
+                Queue<std::pair<Position, u16>, 3 * N> q;
+                auto vised = Atlas::atlas.bitmap;
+                vised.set(berth.pos);
+                q.push({berth.pos, 0});
+                while(!q.empty()) {
+                    auto [u, dis] = q.pop();
+                    berth.values[dis]++;
+                    for(auto &move: Move) {
+                        auto v = u + move;
+                        if(v.outside() || vised.test(v)) { continue; }
+                        vised.set(v);
+                        q.push({v, dis + 1});
+                    }
+                }
+            }
+        }));
     }
 };
 

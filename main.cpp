@@ -49,13 +49,17 @@ void Init() {
 
     atlas.build();
     berths.init();
-    DEBUG for(int i = BERTH_NUM - 0; i < BERTH_NUM; i++) {
-        berths[berths.srb[i]].disabled = true;
-    }
     robots.init();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(4950) -
-                                (std::chrono::high_resolution_clock::now() - start_time));
+    DEBUG {
+        for(auto &ft: async_pool) {
+            ft.wait();
+        }
+    }
+    else {
+        std::this_thread::sleep_for(std::chrono::milliseconds(4950) -
+                                    (std::chrono::high_resolution_clock::now() - start_time));
+    }
     cout << "OK" << endl;
     DEBUG {
         cerr << "build time: "
@@ -173,7 +177,7 @@ int main(int argc, char *argv[]) {
                 berth.cargo.pop();
             }
         }
-        for(auto &ship : ships){
+        for(auto &ship: ships) {
             tot_score += ship.value;
             ship.value = ship.load = 0;
         }
