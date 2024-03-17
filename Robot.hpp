@@ -51,7 +51,7 @@ struct Robot {
             };
             for(auto &item: Items::items) {
                 if(item.occupied || item.live_time() < Atlas::atlas.distance(exec->pos, item.pos)) { continue; }
-                for(auto &berth: Berths::berths) {
+                for(auto &berth : Berths::berths) {
                     if(berth.disabled || Atlas::atlas.distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
                     float value = calc_value(*exec, item, berth);
                     if(value > mission.reserved_value) {
@@ -274,20 +274,21 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
         return std::async(std::launch::async, [this] {
             std::set<index_t> robot_set;
             for(int i = 0; i < ROBOT_NUM; i++) { robot_set.insert(i); }
-            std::priority_queue<std::pair<f80, index_t>> q;
+            std::priority_queue<std::tuple<f80, index_t, u16>> q;
+            auto calc = [](auto &berth, auto cnt) {
+                int size = ((Berth::Info&)berth.values).x;
+                int order = size - (size + 1) / (cnt + 1);
+                auto x = berth.values.binary_search(Berth::Info{order});
+                return Item::MAX_ITEM_VALUE / 4.l / x;
+            };
             for(auto &berth: Berths::berths) {
-                u16 order = (u16) (berth.values.size() + 1) / (berth.working_robots + 1) - 1;
-                auto x = berth.values.find_by_order(order)->second;
-                q.emplace(Item::MAX_ITEM_VALUE / 4.l / x, berth.id);
+                q.emplace(calc(berth, 1), berth.id, 2);
             }
             while(!robot_set.empty()) {
-                auto [_, berth_id] = q.top();
+                auto [_, berth_id, cnt] = q.top();
                 q.pop();
                 auto &berth = Berths::berths[berth_id];
-                berth.working_robots++;
-                u16 order = (u16) (berth.values.size() + 1) / (berth.working_robots + 1) - 1;
-                auto x = berth.values.find_by_order(order)->second;
-                q.emplace(Item::MAX_ITEM_VALUE / 4.l / x, berth.id);
+                q.emplace(calc(berth, cnt), berth.id, cnt + 1);
 
                 auto robot_id = *std::min_element(robot_set.begin(), robot_set.end(), [&](auto i, auto j) {
                     return Atlas::atlas.distance(this->operator[](i).pos, berth.pos) <
@@ -299,10 +300,10 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                         Robot::Mission::MISSION_STATE::CARRYING,
                         &robot,
                         INFINITY,
-                        {{Item::noItem.unique_id, berth_id}}
+                        {{Item::noItem.unique_id, berth_id}},
                 };
-                DEBUG{
-                    std::cerr << "robot " << robot_id << " goto berth " << berth_id << '\n';
+                DEBUG {
+                    std::cerr << "robot " << robot_id << " arranged to berth " << berth_id << '\n';
                 }
             }
         });
@@ -371,6 +372,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
  *      1. 货物太少, 需要换码头, 远的码头可能更差
  * 3. [*已添加] 注意到泊位附近的物品总是不太够的, 考虑物品生命周期进行调度, 对一个序列的物品做背包即可
  * 4. [*已添加] 对物品的调度, 考虑可以在不同泊位附近变换, 做一个高维背包
+ * 5. [*已添加] 初始化调度到更优的港口 (计算期望价值 -> 有点不对)
  *
  * BUGS:
  * 1. [*已修复] 有时候机器人取到货物后在某个地方傻住不动, 原因:有些机器人路过把他的item拿了

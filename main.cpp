@@ -48,8 +48,8 @@ void Init() {
     cin >> buff;
 
     atlas.build();
-    berths.init().wait();
-    robots.init().wait();
+    // berths.init().wait();
+    // robots.init().wait();
 
     DEBUG {
         for(auto &ft: async_pool) {
@@ -161,10 +161,6 @@ int main(int argc, char *argv[]) {
         cout << "OK" << endl;
     }
 
-    for(auto &ft: async_pool) {
-        ft.wait();
-    }
-
     DEBUG {
         int left_items = 0, left_value = 0;
         for(auto &berth: berths) {
@@ -184,6 +180,10 @@ int main(int argc, char *argv[]) {
         cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
         cerr << "idle occurred: " << idle_cnt << " times\n";
         cerr << "tot_score: " << tot_score << '\n';
+    } else {
+        for(auto &ft: async_pool) {
+            ft.wait();
+        }
     }
 
     return 0;

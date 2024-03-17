@@ -15,7 +15,7 @@
 #include "Item.hpp"
 #include "Position.hpp"
 #include "Queue.hpp"
-#include "OrderMap.hpp"
+#include "SegTree.hpp"
 
 struct Berth {
     index_t id{};
@@ -24,9 +24,6 @@ struct Berth {
     int loading_speed{};
     bool disabled = false;
 
-    OrderMap<u16, u16> values;
-
-    int working_robots = 0;
     int notified = 0;
     int occupied = 0;
     std::queue<Item> cargo;
@@ -36,6 +33,19 @@ struct Berth {
     static constexpr int TRANSPORT_TIME = 500;
     static constexpr int MAX_TRANSPORT_TIME = 3000;
     static Berth virtual_berth;
+
+    struct Tag {
+        int x = 0;
+        bool operator==(const Tag &t) const { return x == t.x; }
+        void operator+=(const Tag &t) { x += t.x; }
+    };
+    struct Info {
+        int x = 0;
+        Info operator+(const Info &o) const { return {x + o.x}; }
+        bool operator<(const Info &o) const { return x < o.x; }
+        void operator+=(const Tag &t) { x += t.x; }
+    };
+    SegTree<Info, Tag, 0, N *(N + 1) / 2> values;
 
     auto notify(Item &item) {
         if(item.value <= 0) { return; }
@@ -74,7 +84,9 @@ struct Berth {
 struct Berths : public std::array<Berth, BERTH_NUM> {
     using array::array;
     static Berths berths;
-    Berths() = default;
+    Berths() {
+        decltype(Berth::values)::node.reserve(N * N / 2);
+    }
 
     auto &operator[](index_t i) {
         if(i == no_index) return Berth::virtual_berth;
@@ -82,7 +94,7 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
     }
 
     auto init() {
-        return std::async(std::launch::async, [this]{
+        return std::async(std::launch::async, [this] {
             for(auto &berth: *this) {
                 Queue<Position, 3 * N> q;
                 auto vised = Atlas::atlas.bitmap;
@@ -90,7 +102,7 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
                 q.push(berth.pos);
                 while(!q.empty()) {
                     auto u = q.pop();
-                    berth.values[Atlas::atlas.distance(berth.pos, u)]++;
+                    berth.values.apply(Atlas::atlas.distance(berth.pos, u), Berth::Tag{1});
                     for(auto &move: Move) {
                         auto v = u + move;
                         if(v.outside() || vised.test(v)) { continue; }
@@ -113,7 +125,7 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
  *          (参数value也是预备此功能添加的)
  * 2. wanted回调用于寻求船, 至于几艘船或者是否响应, 交给回调方处理
  * 3. sign/get_load记录货物运到/上船 (目前好像没有实际作用)
- * 4. init对每个berth做评分, 记录所有格点的分, 用OrderMap做找kth
+ * 4. [*已添加] init对每个berth做评分, 记录所有格点的分, 用OrderMap做找kth
  *      4.1 现在先在BFS时更新distance, 以防止robots.init()时distance没有更新 (可优化)
  * BUGS
  *  1. [*已修改] robot.pull如果每帧都执行, 可能中途路过一个berth放进去
