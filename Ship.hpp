@@ -19,8 +19,8 @@ struct Ship {
     index_t berth_id = no_index;
     bool sail_out = false;
 
-    static std::map<std::pair<index_t, index_t>, std::pair<int, index_t>> transport_record;
     static auto transport(index_t s, index_t t) {
+        static std::map<std::pair<index_t, index_t>, std::pair<int, index_t>> transport_record;
         if(transport_record.count({s, t})) {
             return transport_record[{s, t}];
         }
