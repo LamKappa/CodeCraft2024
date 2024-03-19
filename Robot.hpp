@@ -46,6 +46,7 @@ struct Robot {
             auto calc_value = [](const Robot &robot, const Item &item, const Berth &berth) {
                 Atlas &atlas = Atlas::atlas;
                 float rate = 1.f - (float) (item.live_time() - atlas.distance(robot.pos, item.pos)) / Item::OVERDUE;
+                rate = std::sqrt(rate);
                 return (rate * (float) item.value) /
                        ((float) atlas.distance(robot.pos, item.pos) +
                         (float) atlas.distance(item.pos, berth.pos));
@@ -79,35 +80,35 @@ struct Robot {
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
             for(auto &berth: Berths::berths) {
                 if(berth.disabled_pulling || distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
-                std::vector dp(3 * Item::OVERDUE, 0);
-                // std::unordered_map<int, long> last_item;
+                std::vector dp(3 * Item::OVERDUE, 0.f);
                 std::unordered_map<int, std::vector<long>> item_list;
                 for(auto &item: Items::items) {
                     if(item.occupied) { continue; }
-                    auto update = [&item, &dp, &item_list](auto x, auto y) {
+                    auto live_time = item.live_time();
+                    auto berth_to_item = distance(berth.pos, item.pos);
+                    auto robot_to_item = distance(exec->pos, item.pos);
+                    if(robot_to_item > live_time) { continue; }
+                    float rate = 1.f - (float) (live_time - robot_to_item) / Item::OVERDUE;
+                    auto update = [&item, &rate, &dp, &item_list](auto x, auto y) {
                         if(x >= dp.size()) { return; }
-                        if(dp[y] + item.value > dp[x]) {
-                            dp[x] = dp[y] + item.value;
-                            // last_item[x] = item.unique_id;
+                        float value = dp[y] + rate * (float) item.value;
+                        if(value > dp[x]) {
+                            dp[x] = value;
                             item_list[x] = item_list[y];
                             item_list[x].emplace_back(item.unique_id);
                         }
                     };
-                    auto live_time = item.live_time();
-                    auto berth_to_item = distance(berth.pos, item.pos);
-                    auto robot_to_item = distance(exec->pos, item.pos);
                     int max_t = live_time - berth_to_item;
                     for(int j = max_t; j > 0; j--) {
                         if(dp[j] == 0) { continue; }
                         update(j + 2 * berth_to_item, j);
                     }
-                    if(robot_to_item > live_time) { continue; }
                     update(robot_to_item + berth_to_item, 0);
                 }
                 int best_last_j = 0;
                 float best_value = 0.f;
                 for(int j = 1; j < dp.size(); j++) {
-                    float value = (float) dp[j] / (float) j;
+                    float value = dp[j] / (float) j;
                     if(value > best_value) {
                         best_value = value;
                         best_last_j = j;
@@ -119,14 +120,6 @@ struct Robot {
                     for(auto id: item_list[best_last_j]) {
                         mission.targets.emplace_back(id, berth.id);
                     }
-                    // while(best_last_j > 0 && last_item[best_last_j] != Item::noItem.unique_id) {
-                    //     auto &item = Items::items.find_by_id(last_item[best_last_j]);
-                    //     auto berth_to_item = distance(berth.pos, item.pos);
-                    //     auto robot_to_item = distance(exec->pos, item.pos);
-                    //     mission.targets.emplace_front(item.unique_id, berth.id);
-                    //     if(best_last_j == berth_to_item + robot_to_item) { break; }
-                    //     best_last_j -= 2 * berth_to_item;
-                    // }
                 }
             }
             if(mission.targets.empty()) { return idle; }
@@ -151,13 +144,14 @@ struct Robot {
                 auto live_time = item.live_time();
                 auto robot_to_item = distance(exec->pos, item.pos);
                 if(robot_to_item > live_time) { continue; }
+                float rate = 1.f - (float) (live_time - robot_to_item) / Item::OVERDUE;
 
                 auto g = dp;
                 for(auto &to_berth: Berths::berths) {
                     if(to_berth.disabled_pulling || distance(exec->pos, to_berth.pos) == Atlas::INF_DIS) { continue; }
-                    auto update = [&item, &to_berth, &dp, &g, &item_list](auto x, auto i, auto j) {
+                    auto update = [&item, &rate, &to_berth, &dp, &g, &item_list](auto x, auto i, auto j) {
                         if(x >= dp[to_berth.id].size()) { return; }
-                        float value = g[i][j] + (float) item.value / Item::MAX_ITEM_VALUE;
+                        float value = g[i][j] + rate * (float) item.value;
                         if(value > dp[to_berth.id][x]) {
                             dp[to_berth.id][x] = value;
                             item_list[to_berth.id][x] = item_list[i][j];
