@@ -183,8 +183,9 @@ int main(int argc, char *argv[]) {
         cerr << "tot_left_values: " << left_value << '\n';
         cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
         cerr << "idle occurred: " << idle_cnt << " times\n";
-        cerr << "tot_score: " << tot_score << '\n';
-        cerr << "tot_delivered_score: " << tot_score + left_value << '\n';
+        cerr << "recall: " << fixed << setprecision(2)
+             << 100.f * (float) (tot_score) / (float) (tot_score + left_value) << "% "
+             << "(" << tot_score << " / " << tot_score + left_value << ")\n";
     }
     else {
         for(auto &ft: async_pool) {
