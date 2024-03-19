@@ -22,11 +22,14 @@ struct Berth {
     Position pos;
     int transport_time{};
     int loading_speed{};
-    bool disabled = false;
+    bool disabled_loading = false;
+    bool disabled_pulling = false;
 
-    int notified = 0;
     int occupied = 0;
+    int notified = 0;
+    int notified_value = 0;
     std::queue<Item> cargo;
+    int cargo_value = 0;
 
     Berth() = default;
 
@@ -49,13 +52,16 @@ struct Berth {
 
     auto notify(Item &item) {
         if(item.value <= 0) { return; }
+        notified_value += item.value;
         notified++;
     }
 
     auto sign(Item &item) {
         if(item.value <= 0) { return; }
         item.deleted = true;
+        cargo_value += item.value;
         cargo.emplace(item);
+        notified_value -= item.value;
         notified--;
     }
 
@@ -66,6 +72,7 @@ struct Berth {
             cargo.pop();
             load_item_cnt++;
         }
+        cargo_value -= load_item_value;
         return std::make_pair(load_item_cnt, load_item_value);
     }
 

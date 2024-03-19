@@ -96,10 +96,10 @@ void Input() {
 
 void Resolve() {
     for(auto &berth: berths) {
-        if(berth.disabled) { continue; }
+        if(berth.disabled_pulling) { continue; }
         auto [time, _] = Ship::transport(berth.id, Berth::virtual_berth.id);
         if(time > MAX_FRAME - (stamp + (berth.cargo.size() + 1) / berth.loading_speed)) {
-            berth.disabled = true;
+            berth.disabled_pulling = true;
         }
     }
 
