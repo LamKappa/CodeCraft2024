@@ -12,7 +12,7 @@
 #include "Item.hpp"
 #include "Position.hpp"
 
-#define Robot_idea_1
+#define Robot_idea_3
 
 struct Robot {
     Robot() = default;
@@ -88,10 +88,10 @@ struct Robot {
                     auto berth_to_item = distance(berth.pos, item.pos);
                     auto robot_to_item = distance(exec->pos, item.pos);
                     if(robot_to_item > live_time) { continue; }
-                    float rate = 1.f - (float) (live_time - robot_to_item) / Item::OVERDUE;
-                    rate = (float) std::pow(rate, 0.39);
-                    auto update = [&item, &rate, &dp, &item_list](auto x, auto y) {
+                    auto update = [&](auto x, auto y) {
                         if(x >= dp.size()) { return; }
+                        float rate = 1.f - (float) (live_time) / Item::OVERDUE;
+                        rate = (float) std::pow(rate, 0.8);
                         float value = dp[y] + rate * (float) item.value;
                         if(value > dp[x]) {
                             dp[x] = value;

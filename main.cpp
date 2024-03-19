@@ -98,7 +98,11 @@ void Resolve() {
     for(auto &berth: berths) {
         if(berth.disabled_pulling) { continue; }
         auto [time, _] = Ship::transport(berth.id, Berth::virtual_berth.id);
-        if(time > MAX_FRAME - (stamp + (berth.notified + berth.cargo.size() - 1) / berth.loading_speed) + 1) {
+        if(time > MAX_FRAME -
+                          (stamp +
+                           (berth.notified + berth.cargo.size() - 1) / berth.loading_speed +
+                           (berth.occupied ? 0 : Berth::TRANSPORT_TIME)) +
+                          1) {
             berth.disabled_pulling = true;
         }
     }
@@ -180,7 +184,9 @@ int main(int argc, char *argv[]) {
         cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
         cerr << "idle occurred: " << idle_cnt << " times\n";
         cerr << "tot_score: " << tot_score << '\n';
-    } else {
+        cerr << "tot_delivered_score: " << tot_score + left_value << '\n';
+    }
+    else {
         for(auto &ft: async_pool) {
             ft.wait();
         }
