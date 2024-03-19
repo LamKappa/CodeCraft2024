@@ -26,9 +26,9 @@ struct Ship {
         }
         if(s == t) { return std::make_pair(0, s); }
         if(s != no_index && t != no_index) {
-            return std::min<std::pair<int, index_t>>(
-                    {Berth::TRANSPORT_TIME, t},
-                    {Berths::berths[s].transport_time + Berths::berths[t].transport_time, no_index});
+            return transport_record[{s, t}] = std::min<std::pair<int, index_t>>(
+                           {Berth::TRANSPORT_TIME, t},
+                           {Berths::berths[s].transport_time + Berths::berths[t].transport_time, no_index});
         }
         std::array<index_t, BERTH_NUM> rk{};
         std::iota(rk.begin(), rk.end(), 0);
@@ -38,7 +38,7 @@ struct Ship {
         auto best_i = *std::min_element(rk.begin(), rk.end(), [&calc](auto i, auto j) {
             return calc(i) < calc(j);
         });
-        return std::make_pair(calc(best_i), best_i == s ? t : best_i);
+        return transport_record[{s, t}] = std::make_pair(calc(best_i), best_i == s ? t : best_i);
     }
 
     struct Mission {
