@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
             left_items += (int) berth.cargo.size();
             while(!berth.cargo.empty()) {
                 left_value += berth.cargo.front().value;
-                berth.cargo.pop();
+                berth.cargo.pop_front();
             }
         }
         for(auto &ship: ships) {

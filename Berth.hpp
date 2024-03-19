@@ -28,7 +28,7 @@ struct Berth {
     int occupied = 0;
     int notified = 0;
     int notified_value = 0;
-    std::queue<Item> cargo;
+    std::deque<Item> cargo;
     int cargo_value = 0;
 
     Berth() = default;
@@ -60,7 +60,7 @@ struct Berth {
         if(item.value <= 0) { return; }
         item.deleted = true;
         cargo_value += item.value;
-        cargo.emplace(item);
+        cargo.emplace_back(item);
         notified_value -= item.value;
         notified--;
     }
@@ -69,7 +69,7 @@ struct Berth {
         int load_item_cnt = 0, load_item_value = 0;
         while(!cargo.empty() && load_item_cnt < requirement && load_item_cnt < loading_speed) {
             load_item_value += cargo.front().value;
-            cargo.pop();
+            cargo.pop_front();
             load_item_cnt++;
         }
         cargo_value -= load_item_value;

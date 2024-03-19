@@ -96,9 +96,10 @@ struct Ship {
                 if(stamp + time > MAX_FRAME) { continue; }
                 int berth_hold = berth.notified + (int) berth.cargo.size();
                 int berth_hold_value = berth.notified_value + berth.cargo_value;
-                float cost = std::min((float) (MAX_FRAME - stamp - time),
+                float load_time = std::min((float) (MAX_FRAME - stamp - time),
                                       (float) berth_hold / (float) berth.loading_speed);
-                float value = (float) berth_hold_value * (cost * (float) berth.loading_speed) / (float) berth_hold / (cost + (float) time);
+                float load_cnt = load_time * (float) berth.loading_speed;
+                float value = (float) berth_hold_value * load_cnt / (float) berth_hold / (load_time + (float) time);
                 if(value >= mission.reserved_value) {
                     mission.reserved_value = value;
                     mission.target = berth.id;
