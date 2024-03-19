@@ -19,7 +19,11 @@ struct Ship {
     index_t berth_id = no_index;
     bool sail_out = false;
 
+    static std::map<std::pair<index_t, index_t>, std::pair<int, index_t>> transport_record;
     static auto transport(index_t s, index_t t) {
+        if(transport_record.count({s, t})) {
+            return transport_record[{s, t}];
+        }
         if(s == t) { return std::make_pair(0, s); }
         if(s != no_index && t != no_index) {
             return std::min<std::pair<int, index_t>>(
@@ -97,7 +101,7 @@ struct Ship {
                 int berth_hold = berth.notified + (int) berth.cargo.size();
                 int berth_hold_value = berth.notified_value + berth.cargo_value;
                 float load_time = std::min((float) (MAX_FRAME - stamp - time),
-                                      (float) berth_hold / (float) berth.loading_speed);
+                                           (float) berth_hold / (float) berth.loading_speed);
                 float load_cnt = load_time * (float) berth.loading_speed;
                 float value = (float) berth_hold_value * load_cnt / (float) berth_hold / (load_time + (float) time);
                 if(value >= mission.reserved_value) {
