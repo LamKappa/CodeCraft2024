@@ -45,7 +45,7 @@ struct Robot {
             Mission mission = {SEARCHING, exec};
             auto calc_value = [](const Robot &robot, const Item &item, const Berth &berth) {
                 Atlas &atlas = Atlas::atlas;
-                float rate = 1.f - (float) item.live_time() / Item::OVERDUE;
+                float rate = 1.f - (float) (item.live_time() - atlas.distance(robot.pos, item.pos)) / Item::OVERDUE;
                 rate = (float) std::pow(rate, 0.39);
                 return (rate * (float) item.value) /
                        ((float) atlas.distance(robot.pos, item.pos) +
