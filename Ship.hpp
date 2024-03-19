@@ -10,7 +10,7 @@
 #include "Berth.hpp"
 #include "Config.h"
 
-#define Ship_idea_3
+#define Ship_idea_4
 
 struct Ship {
     int load = 0;
@@ -53,9 +53,13 @@ struct Ship {
         index_t target = no_index;
         index_t next_move = no_index;
 
+        [[nodiscard]] auto vacant() const {
+            return mission_state == WAITING;
+        }
 #ifdef Ship_idea_3
         static Mission create(decltype(executor) exec) {
             static const float NOT_VALUABLE = 0.f;
+            if(!exec->mission.vacant()) { return exec->mission; }
             Mission mission = {SAILING, exec, 0.f, exec->berth_id};
             for(auto &berth: Berths::berths) {
                 if(berth.disabled_loading || berth.occupied) { continue; }
@@ -84,15 +88,17 @@ struct Ship {
 #ifdef Ship_idea_4
         static Mission create(decltype(executor) exec) {
             static const float NOT_VALUABLE = 0.f;
+            if(!exec->mission.vacant()) { return exec->mission; }
             Mission mission = {SAILING, exec, 0.f, exec->berth_id};
             for(auto &berth: Berths::berths) {
                 if(berth.disabled_loading || berth.occupied) { continue; }
                 auto time = transport(exec->berth_id, berth.id).first + transport(berth.id, no_index).first;
                 if(stamp + time > MAX_FRAME) { continue; }
                 int berth_hold = berth.notified + (int) berth.cargo.size();
+                int berth_hold_value = berth.notified_value + berth.cargo_value;
                 float cost = std::min((float) (MAX_FRAME - stamp - time),
                                       (float) berth_hold / (float) berth.loading_speed);
-                float value = cost * (float) berth.loading_speed / (cost + (float) time);
+                float value = (float) berth_hold_value * (cost * (float) berth.loading_speed) / (float) berth_hold / (cost + (float) time);
                 if(value >= mission.reserved_value) {
                     mission.reserved_value = value;
                     mission.target = berth.id;
@@ -111,9 +117,6 @@ struct Ship {
         }
 #endif
 
-        [[nodiscard]] auto vacant() const {
-            return mission_state == WAITING;
-        }
         auto check_arrival() const {
             if(!executor) { return; }
             if(executor->status != 0) {
@@ -210,9 +213,7 @@ struct Ships : public std::array<Ship, SHIP_NUM> {
         return std::async(std::launch::async, [this] {
             for(auto &ship: *this) {
                 ship.mission.check_emptyload();
-                if(ship.mission.vacant()) {
-                    ship.mission = Ship::Mission::create(&ship);
-                }
+                ship.mission = Ship::Mission::create(&ship);
                 ship.mission.check_arrival();
                 ship.mission.check_waiting();
                 ship.mission.check_loading();
