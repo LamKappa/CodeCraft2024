@@ -52,7 +52,7 @@ struct Robot {
             for(auto &item: Items::items) {
                 if(item.occupied || item.live_time() < Atlas::atlas.distance(exec->pos, item.pos)) { continue; }
                 for(auto &berth : Berths::berths) {
-                    if(berth.disabled || Atlas::atlas.distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
+                    if(berth.disabled_pulling || Atlas::atlas.distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
                     float value = calc_value(*exec, item, berth);
                     if(value > mission.reserved_value) {
                         mission.reserved_value = value;
@@ -70,13 +70,14 @@ struct Robot {
 #ifdef Robot_idea_3
         static Mission create(decltype(executor) exec) {
             if(!exec->mission.vacant()) { return exec->mission; }
+            // if(exec->mission.mission_state == CARRYING) { return exec->mission; }
             Mission mission{SEARCHING, exec, 0.f};
             for(auto [id, _]: exec->mission.targets) {
                 Items::items.find_by_id(id).occupied = false;
             }
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
             for(auto &berth: Berths::berths) {
-                if(berth.disabled || distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
+                if(berth.disabled_pulling || distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
                 std::vector dp(3 * Item::OVERDUE, 0);
                 // std::unordered_map<int, long> last_item;
                 std::unordered_map<int, std::vector<long>> item_list;
@@ -152,7 +153,7 @@ struct Robot {
 
                 auto g = dp;
                 for(auto &to_berth: Berths::berths) {
-                    if(to_berth.disabled || distance(exec->pos, to_berth.pos) == Atlas::INF_DIS) { continue; }
+                    if(to_berth.disabled_pulling || distance(exec->pos, to_berth.pos) == Atlas::INF_DIS) { continue; }
                     auto update = [&item, &to_berth, &dp, &g, &item_list](auto x, auto i, auto j) {
                         if(x >= dp[to_berth.id].size()) { return; }
                         float value = g[i][j] + (float) item.value / Item::MAX_ITEM_VALUE;
@@ -164,7 +165,7 @@ struct Robot {
                     };
                     auto to_berth_to_item = distance(to_berth.pos, item.pos);
                     for(auto &from_berth: Berths::berths) {
-                        if(from_berth.disabled || distance(exec->pos, from_berth.pos) == Atlas::INF_DIS) { continue; }
+                        if(from_berth.disabled_pulling || distance(exec->pos, from_berth.pos) == Atlas::INF_DIS) { continue; }
                         auto from_berth_to_item = distance(from_berth.pos, item.pos);
                         for(int j = live_time - from_berth_to_item; j > 0; j--) {
                             if(g[from_berth.id][j] == 0) { continue; }
@@ -176,7 +177,7 @@ struct Robot {
             }
             std::pair<index_t, int> best_idx;
             for(auto &berth: Berths::berths) {
-                if(berth.disabled) { continue; }
+                if(berth.disabled_pulling) { continue; }
                 for(int j = 1; j < dp[berth.id].size(); j++) {
                     float value = dp[berth.id][j] / (float) j;
                     if(value > mission.reserved_value) {
@@ -186,6 +187,10 @@ struct Robot {
                 }
             }
             if(item_list[best_idx.first][best_idx.second].empty()) { return idle; }
+            // DEBUG if(item_list[best_idx.first][best_idx.second].size() > mission.targets.size()){
+            //     std::cerr << "size: " << mission.targets.size() << ' ';
+            //     std::cerr << "size: " << item_list[best_idx.first][best_idx.second].size() << '\n';
+            // }
             mission.targets = item_list[best_idx.first][best_idx.second];
             for(auto [id, _]: mission.targets) {
                 Items::items.find_by_id(id).occupied = true;
@@ -371,6 +376,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
  *  Exception:
  *      1. 货物太少, 需要换码头, 远的码头可能更差
  * 3. [*已添加] 注意到泊位附近的物品总是不太够的, 考虑物品生命周期进行调度, 对一个序列的物品做背包即可
+ *      3.1 注意到不应该以单位路径价值比作为选取背包的依据, 背包的目的是进行时间上的调度, 使得物品的生命周期得到充分利用
  * 4. [*已添加] 对物品的调度, 考虑可以在不同泊位附近变换, 做一个高维背包
  * 5. [*已添加] 初始化调度到更优的港口 (计算期望价值 -> 有点不对)
  *

@@ -58,11 +58,12 @@ struct Ship {
             static const float NOT_VALUABLE = 0.f;
             Mission mission = {SAILING, exec, 0.f, exec->berth_id};
             for(auto &berth: Berths::berths) {
-                if(berth.disabled || berth.occupied) { continue; }
+                if(berth.disabled_loading || berth.occupied) { continue; }
                 auto time = transport(exec->berth_id, berth.id).first + transport(berth.id, no_index).first;
                 if(stamp + time > MAX_FRAME) { continue; }
-                int berth_hold = berth.notified + (int) berth.cargo.size();
-                float value = (float) berth_hold / (float) berth.loading_speed;
+                // int berth_hold = berth.notified + (int) berth.cargo.size();
+                int berth_hold_value = berth.notified_value + berth.cargo_value;
+                auto value = (float) berth_hold_value;// + (float) berth_hold / (float) berth.loading_speed;
                 if(value >= mission.reserved_value) {
                     mission.reserved_value = value;
                     mission.target = berth.id;
@@ -85,7 +86,7 @@ struct Ship {
             static const float NOT_VALUABLE = 0.f;
             Mission mission = {SAILING, exec, 0.f, exec->berth_id};
             for(auto &berth: Berths::berths) {
-                if(berth.disabled || berth.occupied) { continue; }
+                if(berth.disabled_loading || berth.occupied) { continue; }
                 auto time = transport(exec->berth_id, berth.id).first + transport(berth.id, no_index).first;
                 if(stamp + time > MAX_FRAME) { continue; }
                 int berth_hold = berth.notified + (int) berth.cargo.size();
@@ -164,7 +165,7 @@ struct Ship {
             if(time == MAX_FRAME - stamp) {
                 mission_state = SAILING;
                 target = no_index;
-                Berths::berths[executor->berth_id].disabled = true;
+                Berths::berths[executor->berth_id].disabled_loading = true;
                 Berths::berths[executor->berth_id].occupied--;
             }
         }

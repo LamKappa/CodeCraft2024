@@ -102,7 +102,7 @@ struct Atlas {
         };
 
         // parallel by 2-cores
-        constexpr int PN = 5;
+        constexpr int PN = 7;
         for(auto i = 0; i < PN; i++) {
             async_pool.emplace_back(std::move(
                     std::async(std::launch::async, [&range_bfs, i] {
