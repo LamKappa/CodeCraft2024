@@ -103,7 +103,15 @@ struct Ship {
                 float load_time = std::min((float) (MAX_FRAME - stamp - time),
                                            (float) berth_hold / (float) berth.loading_speed);
                 float load_cnt = load_time * (float) berth.loading_speed;
-                float value = (float) berth_hold_value * load_cnt / (float) berth_hold / (load_time + (float) time);
+                float load_value = 0;
+                for(int i=0; i<std::min<int>((int) berth.cargo.size(), (int) load_cnt); i++){
+                    load_value += (float) berth.cargo[i].value;
+                }
+                if((int) load_cnt > (int) berth.cargo.size()){
+                    load_value += (float) berth.notified_value * (load_cnt - (float) berth.cargo.size()) / (float) berth.notified;
+                }
+                float value = load_value / (load_time + (float) time);
+                // float value = (float) berth_hold_value * load_cnt / (float) berth_hold / (load_time + (float) time);
                 if(value >= mission.reserved_value) {
                     mission.reserved_value = value;
                     mission.target = berth.id;

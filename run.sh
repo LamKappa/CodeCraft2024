@@ -3,7 +3,7 @@
 seed=$RANDOM
 
 choice=-3.11
-seed=456
+seed=2
 
 echo "start seed:"$seed
 

@@ -45,8 +45,8 @@ struct Robot {
             Mission mission = {SEARCHING, exec};
             auto calc_value = [](const Robot &robot, const Item &item, const Berth &berth) {
                 Atlas &atlas = Atlas::atlas;
-                float rate = 1.f - (float) (item.live_time() - atlas.distance(robot.pos, item.pos)) / Item::OVERDUE;
-                rate = std::sqrt(rate);
+                float rate = 1.f - (float) item.live_time() / Item::OVERDUE;
+                rate = (float) std::pow(rate, 0.39);
                 return (rate * (float) item.value) /
                        ((float) atlas.distance(robot.pos, item.pos) +
                         (float) atlas.distance(item.pos, berth.pos));
@@ -89,6 +89,7 @@ struct Robot {
                     auto robot_to_item = distance(exec->pos, item.pos);
                     if(robot_to_item > live_time) { continue; }
                     float rate = 1.f - (float) (live_time - robot_to_item) / Item::OVERDUE;
+                    rate = (float) std::pow(rate, 0.39);
                     auto update = [&item, &rate, &dp, &item_list](auto x, auto y) {
                         if(x >= dp.size()) { return; }
                         float value = dp[y] + rate * (float) item.value;
