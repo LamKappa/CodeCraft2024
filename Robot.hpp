@@ -45,13 +45,14 @@ struct Robot {
             Mission mission = {SEARCHING, exec};
             auto calc_value = [](const Robot &robot, const Item &item, const Berth &berth) {
                 Atlas &atlas = Atlas::atlas;
-                return (float) (item.value) /
+                float rate = 1.f - (float) (item.live_time() - atlas.distance(robot.pos, item.pos)) / Item::OVERDUE;
+                return (rate * (float) item.value) /
                        ((float) atlas.distance(robot.pos, item.pos) +
                         (float) atlas.distance(item.pos, berth.pos));
             };
             for(auto &item: Items::items) {
                 if(item.occupied || item.live_time() < Atlas::atlas.distance(exec->pos, item.pos)) { continue; }
-                for(auto &berth : Berths::berths) {
+                for(auto &berth: Berths::berths) {
                     if(berth.disabled_pulling || Atlas::atlas.distance(exec->pos, berth.pos) == Atlas::INF_DIS) { continue; }
                     float value = calc_value(*exec, item, berth);
                     if(value > mission.reserved_value) {
@@ -281,7 +282,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
             for(int i = 0; i < ROBOT_NUM; i++) { robot_set.insert(i); }
             std::priority_queue<std::tuple<f80, index_t, u16>> q;
             auto calc = [](auto &berth, auto cnt) {
-                int size = ((Berth::Info&)berth.values).x;
+                int size = ((Berth::Info &) berth.values).x;
                 int order = size - (size + 1) / (cnt + 1);
                 auto x = berth.values.binary_search(Berth::Info{order});
                 return Item::MAX_ITEM_VALUE / 4.l / x;
