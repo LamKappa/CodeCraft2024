@@ -12,7 +12,7 @@
 #include "Item.hpp"
 #include "Position.hpp"
 
-#define Robot_idea_4
+#define Robot_idea_1
 
 struct Robot {
     Robot() = default;
@@ -133,6 +133,7 @@ struct Robot {
 #ifdef Robot_idea_4
         static Mission create(decltype(executor) exec) {
             if(!exec->mission.vacant()) { return exec->mission; }
+            // if(exec->mission.mission_state == CARRYING) { return exec->mission; }
             Mission mission{SEARCHING, exec, 0.f};
             for(auto [id, _]: exec->mission.targets) {
                 Items::items.find_by_id(id).occupied = false;
@@ -144,14 +145,14 @@ struct Robot {
                 if(item.occupied) { continue; }
                 auto live_time = item.live_time();
                 auto robot_to_item = distance(exec->pos, item.pos);
-                if(robot_to_item > live_time) { continue; }
+                if(robot_to_item == Atlas::INF_DIS || robot_to_item > live_time) { continue; }
 
                 auto g = dp;
                 for(auto &to_berth: Berths::berths) {
                     if(to_berth.disabled_pulling || distance(exec->pos, to_berth.pos) == Atlas::INF_DIS) { continue; }
                     auto update = [&](auto x, auto i, auto j) {
                         if(x >= dp[to_berth.id].size()) { return; }
-                        float rate = 1.f - (float) (live_time) / Item::OVERDUE;
+                        float rate = 1.f - (float) live_time / (float) Item::OVERDUE;
                         rate = (float) std::pow(rate, 0.42);
                         float value = g[i][j] + rate * (float) item.value;
                         if(value > dp[to_berth.id][x]) {
@@ -338,13 +339,13 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                                 if(robot.mission.mission_state == Robot::Mission::MISSION_STATE::SEARCHING) {
                                     auto &item = Items::items.find_by_id(robot.mission.targets.front().first);
                                     if(Atlas::atlas.distance(now + move, item.pos) <
-                                       Atlas::atlas.distance(now + next_move, item.pos)){
+                                       Atlas::atlas.distance(now + next_move, item.pos)) {
                                         next_move = move;
                                     }
                                 } else if(robot.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING) {
                                     auto &berth = Berths::berths[robot.mission.targets.front().second];
                                     if(Atlas::atlas.distance(now + move, berth.pos) <
-                                       Atlas::atlas.distance(now + next_move, berth.pos)){
+                                       Atlas::atlas.distance(now + next_move, berth.pos)) {
                                         next_move = move;
                                     }
                                 }

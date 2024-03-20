@@ -63,7 +63,8 @@ struct Ship {
 #ifdef Ship_idea_3
         static Mission create(decltype(executor) exec) {
             static const float NOT_VALUABLE = 0.f;
-            if(!exec->mission.vacant()) { return exec->mission; }
+            if(exec->mission.mission_state == SAILING) { return exec->mission; }
+            Berths::berths[exec->berth_id].occupied--;
             Mission mission = {SAILING, exec, 0.f, exec->berth_id};
             for(auto &berth: Berths::berths) {
                 if(berth.disabled_loading || berth.occupied) { continue; }
@@ -79,8 +80,7 @@ struct Ship {
             }
             if(exec->berth_id != no_index) {
                 if(mission.target == exec->berth_id || mission.reserved_value < NOT_VALUABLE) {
-                    mission = exec->mission;
-                    mission.mission_state = SAILING;
+                    mission =  exec->mission;
                 }
             } else if(mission.target == no_index) {
                 return waiting;
@@ -92,15 +92,16 @@ struct Ship {
 #ifdef Ship_idea_4
         static Mission create(decltype(executor) exec) {
             static const float NOT_VALUABLE = 0.f;
-            if(!exec->mission.vacant()) { return exec->mission; }
+            if(exec->mission.mission_state == SAILING) { return exec->mission; }
+            Berths::berths[exec->berth_id].occupied--;
             Mission mission = {SAILING, exec, 0.f, exec->berth_id};
             for(auto &berth: Berths::berths) {
                 if(berth.disabled_loading || berth.occupied) { continue; }
-                auto time = transport(exec->berth_id, berth.id).first + transport(berth.id, no_index).first;
-                if(stamp + time > MAX_FRAME) { continue; }
+                auto time1 = transport(exec->berth_id, berth.id).first;
+                auto time2 = transport(berth.id, no_index).first;
+                if(stamp + time1 + time2 > MAX_FRAME) { continue; }
                 int berth_hold = berth.notified + (int) berth.cargo.size();
-                // int berth_hold_value = berth.notified_value + berth.cargo_value;
-                float load_time = std::min((float) (MAX_FRAME - stamp - time),
+                float load_time = std::min((float) (MAX_FRAME - stamp - time1 - time2),
                                            (float) berth_hold / (float) berth.loading_speed);
                 float load_cnt = load_time * (float) berth.loading_speed;
                 float load_value = 0;
@@ -110,8 +111,7 @@ struct Ship {
                 if((int) load_cnt > (int) berth.cargo.size()){
                     load_value += (float) berth.notified_value * (load_cnt - (float) berth.cargo.size()) / (float) berth.notified;
                 }
-                float value = load_value / (load_time + (float) time);
-                // float value = (float) berth_hold_value * load_cnt / (float) berth_hold / (load_time + (float) time);
+                float value = load_value / (load_time + (float) time1);
                 if(value >= mission.reserved_value) {
                     mission.reserved_value = value;
                     mission.target = berth.id;
@@ -120,7 +120,6 @@ struct Ship {
             if(exec->berth_id != no_index) {
                 if(mission.target == exec->berth_id || mission.reserved_value < NOT_VALUABLE) {
                     mission = exec->mission;
-                    mission.mission_state = SAILING;
                 }
             } else if(mission.target == no_index) {
                 return waiting;
@@ -160,6 +159,7 @@ struct Ship {
         auto check_overload() {
             if(!executor) { return; }
             if(mission_state != LOADING) { return; }
+            auto &berth = Berths::berths[executor->berth_id];
             if(executor->load == SHIP_CAPACITY) {
                 mission_state = SAILING;
                 target = no_index;
@@ -171,7 +171,6 @@ struct Ship {
             if(mission_state != LOADING) { return; }
             if(Berths::berths[executor->berth_id].cargo.empty()) {
                 mission_state = WAITING;
-                Berths::berths[executor->berth_id].occupied--;
             }
         }
         auto check_forceback() {
