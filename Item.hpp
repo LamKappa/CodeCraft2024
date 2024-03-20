@@ -15,7 +15,7 @@ struct Item {
     Position pos;
     int value{};
 
-    bool occupied{false};
+    void *occupied{nullptr};
     bool deleted{false};
 
     static long item_cnt;
@@ -61,7 +61,7 @@ struct Items : public std::deque<Item> {
 
 /**
  * idea
- *  1. occupied和deleted应该改为一个枚举state
+ *  1. occupied和deleted应该改为一个枚举state (改为指针)
  */
 
 #endif//CODECRAFTSDK_ITEM_HPP

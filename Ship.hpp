@@ -159,7 +159,7 @@ struct Ship {
         auto check_overload() {
             if(!executor) { return; }
             if(mission_state != LOADING) { return; }
-            auto &berth = Berths::berths[executor->berth_id];
+            // auto &berth = Berths::berths[executor->berth_id];
             if(executor->load == SHIP_CAPACITY) {
                 mission_state = SAILING;
                 target = no_index;
