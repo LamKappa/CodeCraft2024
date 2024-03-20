@@ -25,7 +25,7 @@ struct Berth {
     bool disabled_loading = false;
     bool disabled_pulling = false;
 
-    int occupied = 0;
+    void *occupied{nullptr};
     int notified = 0;
     int notified_value = 0;
     std::deque<Item> cargo;

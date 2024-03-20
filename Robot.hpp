@@ -12,7 +12,7 @@
 #include "Item.hpp"
 #include "Position.hpp"
 
-#define Robot_idea_3
+#define Robot_idea_4
 
 struct Robot {
     Robot() = default;
