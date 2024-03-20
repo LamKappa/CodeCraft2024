@@ -12,7 +12,7 @@
 #include "Item.hpp"
 #include "Position.hpp"
 
-#define Robot_idea_3
+#define Robot_idea_4
 
 struct Robot {
     Robot() = default;
@@ -91,7 +91,7 @@ struct Robot {
                     auto update = [&](auto x, auto y) {
                         if(x >= dp.size()) { return; }
                         float rate = 1.f - (float) (live_time) / Item::OVERDUE;
-                        rate = (float) std::pow(rate, 0.8);
+                        rate = (float) std::pow(rate, 0.42);
                         float value = dp[y] + rate * (float) item.value;
                         if(value > dp[x]) {
                             dp[x] = value;
@@ -145,13 +145,14 @@ struct Robot {
                 auto live_time = item.live_time();
                 auto robot_to_item = distance(exec->pos, item.pos);
                 if(robot_to_item > live_time) { continue; }
-                float rate = 1.f - (float) (live_time - robot_to_item) / Item::OVERDUE;
 
                 auto g = dp;
                 for(auto &to_berth: Berths::berths) {
                     if(to_berth.disabled_pulling || distance(exec->pos, to_berth.pos) == Atlas::INF_DIS) { continue; }
-                    auto update = [&item, &rate, &to_berth, &dp, &g, &item_list](auto x, auto i, auto j) {
+                    auto update = [&](auto x, auto i, auto j) {
                         if(x >= dp[to_berth.id].size()) { return; }
+                        float rate = 1.f - (float) (live_time) / Item::OVERDUE;
+                        rate = (float) std::pow(rate, 0.42);
                         float value = g[i][j] + rate * (float) item.value;
                         if(value > dp[to_berth.id][x]) {
                             dp[to_berth.id][x] = value;
@@ -330,8 +331,23 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                     if(obstacles.count(now + next_move)) {
                         for(const auto &move: Atlas::atlas.around(now)) {
                             if(!obstacles.count(now + move)) {
-                                next_move = move;
-                                break;
+                                if(obstacles.count(now + next_move)) {
+                                    next_move = move;
+                                    continue;
+                                }
+                                if(robot.mission.mission_state == Robot::Mission::MISSION_STATE::SEARCHING) {
+                                    auto &item = Items::items.find_by_id(robot.mission.targets.front().first);
+                                    if(Atlas::atlas.distance(now + move, item.pos) <
+                                       Atlas::atlas.distance(now + next_move, item.pos)){
+                                        next_move = move;
+                                    }
+                                } else if(robot.mission.mission_state == Robot::Mission::MISSION_STATE::CARRYING) {
+                                    auto &berth = Berths::berths[robot.mission.targets.front().second];
+                                    if(Atlas::atlas.distance(now + move, berth.pos) <
+                                       Atlas::atlas.distance(now + next_move, berth.pos)){
+                                        next_move = move;
+                                    }
+                                }
                             }
                         }
                         if(obstacles.count(now + next_move)) {

@@ -2,8 +2,6 @@
 #ifndef CODECRAFTSDK_SEGTREE_HPP
 #define CODECRAFTSDK_SEGTREE_HPP
 
-#include <iostream>
-
 template<class Info, class Tag, int LEFT_MARGIN, int RIGHT_MARGIN>
 struct SegTree {
     struct Node {

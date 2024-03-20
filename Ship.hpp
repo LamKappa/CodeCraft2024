@@ -99,7 +99,7 @@ struct Ship {
                 auto time = transport(exec->berth_id, berth.id).first + transport(berth.id, no_index).first;
                 if(stamp + time > MAX_FRAME) { continue; }
                 int berth_hold = berth.notified + (int) berth.cargo.size();
-                int berth_hold_value = berth.notified_value + berth.cargo_value;
+                // int berth_hold_value = berth.notified_value + berth.cargo_value;
                 float load_time = std::min((float) (MAX_FRAME - stamp - time),
                                            (float) berth_hold / (float) berth.loading_speed);
                 float load_cnt = load_time * (float) berth.loading_speed;

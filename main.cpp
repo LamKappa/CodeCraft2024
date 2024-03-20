@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
     DEBUG {
         int left_items = 0, left_value = 0;
         for(auto &berth: berths) {
-            cerr << "left_items: " << berth.cargo.size() << '\n';
+            // cerr << "left_items: " << berth.cargo.size() << '\n';
             left_items += (int) berth.cargo.size();
             while(!berth.cargo.empty()) {
                 left_value += berth.cargo.front().value;
@@ -179,8 +179,8 @@ int main(int argc, char *argv[]) {
             tot_score += ship.value;
             ship.value = ship.load = 0;
         }
-        cerr << "tot_left_items: " << left_items << '\n';
-        cerr << "tot_left_values: " << left_value << '\n';
+        // cerr << "tot_left_items: " << left_items << '\n';
+        // cerr << "tot_left_values: " << left_value << '\n';
         cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
         cerr << "idle occurred: " << idle_cnt << " times\n";
         cerr << "recall: " << fixed << setprecision(2)
