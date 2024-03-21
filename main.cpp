@@ -13,6 +13,7 @@ using namespace std;
 int obstacle_cnt = 0;
 int idle_cnt = 0;
 int tot_score = 0;
+int tot_values = 0;
 
 chrono::high_resolution_clock::time_point start_time;
 
@@ -81,6 +82,7 @@ void Input() {
     for(int i = 0; i < num; i++) {
         items.emplace_back();
         cin >> items.back();
+        DEBUG tot_values += items.back().value;
     }
     for(int i = 0; i < ROBOT_NUM; i++) {
         cin >> robots[i];
@@ -181,8 +183,9 @@ int main(int argc, char *argv[]) {
         }
         // cerr << "tot_left_items: " << left_items << '\n';
         // cerr << "tot_left_values: " << left_value << '\n';
-        cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
-        cerr << "idle occurred: " << idle_cnt << " times\n";
+        // cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
+        // cerr << "idle occurred: " << idle_cnt << " times\n";
+        cerr << "tot_item_values: " << tot_values << '\n';
         cerr << "recall: " << fixed << setprecision(2)
              << 100.f * (float) (tot_score) / (float) (tot_score + left_value) << "% "
              << "(" << tot_score << " / " << tot_score + left_value << ")\n";

@@ -114,19 +114,20 @@ struct Ship {
                     return load_value;
                 };
 
-                float load_time = std::min((float) (MAX_FRAME - stamp - time1 - time2),
-                                           (float) berth_hold / (float) berth.loading_speed);
-                float load_cnt = load_time * (float) berth.loading_speed;
-                float load_value = 0;
+                float load_time = (float) (MAX_FRAME - stamp - time1 - time2),
+                      load_cnt = 0, load_value = 0;
                 if(berth.occupied != nullptr) {
                     auto &ship = *static_cast<Ship *>(berth.occupied);
                     if((SHIP_CAPACITY - ship.load - 1) / berth.loading_speed + 1 > time1) {
                         continue;
-                    }else{
+                    } else {
                         load_value -= calc_value((float) (SHIP_CAPACITY - ship.load));
                         load_cnt += (float) (SHIP_CAPACITY - ship.load);
                     }
+                    berth_hold = std::max(0, berth_hold - SHIP_CAPACITY + ship.load);
                 }
+                load_time = std::min(load_time, (float) berth_hold / (float) berth.loading_speed);
+                load_cnt += load_time * (float) berth.loading_speed;
                 load_value += calc_value(load_cnt);
                 float value = load_value / (load_time + (float) time1);
                 if(value >= mission.reserved_value) {

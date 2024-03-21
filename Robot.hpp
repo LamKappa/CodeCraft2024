@@ -12,7 +12,7 @@
 #include "Item.hpp"
 #include "Position.hpp"
 
-#define Robot_idea_4
+#define Robot_idea_1
 
 struct Robot {
     Robot() = default;
@@ -47,7 +47,7 @@ struct Robot {
             auto calc_value = [](const Robot &robot, const Item &item, const Berth &berth) {
                 Atlas &atlas = Atlas::atlas;
                 float rate = 1.f - (float) (item.live_time() - atlas.distance(robot.pos, item.pos)) / Item::OVERDUE;
-                rate = (float) std::pow(rate, 0.39);
+                rate = (float) std::pow(rate, 0.42);
                 return (rate * (float) item.value) /
                        ((float) atlas.distance(robot.pos, item.pos) +
                         (float) atlas.distance(item.pos, berth.pos));
