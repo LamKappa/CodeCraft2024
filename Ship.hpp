@@ -14,7 +14,7 @@
 
 struct Ship {
     int load = 0;
-    int value = 0;
+    int load_values = 0;
     int status{};
     index_t berth_id = no_index;
     bool sail_out = false;
@@ -209,16 +209,16 @@ struct Ship {
             if(!executor) { return; }
             switch(mission_state) {
             case WAITING: {
-                DEBUG ::tot_score += executor->value;
+                DEBUG ::tot_score += executor->load_values;
                 executor->load = 0;
-                executor->value = 0;
+                executor->load_values = 0;
             } break;
             case SAILING: {
             } break;
             case LOADING: {
                 auto [cnt, load_value] = Berths::berths[executor->berth_id].get_load(SHIP_CAPACITY - executor->load);
                 executor->load += cnt;
-                executor->value += load_value;
+                executor->load_values += load_value;
             } break;
             case QUEUEING: {
             } break;

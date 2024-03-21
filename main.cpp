@@ -178,8 +178,8 @@ int main(int argc, char *argv[]) {
             }
         }
         for(auto &ship: ships) {
-            tot_score += ship.value;
-            ship.value = ship.load = 0;
+            tot_score += ship.load_values;
+            ship.load_values = ship.load = 0;
         }
         // cerr << "tot_left_items: " << left_items << '\n';
         // cerr << "tot_left_values: " << left_value << '\n';
