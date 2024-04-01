@@ -194,10 +194,9 @@ int main(int argc, char *argv[]) {
              << 100.f * (float) (tot_score) / (float) (tot_score + left_value) << "% "
              << "(" << tot_score << " / " << tot_score + left_value << ")\n";
     }
-    else {
-        for(auto &ft: async_pool) {
-            ft.wait();
-        }
+
+    for(auto &ft: async_pool) {
+        ft.wait();
     }
 
     return 0;
