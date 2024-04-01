@@ -237,10 +237,12 @@ struct Ship {
     }
 };
 
-struct Ships : public std::array<Ship, SHIP_NUM> {
-    using array::array;
+struct Ships : public std::vector<Ship> {
+    using vector::vector;
     static Ships ships;
-    Ships() = default;
+    Ships() {
+        resize(5);
+    }
 
     auto resolve() {
         return std::async(std::launch::async, [this] {

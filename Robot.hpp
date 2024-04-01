@@ -292,19 +292,21 @@ struct Robot {
     }
 };
 
-struct Robots : public std::array<Robot, ROBOT_NUM> {
-    using array::array;
+struct Robots : public std::vector<Robot> {
+    using vector::vector;
     static Robots robots;
     Robots() {
+        resize(10);
+        prior.resize(10);
         std::iota(prior.begin(), prior.end(), 0);
     };
 
-    std::array<index_t, ROBOT_NUM> prior{};
+    std::vector<index_t> prior{};
 
     auto init() {
         return std::async(std::launch::async, [this] {
             std::set<index_t> robot_set;
-            for(int i = 0; i < ROBOT_NUM; i++) { robot_set.insert(i); }
+            for(int i = 0; i < size(); i++) { robot_set.insert(i); }
             std::priority_queue<std::tuple<f80, index_t, u16>> q;
             auto calc = [](auto &berth, auto cnt) {
                 int size = ((Berth::Info &) berth.values).x;
@@ -342,7 +344,7 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
 
     auto resolve() {
         return std::async(std::launch::async, [this] {
-            for(auto &robot: robots) {
+            for(auto &robot: *this) {
                 robot.mission.next_move = Position::npos;
                 while(!robot.mission.check_item_overdue()) {}
                 robot.mission.check_complete();
@@ -352,10 +354,10 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
             }
 
             std::function<bool()> obstacle_avoiding = [&] {
-                std::array<Position, ROBOT_NUM> best_move;
+                std::vector<Position> best_move(size());
                 std::map<Position, index_t> obstacles;
-                for(int i = 0; i < ROBOT_NUM; i++) {
-                    auto &robot = robots[prior[i]];
+                for(int i = 0; i < size(); i++) {
+                    auto &robot = this->operator[](prior[i]);
                     Position now = robot.pos, next_move = robot.mission.next_move;
                     if(obstacles.count(now + next_move)) {
                         for(const auto &move: Atlas::atlas.around(now)) {
@@ -387,8 +389,8 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                     obstacles.insert({now + next_move, i});
                     best_move[prior[i]] = next_move;
                 }
-                for(int i = 0; i < ROBOT_NUM; i++) {
-                    robots[i].mission.next_move = best_move[i];
+                for(int i = 0; i < size(); i++) {
+                    this->operator[](i).mission.next_move = best_move[i];
                 }
                 return true;
             };

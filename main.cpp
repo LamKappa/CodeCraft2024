@@ -84,13 +84,13 @@ void Input() {
         cin >> items.back();
         DEBUG tot_values += items.back().value;
     }
-    for(int i = 0; i < ROBOT_NUM; i++) {
+    for(int i = 0; i < robots.size(); i++) {
         cin >> robots[i];
         DEBUG if(robots[i].status == 0) {
             obstacle_cnt++;
         }
     }
-    for(int i = 0; i < SHIP_NUM; i++) {
+    for(int i = 0; i < ships.size(); i++) {
         cin >> ships[i];
     }
     cin >> buff;
@@ -118,7 +118,7 @@ void Resolve() {
 }
 
 void Output() {
-    for(int i = 0; i < ROBOT_NUM; i++) {
+    for(int i = 0; i < robots.size(); i++) {
         auto &robot = robots[i];
         auto next_move = robot.mission.next_move;
         Position dest = robot.pos + robot.mission.next_move;
@@ -140,7 +140,7 @@ void Output() {
             idle_cnt++;
         }
     }
-    for(int i = 0; i < SHIP_NUM; i++) {
+    for(int i = 0; i < ships.size(); i++) {
         if(ships[i].mission.mission_state == Ship::Mission::MISSION_STATE::SAILING) {
             if(ships[i].sail_out) { continue; }
             auto next_move = ships[i].mission.next_move;
