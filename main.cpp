@@ -123,7 +123,7 @@ void Output() {
         auto next_move = robot.mission.next_move;
         Position dest = robot.pos + robot.mission.next_move;
 
-        if(!robot.mission.targets.empty()) {
+        if(robot.goods && robot.mission.mission_state != Robot::Mission::MISSION_STATE::CARRYING) {
             cout << "pull " << i << '\n';
         }
 
