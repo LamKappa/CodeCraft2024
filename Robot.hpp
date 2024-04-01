@@ -242,7 +242,7 @@ struct Robot {
         auto check_complete() {
             if(Item &item = Items::items.find_by_id(targets.front().first);
                mission_state == CARRYING && !item.deleted &&
-               executor && !executor->goods && Berths::berths[targets.front().second].inside(executor->pos)) {
+               executor && executor->goods && Berths::berths[targets.front().second].inside(executor->pos)) {
                 Berths::berths[targets.front().second].sign(item);
                 targets.pop_front();
                 if(targets.empty()) {

@@ -120,19 +120,20 @@ void Resolve() {
 void Output() {
     for(int i = 0; i < ROBOT_NUM; i++) {
         auto &robot = robots[i];
-
         auto next_move = robot.mission.next_move;
+        Position dest = robot.pos + robot.mission.next_move;
+
+        if(!robot.mission.targets.empty()) {
+            cout << "pull " << i << '\n';
+        }
+
         int move_id = COMMAND.at(next_move);
         if(move_id >= 0) {
             cout << "move " << i << " " << move_id << '\n';
-        }
-
-        Position dest = robot.pos + robot.mission.next_move;
-        if(!robot.mission.targets.empty()) {
-            if(dest == Items::items.find_by_id(robot.mission.targets.front().first).pos) {
-                cout << "get " << i << '\n';
-            } else if(robot.goods && berths[robot.mission.targets.front().second].inside(dest)) {
-                cout << "pull " << i << '\n';
+            if(!robot.mission.targets.empty()) {
+                if(dest == Items::items.find_by_id(robot.mission.targets.front().first).pos) {
+                    cout << "get " << i << '\n';
+                }
             }
         }
         DEBUG if(robot.mission.mission_state == Robot::Mission::MISSION_STATE::IDLING) {
