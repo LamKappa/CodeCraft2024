@@ -380,7 +380,6 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                             }
                         }
                         if(obstacles.count(now + next_move)) {
-                            std::shuffle(prior.begin(), prior.end(), eng);
                             return false;
                         }
                     }
@@ -393,7 +392,9 @@ struct Robots : public std::array<Robot, ROBOT_NUM> {
                 }
                 return true;
             };
-            while(!obstacle_avoiding()) {}
+            while(!obstacle_avoiding()) {
+                std::shuffle(prior.begin(), prior.end(), eng);
+            }
         });
     }
 };

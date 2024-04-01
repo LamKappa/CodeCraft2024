@@ -99,12 +99,15 @@ void Input() {
 void Resolve() {
     for(auto &berth: berths) {
         if(berth.disabled_pulling) { continue; }
+        auto berth_hold = berth.notified + (int) berth.cargo.size();
         auto [time, _] = Ship::transport(berth.id, Berth::virtual_berth.id);
-        if(time > MAX_FRAME -
-                          (stamp +
-                           (berth.notified + berth.cargo.size() - 1) / berth.loading_speed +
-                           (berth.occupied ? 0 : Berth::TRANSPORT_TIME)) +
-                          1) {
+        if(time >= MAX_FRAME -
+                           (stamp +
+                            (berth_hold) / berth.loading_speed +
+                            (berth.occupied ? 0 : Berth::TRANSPORT_TIME)) ||
+           MAX_FRAME - stamp - time <=
+                   (berth.occupied ? (std::min(berth_hold, SHIP_CAPACITY - ((Ship *) berth.occupied)->load) / berth.loading_speed)
+                                   : (std::min(berth_hold, SHIP_CAPACITY) / berth.loading_speed + time))) {
             berth.disabled_pulling = true;
         }
     }

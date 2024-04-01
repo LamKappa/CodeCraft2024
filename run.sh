@@ -2,9 +2,11 @@
 
 seed=$RANDOM
 
-choice=-3.13
-#seed=12523
-seed=2
+choice=-maze
+#seed=5898399
+#seed=19550
+#seed=29367
+seed=10
 
 echo "start seed:"$seed
 

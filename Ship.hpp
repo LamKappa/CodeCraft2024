@@ -116,7 +116,7 @@ struct Ship {
 
                 float load_time = (float) (MAX_FRAME - stamp - time1 - time2),
                       load_cnt = 0, load_value = 0;
-                if(berth.occupied != nullptr) {
+                if(berth.occupied != nullptr && berth.occupied != exec) {
                     auto &ship = *static_cast<Ship *>(berth.occupied);
                     if((SHIP_CAPACITY - ship.load - 1) / berth.loading_speed + 1 > time1) {
                         continue;
@@ -137,10 +137,10 @@ struct Ship {
             }
             if(exec->berth_id != no_index) {
                 if(mission.target == exec->berth_id) {
-                    mission = exec->mission;
+                    mission.mission_state = LOADING;
                 }
             } else if(mission.target == no_index) {
-                return waiting;
+                return mission = waiting;
             }
             if(Berths::berths[mission.target].occupied == nullptr) {
                 Berths::berths[mission.target].occupied = exec;
