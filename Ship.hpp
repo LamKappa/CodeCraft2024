@@ -30,7 +30,7 @@ struct Ship {
                            {Berth::TRANSPORT_TIME, t},
                            {Berths::berths[s].transport_time + Berths::berths[t].transport_time, no_index});
         }
-        std::array<index_t, BERTH_NUM> rk{};
+        std::vector<index_t> rk(Berths::berths.size());
         std::iota(rk.begin(), rk.end(), 0);
         auto calc = [&](int i) {
             return (i == s || i == t ? 0 : Berth::TRANSPORT_TIME) + Berths::berths[i].transport_time;
@@ -233,7 +233,8 @@ struct Ship {
     Ship() = default;
 
     friend auto &operator>>(std::istream &in, Ship &b) {
-        return in >> b.status >> b.berth_id;
+        int id, num, x, y, direction;
+        return in >> id >> num >> x >> y >> direction >> b.status;
     }
 };
 
@@ -241,7 +242,6 @@ struct Ships : public std::vector<Ship> {
     using vector::vector;
     static Ships ships;
     Ships() {
-        resize(5);
     }
 
     auto resolve() {

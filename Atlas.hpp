@@ -20,14 +20,30 @@
 #include "Queue.hpp"
 
 enum MAP_SYMBOLS {
-    GROUND [[maybe_unused]] = ' ',
-    SEA = '*',
-    WALL = '#',
-    ROBOT [[maybe_unused]] = 'A',
-    BERTH [[maybe_unused]] = 'B'
+    GROUND              = '.',
+    GROUND_MULTI        = '>',
+    SEA                 = '*',
+    SEA_MULTI           = '~',
+    WALL                = '#',
+    ROBOT               = 'R',
+    SHIP                = 'S',
+    BERTH               = 'B',
+    BERTH_AROUND        = 'K',
+    SEA_GROUND          = 'C',
+    SEA_GROUND_MULTI    = 'c',
+    COMMIT              = 'T',
 };
 
-const std::set<char> BARRIER_SYM{MAP_SYMBOLS::SEA, MAP_SYMBOLS::WALL};
+const std::set<char> BARRIER_SYM{
+        MAP_SYMBOLS::SEA,
+        MAP_SYMBOLS::SEA_MULTI,
+        MAP_SYMBOLS::SHIP,
+        MAP_SYMBOLS::WALL,
+        MAP_SYMBOLS::BERTH_AROUND,
+        MAP_SYMBOLS::COMMIT,
+};
+
+extern std::vector<Position> robot_shop, ship_shop, commit_point;
 
 struct Atlas {
     static Atlas atlas;
@@ -37,6 +53,7 @@ struct Atlas {
     static constexpr int bitmap_size = N * N;
     static constexpr int dist_size = N * N * (N * N + 3) / 2;
     Bitset<bitmap_size> bitmap;
+    char maze[bitmap_size];
     u16 dist[dist_size];
 
     std::future<void> f_lock;

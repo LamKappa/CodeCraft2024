@@ -30,7 +30,6 @@ struct Item {
     }
     friend std::istream &operator>>(std::istream &in, Item &it) {
         it.stamp = ::stamp;
-        it.unique_id = ++item_cnt;
         return in >> it.pos >> it.value;
     }
     bool operator<(const Item &o) const {
@@ -49,6 +48,11 @@ struct Items : public std::deque<Item> {
     static Items items;
 
     Items() = default;
+
+    void new_item() {
+        emplace_back();
+        back().unique_id = ++Item::item_cnt;
+    }
 
     Item &find_by_id(long id) {
         if(id == Item::noItem.unique_id) { return Item::noItem; }

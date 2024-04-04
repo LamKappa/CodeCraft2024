@@ -15,7 +15,7 @@ struct SegTree {
     ~SegTree() {
         if(node.empty()) { return; }
         auto finalize = [&](auto &&finalize, int rt, int l, int r) -> void {
-            if(rt == -1) { return; }
+            if(rt == -1 || l >= r) { return; }
             finalize(finalize, node[rt].ch[0], l, (l + r) / 2);
             finalize(finalize, node[rt].ch[1], (l + r) / 2, r);
             _drop(rt);

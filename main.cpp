@@ -10,7 +10,6 @@
 #include "Ship.hpp"
 using namespace std;
 
-int obstacle_cnt = 0;
 int idle_cnt = 0;
 int tot_score = 0;
 int tot_values = 0;
@@ -33,24 +32,36 @@ void Init() {
     atlas.init();
     for(int x = 0; x < N; x++) {
         for(int y = 0; y < N; y++) {
-            char ch;
-            cin >> ch;
-            if(static_cast<bool>(BARRIER_SYM.count(ch))) {
-                atlas.bitmap.set(Position{x, y});
+            Position p(x, y);
+            cin >> atlas.maze[p];
+            if(static_cast<bool>(BARRIER_SYM.count(atlas.maze[p]))) {
+                atlas.bitmap.set(p);
             } else {
-                atlas.bitmap.reset(Position{x, y});
+                atlas.bitmap.reset(p);
+            }
+            switch(atlas.maze[p]){
+            case MAP_SYMBOLS::ROBOT:{
+                robot_shop.emplace_back(p);
+            }break;
+            case MAP_SYMBOLS::SHIP:{
+                ship_shop.emplace_back(p);
+            }break;
+            case MAP_SYMBOLS::COMMIT:{
+                commit_point.emplace_back(p);
+            }break;
             }
         }
     }
-    for(int i = 0; i < BERTH_NUM; i++) {
+    int B;
+    cin >> B;
+    for(int i = 0; i < B; i++) {
+        berths.emplace_back();
         cin >> berths[i];
     }
     cin >> SHIP_CAPACITY;
     cin >> buff;
 
     atlas.build();
-    // berths.init().wait();
-    // robots.init().wait();
 
     DEBUG {
         for(auto &ft: async_pool) {
@@ -74,22 +85,24 @@ void Init() {
 
 void Input() {
     cin >> stamp >> money;
-    int num;
+    int num, R, S;
     cin >> num;
     while(!items.empty() && (!items.front().occupied || items.front().deleted) && items.front().live_time() < 0) {
         items.pop_front();
     }
     for(int i = 0; i < num; i++) {
-        items.emplace_back();
+        if(items.empty() || items.back().value != 0) { items.new_item(); }
         cin >> items.back();
         DEBUG tot_values += items.back().value;
     }
+    cin >> R;
+    assert(R == robots.size());
     for(int i = 0; i < robots.size(); i++) {
         cin >> robots[i];
-        DEBUG if(robots[i].status == 0) {
-            obstacle_cnt++;
-        }
+        assert(robots[i].id == i);
     }
+    cin >> S;
+    assert(S == ships.size());
     for(int i = 0; i < ships.size(); i++) {
         cin >> ships[i];
     }
@@ -97,20 +110,20 @@ void Input() {
 }
 
 void Resolve() {
-    for(auto &berth: berths) {
-        if(berth.disabled_pulling) { continue; }
-        auto berth_hold = berth.notified + (int) berth.cargo.size();
-        auto [time, _] = Ship::transport(berth.id, Berth::virtual_berth.id);
-        if(time >= MAX_FRAME -
-                           (stamp +
-                            (berth_hold) / berth.loading_speed +
-                            (berth.occupied ? 0 : Berth::TRANSPORT_TIME)) ||
-           MAX_FRAME - stamp - time <=
-                   (berth.occupied ? (std::min(berth_hold, SHIP_CAPACITY - ((Ship *) berth.occupied)->load) / berth.loading_speed)
-                                   : (std::min(berth_hold, SHIP_CAPACITY) / berth.loading_speed + time))) {
-            berth.disabled_pulling = true;
-        }
-    }
+    // for(auto &berth: berths) {
+    //     if(berth.disabled_pulling) { continue; }
+    //     auto berth_hold = berth.notified + (int) berth.cargo.size();
+    //     auto [time, _] = Ship::transport(berth.id, Berth::virtual_berth.id);
+    //     if(time >= MAX_FRAME -
+    //                        (stamp +
+    //                         (berth_hold) / berth.loading_speed +
+    //                         (berth.occupied ? 0 : Berth::TRANSPORT_TIME)) ||
+    //        MAX_FRAME - stamp - time <=
+    //                (berth.occupied ? (std::min(berth_hold, SHIP_CAPACITY - ((Ship *) berth.occupied)->load) / berth.loading_speed)
+    //                                : (std::min(berth_hold, SHIP_CAPACITY) / berth.loading_speed + time))) {
+    //         berth.disabled_pulling = true;
+    //     }
+    // }
 
     robots.resolve().wait();
 
@@ -164,7 +177,16 @@ int main(int argc, char *argv[]) {
     cin.tie(nullptr);
 
     Init();
-    for(int _ = 1; _ <= MAX_FRAME; _++) {
+    {
+        // after init
+        Input();
+        for(auto p : robot_shop){
+            robots.new_robot(p);
+            cout << "lbot " << (int)p.first << " " << (int)p.second << '\n';
+        }
+        cout << "OK" << endl;
+    }
+    for(int _ = 2; _ <= MAX_FRAME; _++) {
         Input();
         Resolve();
         Output();
@@ -187,7 +209,6 @@ int main(int argc, char *argv[]) {
         }
         // cerr << "tot_left_items: " << left_items << '\n';
         // cerr << "tot_left_values: " << left_value << '\n';
-        // cerr << "obstacle occurred: " << obstacle_cnt << " times\n";
         // cerr << "idle occurred: " << idle_cnt << " times\n";
         cerr << "tot_item_values: " << tot_values << '\n';
         cerr << "recall: " << fixed << setprecision(2)

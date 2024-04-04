@@ -279,68 +279,35 @@ struct Robot {
             }
         }
     };
-    Position pos;
-    Mission mission;
-
+    index_t id;
     bool goods{};
-    bool status{};
+    Position pos;
+    Mission mission = Mission::idle;
 
     [[maybe_unused]] static constexpr int ROBOT_DISABLE_TIME = 20;
 
     friend auto &operator>>(std::istream &in, Robot &r) {
-        return in >> r.goods >> r.pos >> r.status;
+        return in >> r.id >> r.goods >> r.pos;
     }
 };
 
 struct Robots : public std::vector<Robot> {
     using vector::vector;
     static Robots robots;
-    Robots() {
-        resize(10);
-        prior.resize(10);
-        std::iota(prior.begin(), prior.end(), 0);
-    };
+    Robots() = default;
+
+    void new_robot(Position p) {
+        auto id = static_cast<index_t>(size());
+        prior.emplace_back(id);
+        push_back({id, false, p, Robot::Mission::idle});
+    }
 
     std::vector<index_t> prior{};
 
-    auto init() {
-        return std::async(std::launch::async, [this] {
-            std::set<index_t> robot_set;
-            for(int i = 0; i < size(); i++) { robot_set.insert(i); }
-            std::priority_queue<std::tuple<f80, index_t, u16>> q;
-            auto calc = [](auto &berth, auto cnt) {
-                int size = ((Berth::Info &) berth.values).x;
-                int order = size - (size + 1) / (cnt + 1);
-                auto x = berth.values.binary_search(Berth::Info{order});
-                return Item::MAX_ITEM_VALUE / 4.l / x;
-            };
-            for(auto &berth: Berths::berths) {
-                q.emplace(calc(berth, 1), berth.id, 2);
-            }
-            while(!robot_set.empty()) {
-                auto [_, berth_id, cnt] = q.top();
-                q.pop();
-                auto &berth = Berths::berths[berth_id];
-                q.emplace(calc(berth, cnt), berth.id, cnt + 1);
-
-                auto robot_id = *std::min_element(robot_set.begin(), robot_set.end(), [&](auto i, auto j) {
-                    return Atlas::atlas.distance(this->operator[](i).pos, berth.pos) <
-                           Atlas::atlas.distance(this->operator[](j).pos, berth.pos);
-                });
-                robot_set.erase(robot_id);
-                auto &robot = this->operator[](robot_id);
-                robot.mission = Robot::Mission{
-                        Robot::Mission::MISSION_STATE::CARRYING,
-                        &robot,
-                        INFINITY,
-                        {{Item::noItem.unique_id, berth_id}},
-                };
-                DEBUG {
-                    std::cerr << "robot " << robot_id << " arranged to berth " << berth_id << '\n';
-                }
-            }
-        });
-    }
+    const std::set<char> ROBOT_MULTI_SYM{
+            MAP_SYMBOLS::GROUND_MULTI,
+            MAP_SYMBOLS::ROBOT,
+            MAP_SYMBOLS::SEA_GROUND_MULTI};
 
     auto resolve() {
         return std::async(std::launch::async, [this] {
@@ -385,8 +352,12 @@ struct Robots : public std::vector<Robot> {
                             return false;
                         }
                     }
-                    obstacles.insert({now, i});
-                    obstacles.insert({now + next_move, i});
+                    if(ROBOT_MULTI_SYM.count(Atlas::atlas.maze[now])) {
+                        obstacles.insert({now, i});
+                    }
+                    if(ROBOT_MULTI_SYM.count(Atlas::atlas.maze[now + next_move])) {
+                        obstacles.insert({now + next_move, i});
+                    }
                     best_move[prior[i]] = next_move;
                 }
                 for(int i = 0; i < size(); i++) {

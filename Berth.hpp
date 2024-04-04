@@ -77,19 +77,21 @@ struct Berth {
     }
 
     [[nodiscard]] auto inside(Position p) {
-        return pos.first - 2 <= p.first && p.first <= pos.first + 1 &&
-               pos.second - 2 <= p.second && p.second <= pos.second + 1;
+        return false;
     }
 
+    [[nodiscard]] auto around(Position p) {
+        return false;
+    }
     friend auto &operator>>(std::istream &in, Berth &b) {
-        in >> b.id >> b.pos >> b.transport_time >> b.loading_speed;
-        b.pos = b.pos + Position{2, 2};
+        in >> b.id >> b.pos >> b.loading_speed;
+        // todo BFS找范围
         return in;
     }
 };
 
-struct Berths : public std::array<Berth, BERTH_NUM> {
-    using array::array;
+struct Berths : public std::vector<Berth> {
+    using vector::vector;
     static Berths berths;
     Berths() {
         decltype(Berth::values)::node.reserve(N * N / 2);
@@ -97,7 +99,7 @@ struct Berths : public std::array<Berth, BERTH_NUM> {
 
     auto &operator[](index_t i) {
         if(i == no_index) return Berth::virtual_berth;
-        return array::operator[](i);
+        return vector::operator[](i);
     }
 
     auto init() {
