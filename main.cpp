@@ -183,6 +183,12 @@ int main(int argc, char *argv[]) {
         for(auto p : robot_shop){
             robots.new_robot(p);
             cout << "lbot " << (int)p.first << " " << (int)p.second << '\n';
+            robots.new_robot(p);
+            cout << "lbot " << (int)p.first << " " << (int)p.second << '\n';
+            robots.new_robot(p);
+            cout << "lbot " << (int)p.first << " " << (int)p.second << '\n';
+            robots.new_robot(p);
+            cout << "lbot " << (int)p.first << " " << (int)p.second << '\n';
         }
         cout << "OK" << endl;
     }
@@ -194,6 +200,7 @@ int main(int argc, char *argv[]) {
     }
 
     DEBUG {
+        int cost = robots.size() * ROBOT_COST + ships.size() * SHIP_COST;
         int left_items = 0, left_value = 0;
         for(auto &berth: berths) {
             // cerr << "left_items: " << berth.cargo.size() << '\n';
@@ -211,9 +218,15 @@ int main(int argc, char *argv[]) {
         // cerr << "tot_left_values: " << left_value << '\n';
         // cerr << "idle occurred: " << idle_cnt << " times\n";
         cerr << "tot_item_values: " << tot_values << '\n';
+        cerr << "profit: " << fixed << setprecision(2)
+             << 100.f * (float) (tot_score + left_value - cost) / (float) (tot_score + left_value) << "% "
+             << "(" << tot_score + left_value - cost << " / " << tot_score + left_value << ")\n";
         cerr << "recall: " << fixed << setprecision(2)
              << 100.f * (float) (tot_score) / (float) (tot_score + left_value) << "% "
              << "(" << tot_score << " / " << tot_score + left_value << ")\n";
+        cerr << "profit-recall: " << fixed << setprecision(2)
+             << 100.f * (float) (tot_score - cost) / (float) (tot_score - cost + left_value) << "% "
+             << "(" << tot_score - cost << " / " << tot_score - cost + left_value << ")\n";
     }
 
     for(auto &ft: async_pool) {

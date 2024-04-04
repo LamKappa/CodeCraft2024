@@ -30,6 +30,9 @@ constexpr int N = 200;
 // constexpr int SHIP_NUM = 5;
 constexpr int MAX_FRAME = 15000;
 
+constexpr int ROBOT_COST = 2000;
+constexpr int SHIP_COST = 8000;
+
 extern int stamp, money;
 extern std::mt19937 eng;
 extern int SHIP_CAPACITY;

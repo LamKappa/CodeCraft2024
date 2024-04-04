@@ -352,10 +352,10 @@ struct Robots : public std::vector<Robot> {
                             return false;
                         }
                     }
-                    if(ROBOT_MULTI_SYM.count(Atlas::atlas.maze[now])) {
+                    if(!ROBOT_MULTI_SYM.count(Atlas::atlas.maze[now])) {
                         obstacles.insert({now, i});
                     }
-                    if(ROBOT_MULTI_SYM.count(Atlas::atlas.maze[now + next_move])) {
+                    if(!ROBOT_MULTI_SYM.count(Atlas::atlas.maze[now + next_move])) {
                         obstacles.insert({now + next_move, i});
                     }
                     best_move[prior[i]] = next_move;

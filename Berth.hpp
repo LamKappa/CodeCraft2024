@@ -31,6 +31,9 @@ struct Berth {
     std::deque<Item> cargo;
     int cargo_value = 0;
 
+    Position inside_p1, inside_p2;
+    Position around_p1, around_p2;
+
     Berth() = default;
 
     static constexpr int TRANSPORT_TIME = 500;
@@ -77,15 +80,48 @@ struct Berth {
     }
 
     [[nodiscard]] auto inside(Position p) {
-        return false;
+        return inside_p1.first <= p.first && p.first <= inside_p2.first &&
+               inside_p1.second <= p.second && p.second <= inside_p2.second;
     }
 
     [[nodiscard]] auto around(Position p) {
-        return false;
+        return around_p1.first <= p.first && p.first <= around_p2.first &&
+               around_p1.second <= p.second && p.second <= around_p2.second;
     }
     friend auto &operator>>(std::istream &in, Berth &b) {
         in >> b.id >> b.pos >> b.loading_speed;
-        // todo BFS找范围
+        // BFS search berth around & around
+        {
+            std::queue<Position> q;
+            std::set<Position> vis;
+            q.emplace(b.pos);
+            while(!q.empty()) {
+                auto u = q.front();
+                q.pop();
+                vis.insert(u);
+                switch(Atlas::atlas.maze[u]) {
+                case MAP_SYMBOLS::BERTH: {
+                    b.inside_p1.first = std::min(b.inside_p1.first, u.first);
+                    b.inside_p1.second = std::min(b.inside_p1.second, u.second);
+                    b.inside_p2.first = std::max(b.inside_p2.first, u.first);
+                    b.inside_p2.second = std::max(b.inside_p2.second, u.second);
+                } break;
+                case MAP_SYMBOLS::BERTH_AROUND: {
+                    b.around_p1.first = std::min(b.around_p1.first, u.first);
+                    b.around_p1.second = std::min(b.around_p1.second, u.second);
+                    b.around_p2.first = std::max(b.around_p2.first, u.first);
+                    b.around_p2.second = std::max(b.around_p2.second, u.second);
+                } break;
+                }
+                for(auto move: Move) {
+                    auto v = u + move;
+                    if(v.outside() || vis.count(v) ||
+                       Atlas::atlas.maze[v] != MAP_SYMBOLS::BERTH ||
+                       Atlas::atlas.maze[v] != MAP_SYMBOLS::BERTH_AROUND) { continue; }
+                    q.emplace(v);
+                }
+            }
+        }
         return in;
     }
 };
