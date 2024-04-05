@@ -12,8 +12,24 @@
 #include "Dijkstra.hpp"
 
 struct Ship {
+    enum ShipMode {
+        WAITING,
+        SAILING,
+        LOADING,
+    };
+
     std::array<Position, 6> area;
+    ShipMode mode = WAITING;
+    int last_action_num = 0;
+    int id;
+    int load_num = 0;
+    int status;
+    int target = -1;
     using Area = std::array<Position, 6>;
+    Position pos;
+    Direction dir;
+    std::string output = "";
+    int wait_time = 0;
 
     static Area getArea(Position center_t, Direction dir_t) {
         Area ans;
@@ -56,15 +72,16 @@ struct Ship {
         return {(int) center_t + Id(dir_t) * N * N, multi};
     }
 
-    void updateArea() {
-
+    static std::pair<Position, Direction> unpack(int num) {
+        return {num % (N * N), Move[num / (N * N)]};
     }
 
     Ship() = default;
 
     friend auto &operator>>(std::istream &in, Ship &b) {
-        int id, good, x, y, dir, sta;
-        in >> id >> good >> x >> y >> dir >> sta;
+        int dir_t = 0;
+        in >> b.id >> b.load_num >> b.pos >> dir_t >> b.status;
+        b.dir = Move[dir_t];
         return in;
     }
 };
@@ -78,12 +95,52 @@ struct Ships : public std::vector<Ship> {
          int w;
      };
 
-    DirectedGraph<Edge> graph;
+     struct Action {
+         enum TYPE{
+             FORWARD,
+             MULTI_FORWARD,
+             TURN_LEFT,
+             TURN_RIGHT,
+             DEPT,
+             ACTION_NUM
+         };
+         int to;
+         TYPE type;
+
+         std::string toString(int id) const {
+             switch(type) {
+             case FORWARD:
+             case MULTI_FORWARD:
+                 return "ship " + std::to_string(id);
+             case TURN_LEFT:
+                 return "rot " + std::to_string(id) + " 1";
+             case TURN_RIGHT:
+                 return "rot " + std::to_string(id) + " 1";
+             default:
+                 return "";
+             }
+         }
+     };
+     std::array<int, Action::ACTION_NUM> action_cost = {1, 2, 1, 1, -1};
+
+    DirectedGraph<Edge> rev_graph;
+    std::vector<std::vector<Action>> graph;
+    std::vector<std::vector<int>> berth_dis;
+    std::vector<std::vector<int>> commit_dis;
+
+    void add_edge(int f, int t, Action::TYPE type) {
+        if(f == -1 || t == -1) {
+            return;
+        }
+        rev_graph.add_edge({t, f, action_cost[type]});
+        graph[f].push_back({t, type});
+    }
 
     Ships() = default;
 
     auto init() {
         return std::async(std::launch::async, [this] {
+            rev_graph.resize(N * N * 4);
             graph.resize(N * N * 4);
             for(int i = 0; i < N; i++) {
                 for(int j = 0; j < N; j++) {
@@ -93,15 +150,30 @@ struct Ships : public std::vector<Ship> {
                         if(id < 0) { continue; }
                         // 前进
                         auto last = Ship::getId(pos + dir, dir).first;
-                        if(last >= 0) { graph.add_edge({id, last, at ? 2 : 1}); }
+                        add_edge(id, last, at ? Action::MULTI_FORWARD : Action::FORWARD);
                         // 右转
                         last = Ship::getId(pos + dir + dir, next(dir)).first;
-                        if(last >= 0) { graph.add_edge({id, last, 1}); }
+                        add_edge(id, last, Action::TURN_RIGHT);
                         // 左传
                         last = Ship::getId(pos + dir + next(dir), prev(dir)).first;
-                        if(last >= 0) { graph.add_edge({id, last, 1}); }
+                        add_edge(id, last, Action::TURN_LEFT);
                         // dept传送
                         // berth传送
+                    }
+                }
+            }
+            for(auto & berth : Berths::berths) {
+                berth_dis.emplace_back(rev_graph.dijkstra(Ship::getId(berth.pos, berth.dir).first));
+            }
+            for(auto & commit : commit_point) {
+                commit_dis.emplace_back(graph.size(), -1);
+                auto & dis = commit_dis[commit_dis.size() - 1];
+                for(auto dir : Move){
+                    auto dir_dis = rev_graph.dijkstra(Ship::getId(commit, dir).first);
+                    for(int i = 0; i < dis.size(); i++) {
+                        if(dis[i] == -1 || (dir_dis[i] != -1 && dir_dis[i] < dis[i])) {
+                            dis[i] = dir_dis[i];
+                        }
                     }
                 }
             }
@@ -110,7 +182,65 @@ struct Ships : public std::vector<Ship> {
 
     auto resolve() {
         return std::async(std::launch::async, [this] {
+            for(auto & ship : *this) {
+                switch(ship.mode) {
+                case Ship::SAILING: {
+                    if(ship.last_action_num > 0) {
+                        ship.output = "";
+                        ship.last_action_num--;
+                        break;
+                    }
+                    bool is_commit = ship.target >= berth_dis.size();
+                    auto & dis = (is_commit ? commit_dis[ship.target - berth_dis.size()] : berth_dis[ship.target]);
+                    if(dis[ship.pos] == 0) {
+                        if(is_commit) {
+                            ship.target = 0;
+                        }
+                        else {
+                            ship.wait_time = 100;
+                            ship.mode = Ship::LOADING;
+                        }
+                    }
+                    else {
+                        auto [id, dir] = Ship::getId(ship.pos, ship.dir);
+                        int next_idx = 0, next_dis = dis[graph[id][0].to];
+                        for(int i = 1; i < graph[id].size(); i++) {
+                            auto i_dis = dis[graph[id][i].to];
+                            if(next_dis == -1 || (i_dis != -1 && i_dis < next_dis)) {
+                                next_dis = i_dis;
+                                next_idx = i;
+                            }
+                        }
+                        auto & edge = graph[id][next_idx];
+                        ship.output = edge.toString(ship.id);
+                        ship.last_action_num = action_cost[edge.type] - 1;
+                    }
+                    break;
+                }
+                case Ship::LOADING: {
+                    if(ship.wait_time == 0) {
+                        ship.target++;
+                        ship.mode = Ship::SAILING;
+                    }
+                    else {
+                        ship.wait_time--;
+                    }
+                    break;
+                }
+                default:
+                    ship.mode = Ship::SAILING;
+                }
+            }
         });
+    }
+
+    void new_ship(int shop_id) {
+        Ship ship{
+                .id = (int)size(),
+                .pos = ship_shop[shop_id],
+                .dir = RIGHT
+        };
+        push_back(ship);
     }
 };
 

@@ -4,7 +4,6 @@
 
 template<typename Edge>
 struct DirectedGraph {
-    const static long long INF = 0x3fffffff;
     int node_size{}, edge_size{}, tarjan_tot{};
     std::vector<std::vector<Edge> > edge;
     std::vector<bool> vis;
