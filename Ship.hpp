@@ -27,23 +27,31 @@ struct Ship {
         return ans;
     }
 
-    static inline std::set<char> SHIP_BLOCK = {
+    static inline std::set<char> SHIP_BLOCK_SYM{
             MAP_SYMBOLS::SEA,
             MAP_SYMBOLS::SEA_MULTI,
             MAP_SYMBOLS::SHIP,
             MAP_SYMBOLS::SEA_GROUND,
             MAP_SYMBOLS::SEA_GROUND_MULTI,
             MAP_SYMBOLS::COMMIT,
+            MAP_SYMBOLS::BERTH,
+    };
+
+    static inline std::set<char> SHIP_MULTI_SYM{
+            MAP_SYMBOLS::SEA_MULTI,
+            MAP_SYMBOLS::SHIP,
+            MAP_SYMBOLS::SEA_GROUND_MULTI,
+            MAP_SYMBOLS::BERTH,
     };
 
     static std::pair<int, bool> getId(Position center_t, Direction dir_t) {
         bool multi = false;
         if(center_t.outside()) { return {-1, false}; }
         for(auto pos : getArea(center_t, dir_t)) {
-            if(pos.outside() || !SHIP_BLOCK.count(Atlas::atlas.maze[pos])) {
+            if(pos.outside() || !SHIP_BLOCK_SYM.count(Atlas::atlas.maze[pos])) {
                 return {-1, false};
             }
-            multi |= (Atlas::atlas.maze[pos] == MAP_SYMBOLS::SEA_MULTI || Atlas::atlas.maze[pos] == MAP_SYMBOLS::SEA_GROUND_MULTI);
+            if(!multi) {multi |= SHIP_MULTI_SYM.count(Atlas::atlas.maze[pos]); }
         }
         return {(int) center_t + Id(dir_t) * N * N, multi};
     }

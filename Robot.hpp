@@ -308,6 +308,7 @@ struct Robots : public std::vector<Robot> {
         MAP_SYMBOLS::GROUND_MULTI,
         MAP_SYMBOLS::ROBOT,
         MAP_SYMBOLS::SEA_GROUND_MULTI,
+        MAP_SYMBOLS::BERTH,
     };
 
     auto resolve() {

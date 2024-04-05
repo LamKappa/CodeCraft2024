@@ -34,6 +34,8 @@ struct Berth {
     Position inside_p1, inside_p2;
     Position around_p1, around_p2;
 
+    Direction dir;
+
     Berth() = default;
 
     static constexpr int TRANSPORT_TIME = 500;
@@ -88,6 +90,7 @@ struct Berth {
         return around_p1.first <= p.first && p.first <= around_p2.first &&
                around_p1.second <= p.second && p.second <= around_p2.second;
     }
+
     friend auto &operator>>(std::istream &in, Berth &b) {
         in >> b.id >> b.pos >> b.loading_speed;
         // BFS search berth around & around
@@ -119,6 +122,14 @@ struct Berth {
                        Atlas::atlas.maze[v] != MAP_SYMBOLS::BERTH ||
                        Atlas::atlas.maze[v] != MAP_SYMBOLS::BERTH_AROUND) { continue; }
                     q.emplace(v);
+                }
+            }
+        }
+        {
+            for(auto dir : Move){
+                if(!(b.pos + next(dir)).outside() && Atlas::atlas.maze[b.pos + next(dir)] == MAP_SYMBOLS::BERTH &&
+                   !(b.pos + dir).outside() && Atlas::atlas.maze[b.pos + dir] == MAP_SYMBOLS::BERTH){
+                    b.dir = dir;
                 }
             }
         }
