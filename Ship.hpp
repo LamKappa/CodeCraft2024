@@ -9,254 +9,98 @@
 
 #include "Berth.hpp"
 #include "Config.h"
-
-#define Ship_idea_4
+#include "Dijkstra.hpp"
+// Hello World !!! 
 
 struct Ship {
-    int load = 0;
-    int load_values = 0;
-    int status{};
-    index_t berth_id = no_index;
-    bool sail_out = false;
+    static decltype(Atlas::atlas.maze) &maze;
+    std::array<Position, 6> area;
+    using Area = std::array<Position, 6>;
 
-    static auto transport(index_t s, index_t t) {
-        static std::map<std::pair<index_t, index_t>, std::pair<int, index_t>> transport_record;
-        if(transport_record.count({s, t})) {
-            return transport_record[{s, t}];
+    static Area getArea(Position center_t, DIRECTION dir_t) {
+        Area ans;
+        auto front = Move[dir_t];
+        auto right = Move[++dir_t];
+        for(int i = 0; i < 3; i++) {
+            ans[i * 2] = center_t;
+            ans[i * 2 + 1] = center_t + right;
+            center_t += front;
         }
-        if(s == t) { return std::make_pair(0, s); }
-        if(s != no_index && t != no_index) {
-            return transport_record[{s, t}] = std::min<std::pair<int, index_t>>(
-                           {Berth::TRANSPORT_TIME, t},
-                           {Berths::berths[s].transport_time + Berths::berths[t].transport_time, no_index});
-        }
-        std::vector<index_t> rk(Berths::berths.size());
-        std::iota(rk.begin(), rk.end(), 0);
-        auto calc = [&](int i) {
-            return (i == s || i == t ? 0 : Berth::TRANSPORT_TIME) + Berths::berths[i].transport_time;
-        };
-        auto best_i = *std::min_element(rk.begin(), rk.end(), [&calc](auto i, auto j) {
-            return calc(i) < calc(j);
-        });
-        return transport_record[{s, t}] = std::make_pair(calc(best_i), best_i == s ? t : best_i);
+        return ans;
     }
 
-    struct Mission {
-        Mission() = default;
-        enum MISSION_STATE {
-            WAITING,
-            SAILING,
-            LOADING,
-            QUEUEING,
-        };
-        static Mission waiting;
-
-        MISSION_STATE mission_state{MISSION_STATE::WAITING};
-        Ship *executor{nullptr};
-        float reserved_value = 0.f;
-        index_t target = no_index;
-        index_t next_move = no_index;
-
-        [[nodiscard]] auto vacant() const {
-            return mission_state == WAITING;
-        }
-#ifdef Ship_idea_3
-        static Mission create(decltype(executor) exec) {
-            static const float NOT_VALUABLE = 0.f;
-            if(exec->mission.mission_state == SAILING) { return exec->mission; }
-            Berths::berths[exec->berth_id].occupied--;
-            Mission mission = {SAILING, exec, 0.f, exec->berth_id};
-            for(auto &berth: Berths::berths) {
-                if(berth.disabled_loading || berth.occupied) { continue; }
-                auto time = transport(exec->berth_id, berth.id).first + transport(berth.id, no_index).first;
-                if(stamp + time > MAX_FRAME) { continue; }
-                // int berth_hold = berth.notified + (int) berth.cargo.size();
-                int berth_hold_value = berth.notified_value + berth.cargo_value;
-                auto value = (float) berth_hold_value;// + (float) berth_hold / (float) berth.loading_speed;
-                if(value >= mission.reserved_value) {
-                    mission.reserved_value = value;
-                    mission.target = berth.id;
-                }
-            }
-            if(exec->berth_id != no_index) {
-                if(mission.target == exec->berth_id || mission.reserved_value < NOT_VALUABLE) {
-                    mission = exec->mission;
-                }
-            } else if(mission.target == no_index) {
-                return waiting;
-            }
-            Berths::berths[mission.target].occupied++;
-            return mission;
-        }
-#endif
-#ifdef Ship_idea_4
-        Mission create(decltype(executor) exec) {
-            auto &mission = *this;
-            if(mission.mission_state == SAILING) { return mission; }
-            Berths::berths[exec->berth_id].occupied = nullptr;
-            mission = {SAILING, exec, 0.f, exec->berth_id};
-            for(auto &berth: Berths::berths) {
-                if(berth.disabled_loading) { continue; }
-                auto time1 = transport(exec->berth_id, berth.id).first;
-                auto time2 = transport(berth.id, no_index).first;
-                if(stamp + time1 + time2 > MAX_FRAME) { continue; }
-                int berth_hold = berth.notified + (int) berth.cargo.size();
-
-                auto calc_value = [&berth, &berth_hold](float load_cnt) {
-                    load_cnt = std::min(load_cnt, (float) berth_hold);
-                    float load_value = 0;
-                    for(int i = 0; i < std::min<int>((int) berth.cargo.size(), (int) load_cnt); i++) {
-                        load_value += (float) berth.cargo[i].value;
-                    }
-                    if((int) load_cnt > (int) berth.cargo.size()) {
-                        load_value += (float) berth.notified_value * (load_cnt - (float) berth.cargo.size()) / (float) berth.notified;
-                    }
-                    return load_value;
-                };
-
-                float load_time = (float) (MAX_FRAME - stamp - time1 - time2),
-                      load_cnt = 0, load_value = 0;
-                if(berth.occupied != nullptr && berth.occupied != exec) {
-                    auto &ship = *static_cast<Ship *>(berth.occupied);
-                    if((SHIP_CAPACITY - ship.load - 1) / berth.loading_speed + 1 > time1) {
-                        continue;
-                    } else {
-                        load_value -= calc_value((float) (SHIP_CAPACITY - ship.load));
-                        load_cnt += (float) (SHIP_CAPACITY - ship.load);
-                    }
-                    berth_hold = std::max(0, berth_hold - SHIP_CAPACITY + ship.load);
-                }
-                load_time = std::min(load_time, (float) berth_hold / (float) berth.loading_speed);
-                load_cnt += load_time * (float) berth.loading_speed;
-                load_value += calc_value(load_cnt);
-                float value = load_value / (load_time + (float) time1);
-                if(value >= mission.reserved_value) {
-                    mission.reserved_value = value;
-                    mission.target = berth.id;
-                }
-            }
-            if(exec->berth_id != no_index) {
-                if(mission.target == exec->berth_id) {
-                    mission.mission_state = LOADING;
-                }
-            } else if(mission.target == no_index) {
-                return mission = waiting;
-            }
-            if(Berths::berths[mission.target].occupied == nullptr) {
-                Berths::berths[mission.target].occupied = exec;
-            }
-            return mission;
-        }
-#endif
-
-        auto check_arrival() const {
-            if(!executor) { return; }
-            if(executor->status != 0) {
-                executor->sail_out = false;
-            }
-        }
-        auto check_waiting() {
-            if(!executor) { return; }
-            if(executor->status == 1 && executor->berth_id == no_index && target == no_index) {
-                mission_state = WAITING;
-                executor->status = 3;
-            }
-        }
-        auto check_loading() {
-            if(!executor) { return; }
-            if(executor->status == 1 && executor->berth_id == target && target != no_index) {
-                mission_state = LOADING;
-                executor->status = 1;
-                Berths::berths[executor->berth_id].occupied = executor;
-            }
-        }
-        auto check_queueing() {
-            if(!executor) { return; }
-            if(executor->status == 2 && executor->berth_id == target && target != no_index) {
-                mission_state = QUEUEING;
-                executor->status = 1;
-            }
-        }
-        auto check_overload() {
-            if(!executor) { return; }
-            if(mission_state != LOADING) { return; }
-            // auto &berth = Berths::berths[executor->berth_id];
-            if(executor->load == SHIP_CAPACITY) {
-                mission_state = SAILING;
-                target = no_index;
-                Berths::berths[executor->berth_id].occupied = nullptr;
-            }
-        }
-        auto check_emptyload() {
-            if(!executor) { return; }
-            if(mission_state != LOADING) { return; }
-            if(Berths::berths[executor->berth_id].cargo.empty()) {
-                mission_state = WAITING;
-            }
-        }
-        auto check_forceback() {
-            if(!executor) { return; }
-            if(mission_state == SAILING) { return; }
-            auto [time, _] = transport(executor->berth_id, no_index);
-            if(time == MAX_FRAME - stamp) {
-                mission_state = SAILING;
-                target = no_index;
-                Berths::berths[executor->berth_id].disabled_loading = true;
-                Berths::berths[executor->berth_id].occupied = nullptr;
-            }
-        }
-        auto forward() {
-            if(!executor) { return; }
-            switch(mission_state) {
-            case WAITING: {
-                DEBUG ::tot_score += executor->load_values;
-                executor->load = 0;
-                executor->load_values = 0;
-            } break;
-            case SAILING: {
-            } break;
-            case LOADING: {
-                auto [cnt, load_value] = Berths::berths[executor->berth_id].get_load(SHIP_CAPACITY - executor->load);
-                executor->load += cnt;
-                executor->load_values += load_value;
-            } break;
-            case QUEUEING: {
-            } break;
-            }
-            if(!executor->sail_out) {
-                next_move = transport(executor->berth_id, target).second;
-            }
-        }
+    static inline std::set<char> SHIP_BLOCK = {
+            MAP_SYMBOLS::SEA,
+            MAP_SYMBOLS::SEA_MULTI,
+            MAP_SYMBOLS::SHIP,
+            MAP_SYMBOLS::SEA_GROUND,
+            MAP_SYMBOLS::SEA_GROUND_MULTI,
+            MAP_SYMBOLS::COMMIT,
     };
-    Mission mission{};
+
+    static std::pair<int, bool> getId(Position center_t, DIRECTION dir_t) {
+        auto ls = getArea(center_t, dir_t);
+        bool ans = false;
+        for(auto pos : ls) {
+            ans |= (maze[pos] == MAP_SYMBOLS::SEA_MULTI || maze[pos] == MAP_SYMBOLS::SEA_GROUND_MULTI);
+            if(!SHIP_BLOCK.count(maze[pos])) {
+                return {-1, false};
+            }
+        }
+        return {(int) center_t + dir_t * N * N, ans};
+    }
+
+    void updateArea() {
+
+    }
 
     Ship() = default;
 
     friend auto &operator>>(std::istream &in, Ship &b) {
-        int id, num, x, y, direction;
-        return in >> id >> num >> x >> y >> direction >> b.status;
+        return in;
     }
 };
+static decltype(Atlas::atlas.maze) & maze = Atlas::atlas.maze;
 
 struct Ships : public std::vector<Ship> {
     using vector::vector;
     static Ships ships;
-    Ships() {
+
+     struct Edge {
+         int from, to;
+         int w;
+     };
+
+    DirectedGraph<Edge> graph;
+
+    Ships() = default;
+
+    void init() {
+         graph.resize(N * N * 4);
+         for(int i = 0; i < N; i++) {
+            for(int j = 0; j < N; j++) {
+                for(auto dir : {UP, DOWN, LEFT, RIGHT}) {
+                    auto [id, at] = Ship::getId({i, j}, dir);
+                    auto dir_t = dir;
+                    //前进
+                    auto last = Ship::getId(Position{i, j} + Move[dir], dir).first;
+                    graph.add_edge({id, last, at ? 2 : 1});
+                    //右转
+                    ++dir_t;
+                    last = Ship::getId(Position{i, j} + Move[dir] + Move[dir], dir_t).first;
+                    graph.add_edge({id, last, 1});
+                    //左传
+                    dir_t = dir;
+                    --dir_t;
+                    last = Ship::getId(Position{i, j} + Move[dir] + Move[dir], dir_t).first;
+                    graph.add_edge({id, last, 1});
+                }
+            }
+         }
     }
 
     auto resolve() {
         return std::async(std::launch::async, [this] {
-            for(auto &ship: *this) {
-                ship.mission.check_emptyload();
-                ship.mission.create(&ship);
-                ship.mission.check_arrival();
-                ship.mission.check_waiting();
-                ship.mission.check_loading();
-                ship.mission.check_queueing();
-                ship.mission.check_overload();
-                ship.mission.check_forceback();
-                ship.mission.forward();
-            }
         });
     }
 };

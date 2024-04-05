@@ -28,13 +28,15 @@ struct Position : public std::pair<u8, u8> {
     auto operator+(const Position &o) {
         return Position{x + o.x, y + o.y};
     }
+    auto operator+=(const Position &o) {
+        return *this = *this + o;
+    }
     [[nodiscard]] inline auto outside() const {
         return x >= N || y >= N;
     }
 #undef x
 #undef y
 };
-
 
 constexpr std::array<Position, 4> Move{
         Position{0u, 1u},
@@ -50,5 +52,38 @@ const std::map<Position, int> COMMAND{
         {Move[2], 2},
         {Move[3], 3},
 };
+
+enum DIRECTION {
+    RIGHT,
+    LEFT,
+    UP,
+    DOWN,
+};
+
+DIRECTION operator++(DIRECTION &dir) {
+    switch(dir) {
+    case RIGHT:
+        return dir = DOWN;
+    case LEFT:
+        return dir = UP;
+    case UP:
+        return dir = RIGHT;
+    case DOWN:
+        return dir = LEFT;
+    }
+}
+
+DIRECTION operator--(DIRECTION &dir) {
+    switch(dir) {
+    case RIGHT:
+        return dir = UP;
+    case LEFT:
+        return dir = DOWN;
+    case UP:
+        return dir = LEFT;
+    case DOWN:
+        return dir = RIGHT;
+    }
+}
 
 #endif//CODECRAFTSDK_POSITION_HPP
