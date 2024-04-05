@@ -7,6 +7,7 @@
 #include <future>
 #include <ostream>
 
+#undef DEBUG_
 #ifdef DEBUG_
 #define DEBUG if(true)
 #define ASSERT(CON) if(!(CON)) { std::cerr << "ASSERTION FAILURE: " << #CON << std::endl;exit(-1);}
@@ -14,6 +15,7 @@ const size_t RANDOM_SEED = 42;
 // const size_t RANDOM_SEED = std::random_device{}();
 #else
 #define DEBUG if(false)
+#define ASSERT
 const size_t RANDOM_SEED = std::random_device{}();
 #endif
 

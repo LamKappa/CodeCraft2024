@@ -40,20 +40,19 @@ struct Berth {
 
     static constexpr int TRANSPORT_TIME = 500;
     static constexpr int MAX_TRANSPORT_TIME = 3000;
-    static Berth virtual_berth;
 
-    struct Tag {
-        int x = 0;
-        bool operator==(const Tag &t) const { return x == t.x; }
-        void operator+=(const Tag &t) { x += t.x; }
-    };
-    struct Info {
-        int x = 0;
-        Info operator+(const Info &o) const { return {x + o.x}; }
-        bool operator<(const Info &o) const { return x < o.x; }
-        void operator+=(const Tag &t) { x += t.x; }
-    };
-    SegTree<Info, Tag, 0, N *(N + 1) / 2> values;
+    // struct Tag {
+    //     int x = 0;
+    //     bool operator==(const Tag &t) const { return x == t.x; }
+    //     void operator+=(const Tag &t) { x += t.x; }
+    // };
+    // struct Info {
+    //     int x = 0;
+    //     Info operator+(const Info &o) const { return {x + o.x}; }
+    //     bool operator<(const Info &o) const { return x < o.x; }
+    //     void operator+=(const Tag &t) { x += t.x; }
+    // };
+    // SegTree<Info, Tag, 0, N *(N + 1) / 2> values;
 
     auto notify(Item &item) {
         if(item.value <= 0) { return; }
@@ -143,33 +142,28 @@ struct Berths : public std::vector<Berth> {
     using vector::vector;
     static Berths berths;
     Berths() {
-        decltype(Berth::values)::node.reserve(N * N / 2);
-    }
-
-    auto &operator[](index_t i) {
-        if(i == no_index) return Berth::virtual_berth;
-        return vector::operator[](i);
+        // decltype(Berth::values)::node.reserve(N * N / 2);
     }
 
     auto init() {
         return std::async(std::launch::async, [this] {
-            for(auto &berth: *this) {
-                Queue<Position, 3 * N> q;
-                auto vised = Atlas::atlas.bitmap;
-                vised.set(berth.pos);
-                q.push(berth.pos);
-                while(!q.empty()) {
-                    auto u = q.pop();
-                    berth.values.apply(Atlas::atlas.distance(berth.pos, u), Berth::Tag{1});
-                    for(auto &move: Move) {
-                        auto v = u + move;
-                        if(v.outside() || vised.test(v)) { continue; }
-                        vised.set(v);
-                        Atlas::atlas.distance(berth.pos, v) = Atlas::atlas.distance(berth.pos, u) + 1;
-                        q.push(v);
-                    }
-                }
-            }
+            // for(auto &berth: *this) {
+            //     Queue<Position, 3 * N> q;
+            //     auto vised = Atlas::atlas.bitmap;
+            //     vised.set(berth.pos);
+            //     q.push(berth.pos);
+            //     while(!q.empty()) {
+            //         auto u = q.pop();
+            //         berth.values.apply(Atlas::atlas.distance(berth.pos, u), Berth::Tag{1});
+            //         for(auto &move: Move) {
+            //             auto v = u + move;
+            //             if(v.outside() || vised.test(v)) { continue; }
+            //             vised.set(v);
+            //             Atlas::atlas.distance(berth.pos, v) = Atlas::atlas.distance(berth.pos, u) + 1;
+            //             q.push(v);
+            //         }
+            //     }
+            // }
         });
     }
 };
