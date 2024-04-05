@@ -39,16 +39,16 @@ void Init() {
             } else {
                 atlas.bitmap.reset(p);
             }
-            switch(atlas.maze[p]){
-            case MAP_SYMBOLS::ROBOT:{
+            switch(atlas.maze[p]) {
+            case MAP_SYMBOLS::ROBOT: {
                 robot_shop.emplace_back(p);
-            }break;
-            case MAP_SYMBOLS::SHIP:{
+            } break;
+            case MAP_SYMBOLS::SHIP: {
                 ship_shop.emplace_back(p);
-            }break;
-            case MAP_SYMBOLS::COMMIT:{
+            } break;
+            case MAP_SYMBOLS::COMMIT: {
                 commit_point.emplace_back(p);
-            }break;
+            } break;
             }
         }
     }
@@ -111,21 +111,6 @@ void Input() {
 }
 
 void Resolve() {
-    // for(auto &berth: berths) {
-    //     if(berth.disabled_pulling) { continue; }
-    //     auto berth_hold = berth.notified + (int) berth.cargo.size();
-    //     auto [time, _] = Ship::transport(berth.id, Berth::virtual_berth.id);
-    //     if(time >= MAX_FRAME -
-    //                        (stamp +
-    //                         (berth_hold) / berth.loading_speed +
-    //                         (berth.occupied ? 0 : Berth::TRANSPORT_TIME)) ||
-    //        MAX_FRAME - stamp - time <=
-    //                (berth.occupied ? (std::min(berth_hold, SHIP_CAPACITY - ((Ship *) berth.occupied)->load) / berth.loading_speed)
-    //                                : (std::min(berth_hold, SHIP_CAPACITY) / berth.loading_speed + time))) {
-    //         berth.disabled_pulling = true;
-    //     }
-    // }
-
     robots.resolve().wait();
 
     ships.resolve().wait();
@@ -154,18 +139,9 @@ void Output() {
             idle_cnt++;
         }
     }
-    // for(int i = 0; i < ships.size(); i++) {
-    //     if(ships[i].mission.mission_state == Ship::Mission::MISSION_STATE::SAILING) {
-    //         if(ships[i].sail_out) { continue; }
-    //         auto next_move = ships[i].mission.next_move;
-    //         if(next_move == no_index) {
-    //             cout << "go " << i << '\n';
-    //         } else {
-    //             cout << "ship " << i << " " << (int) next_move << '\n';
-    //         }
-    //         ships[i].sail_out = true;
-    //     }
-    // }
+    for(int i = 0; i < ships.size(); i++) {
+        cout << ships[i].output << '\n';
+    }
 }
 
 int main(int argc, char *argv[]) {
@@ -181,15 +157,19 @@ int main(int argc, char *argv[]) {
     {
         // after init
         Input();
-        for(auto p : robot_shop){
-            robots.new_robot(p);
-            cout << "lbot " << (int)p.first << " " << (int)p.second << '\n';
-            robots.new_robot(p);
-            cout << "lbot " << (int)p.first << " " << (int)p.second << '\n';
-            robots.new_robot(p);
-            cout << "lbot " << (int)p.first << " " << (int)p.second << '\n';
-            robots.new_robot(p);
-            cout << "lbot " << (int)p.first << " " << (int)p.second << '\n';
+        for(auto p: robot_shop) {
+            for(int i = 0; i < 4; i++) {
+                money -= ROBOT_COST;
+                if(money < 0) { break; }
+                robots.new_robot(p);
+                cout << "lbot " << (int) p.first << " " << (int) p.second << '\n';
+            }
+        }
+        for(auto p: ship_shop) {
+            money -= SHIP_COST;
+            if(money < 0) { break; }
+            ships.new_ship(p);
+            cout << "lboat " << (int) p.first << " " << (int) p.second << '\n';
         }
         cout << "OK" << endl;
     }

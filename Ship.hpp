@@ -24,7 +24,7 @@ struct Ship {
     int id;
     int load_num = 0;
     int status;
-    int target = -1;
+    int target = 0;
     using Area = std::array<Position, 6>;
     Position pos;
     Direction dir;
@@ -190,9 +190,10 @@ struct Ships : public std::vector<Ship> {
                         ship.last_action_num--;
                         break;
                     }
+                    auto [id, dir] = Ship::getId(ship.pos, ship.dir);
                     bool is_commit = ship.target >= berth_dis.size();
                     auto & dis = (is_commit ? commit_dis[ship.target - berth_dis.size()] : berth_dis[ship.target]);
-                    if(dis[ship.pos] == 0) {
+                    if(dis[id] == 0) {
                         if(is_commit) {
                             ship.target = 0;
                         }
@@ -202,7 +203,6 @@ struct Ships : public std::vector<Ship> {
                         }
                     }
                     else {
-                        auto [id, dir] = Ship::getId(ship.pos, ship.dir);
                         int next_idx = 0, next_dis = dis[graph[id][0].to];
                         for(int i = 1; i < graph[id].size(); i++) {
                             auto i_dis = dis[graph[id][i].to];
@@ -228,16 +228,17 @@ struct Ships : public std::vector<Ship> {
                     break;
                 }
                 default:
+                    ship.target = 0;
                     ship.mode = Ship::SAILING;
                 }
             }
         });
     }
 
-    void new_ship(int shop_id) {
+    void new_ship(Position p) {
         Ship ship{
                 .id = (int)size(),
-                .pos = ship_shop[shop_id],
+                .pos = p,
                 .dir = RIGHT
         };
         push_back(ship);
