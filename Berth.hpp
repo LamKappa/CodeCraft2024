@@ -15,7 +15,7 @@
 #include "Item.hpp"
 #include "Position.hpp"
 #include "Queue.hpp"
-#include "SegTree.hpp"
+// #include "SegTree.hpp"
 
 struct Berth {
     index_t id{};

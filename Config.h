@@ -7,7 +7,6 @@
 #include <future>
 #include <ostream>
 
-#undef DEBUG_
 #ifdef DEBUG_
 #define DEBUG if(true)
 #define ASSERT(CON) if(!(CON)) { std::cerr << "ASSERTION FAILURE: " << #CON << std::endl;exit(-1);}
