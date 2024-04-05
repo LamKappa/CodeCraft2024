@@ -150,7 +150,7 @@ struct Ships : public std::vector<Ship> {
     void selectCommit(Ship & ship) {
         int target = 0;
         auto id = Ship::getId(ship.pos, ship.dir).first;
-        for(int i = 1; i < ship_shop.size(); i++) {
+        for(int i = 1; i < commit_point.size(); i++) {
             auto d = commit_dis[i][id];
             if(commit_dis[i][id] < commit_dis[target][id]) {
                 target = i;
@@ -168,7 +168,9 @@ struct Ships : public std::vector<Ship> {
         graph[f].push_back({t, type});
     }
 
-    Ships() = default;
+    Ships() {
+        reserve(20);
+    }
 
     auto init() {
         return std::async(std::launch::async, [this] {

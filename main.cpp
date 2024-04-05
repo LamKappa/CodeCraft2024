@@ -157,19 +157,20 @@ int main(int argc, char *argv[]) {
     {
         // after init
         Input();
-        for(auto p: robot_shop) {
-            for(int i = 0; i < 4; i++) {
+        for(auto p: ship_shop) {
+            if(!ships.empty()) { break; }
+            if(money - SHIP_COST < 0) { break; }
+            money -= SHIP_COST;
+            ships.new_ship(p);
+            cout << "lboat " << (int) p.first << " " << (int) p.second << '\n';
+        }
+        for(int i = 0; i < 8 / robot_shop.size(); i++) {
+            for(auto p: robot_shop) {
+                if(money - ROBOT_COST < 0) { break; }
                 money -= ROBOT_COST;
-                if(money < 0) { break; }
                 robots.new_robot(p);
                 cout << "lbot " << (int) p.first << " " << (int) p.second << '\n';
             }
-        }
-        for(auto p: ship_shop) {
-            money -= SHIP_COST;
-            if(money < 0) { break; }
-            ships.new_ship(p);
-            cout << "lboat " << (int) p.first << " " << (int) p.second << '\n';
         }
         cout << "OK" << endl;
     }
@@ -177,6 +178,14 @@ int main(int argc, char *argv[]) {
         Input();
         Resolve();
         Output();
+        if(robots.size() < 8){
+            for(auto p: robot_shop) {
+                money -= ROBOT_COST;
+                if(money < 0) { break; }
+                robots.new_robot(p);
+                cout << "lbot " << (int) p.first << " " << (int) p.second << '\n';
+            }
+        }
         cout << "OK" << endl;
     }
 
@@ -208,10 +217,10 @@ int main(int argc, char *argv[]) {
         cerr << "profit-recall: " << fixed << setprecision(2)
              << 100.f * (float) (tot_score - cost) / (float) (tot_score - cost + left_value) << "% "
              << "(" << tot_score - cost << " / " << tot_score - cost + left_value << ")\n";
-    }
-
-    for(auto &ft: async_pool) {
-        ft.wait();
+    }else{
+        for(auto &ft: async_pool) {
+            ft.wait();
+        }
     }
 
     return 0;
