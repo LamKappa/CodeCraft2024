@@ -4,6 +4,7 @@
 
 template<typename Edge>
 struct DirectedGraph {
+    using ValueType = decltype(Edge::w);
     int node_size{}, edge_size{}, tarjan_tot{};
     std::vector<std::vector<Edge> > edge;
     std::vector<bool> vis;
@@ -22,10 +23,9 @@ struct DirectedGraph {
         edge[e.from].push_back(e);
     }
 
-    template<typename T = decltype(Edge::w)>
-    std::vector<T> dijkstra(int s) {
-        std::vector<T> dis(node_size + 1, -1);
-        using Pos = std::pair<T, int>;
+    std::vector<ValueType> dijkstra(int s) {
+        std::vector<ValueType> dis(node_size + 1, -1);
+        using Pos = std::pair<ValueType, int>;
         std::priority_queue<Pos, std::vector<Pos>, std::greater<>> q;
         q.emplace(0ll, s);
         while(!q.empty()) {

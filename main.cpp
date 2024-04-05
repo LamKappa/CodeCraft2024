@@ -146,8 +146,8 @@ void Output() {
 
 int main(int argc, char *argv[]) {
     DEBUG if(argc > 1 && string(argv[1]) == "DEBUG") {
-        freopen("../output.txt", "r", stdin);
-        freopen("/dev/null", "w", stdout);
+        auto f1 = freopen("../output.txt", "r", stdin);
+        auto f2 = freopen("/dev/null", "w", stdout);
     }
     start_time = chrono::high_resolution_clock::now();
     ios::sync_with_stdio(false);

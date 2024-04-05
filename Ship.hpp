@@ -42,6 +42,18 @@ struct Ship {
         return ans;
     }
 
+
+    void updateTarget() {
+         target = 0;
+         int val = Berths::berths[target].notified + Berths::berths[target].cargo_value;
+         for(int i = 1; i < Berths::berths.size(); i++) {
+             if(Berths::berths[i].notified + Berths::berths[i].cargo_value > val) {
+                 val = Berths::berths[i].notified + Berths::berths[i].cargo_value;
+                 target = i;
+             }
+         }
+    }
+
     static inline std::set<char> SHIP_BLOCK_SYM{
             MAP_SYMBOLS::SEA,
             MAP_SYMBOLS::SEA_MULTI,
@@ -135,6 +147,19 @@ struct Ships : public std::vector<Ship> {
     std::vector<std::vector<int>> berth_dis;
     std::vector<std::vector<int>> commit_dis;
 
+    void selectCommit(Ship & ship) {
+        int target = 0;
+        auto id = Ship::getId(ship.pos, ship.dir).first;
+        for(int i = 1; i < ship_shop.size(); i++) {
+            auto d = commit_dis[i][id];
+            if(commit_dis[i][id] < commit_dis[target][id]) {
+                target = i;
+            }
+        }
+        target += berth_dis.size();
+        ship.target = target;
+    }
+
     void add_edge(int f, int t, Action::TYPE type) {
         if(f == -1 || t == -1) {
             return;
@@ -203,7 +228,7 @@ struct Ships : public std::vector<Ship> {
                         if(is_commit) {
                             DEBUG tot_score += ship.load_value;
                             ship.load_num = ship.load_value = 0;
-                            ship.target = 0; // todo better strategy
+                            ship.updateTarget();
                         }
                         else {
                             ship.output = "berth " + std::to_string(ship.id);
@@ -225,7 +250,7 @@ struct Ships : public std::vector<Ship> {
                 }
                 case Ship::LOADING: {
                     if(ship.load_num == SHIP_CAPACITY) {
-                        ship.target = berth_dis.size(); // todo better strategy
+                        selectCommit(ship);
                         ship.mode = Ship::SAILING;
                     }
                     else {
@@ -233,14 +258,14 @@ struct Ships : public std::vector<Ship> {
                         ship.load_num += cnt;
                         ship.load_value += value;
                         if(Berths::berths[ship.target].cargo.empty()) {
-                            ship.target++; // todo better strategy
+                            ship.updateTarget();
                             ship.mode = Ship::SAILING;
                         }
                     }
                     break;
                 }
                 default:
-                    ship.target = 0;
+                    ship.updateTarget();
                     ship.mode = Ship::SAILING;
                 }
             }
@@ -253,6 +278,7 @@ struct Ships : public std::vector<Ship> {
                 .pos = p,
                 .dir = RIGHT
         };
+        ship.updateTarget();
         push_back(ship);
     }
 };
