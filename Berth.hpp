@@ -34,7 +34,7 @@ struct Berth {
     Position inside_p1, inside_p2;
     Position around_p1, around_p2;
 
-    Direction dir;
+    Direction dir = Position::npos;
 
     Berth() = default;
 
@@ -130,8 +130,10 @@ struct Berth {
                 if(!(b.pos + next(dir)).outside() && Atlas::atlas.maze[b.pos + next(dir)] == MAP_SYMBOLS::BERTH &&
                    !(b.pos + dir).outside() && Atlas::atlas.maze[b.pos + dir] == MAP_SYMBOLS::BERTH){
                     b.dir = dir;
+                    break;
                 }
             }
+            std::cerr << "berth: " << b.id << " " << b.pos << " " << b.dir << std::endl;
         }
         return in;
     }

@@ -51,13 +51,13 @@ struct Ship {
             MAP_SYMBOLS::SEA_GROUND_MULTI,
             MAP_SYMBOLS::COMMIT,
             MAP_SYMBOLS::BERTH,
+            MAP_SYMBOLS::BERTH_AROUND,
     };
 
     static inline std::set<char> SHIP_MULTI_SYM{
             MAP_SYMBOLS::SEA_MULTI,
             MAP_SYMBOLS::SHIP,
             MAP_SYMBOLS::SEA_GROUND_MULTI,
-            MAP_SYMBOLS::BERTH,
     };
 
     static std::pair<int, bool> getId(Position center_t, Direction dir_t) {
@@ -100,9 +100,11 @@ struct Ships : public std::vector<Ship> {
              FORWARD,
              MULTI_FORWARD,
              TURN_LEFT,
+             MULTI_TURN_LEFT,
              TURN_RIGHT,
+             MULTI_TURN_RIGHT,
              DEPT,
-             ACTION_NUM
+             ACTION_NUM,
          };
          int to;
          TYPE type;
@@ -113,15 +115,17 @@ struct Ships : public std::vector<Ship> {
              case MULTI_FORWARD:
                  return "ship " + std::to_string(id);
              case TURN_LEFT:
+             case MULTI_TURN_LEFT:
                  return "rot " + std::to_string(id) + " 1";
              case TURN_RIGHT:
-                 return "rot " + std::to_string(id) + " 1";
+             case MULTI_TURN_RIGHT:
+                 return "rot " + std::to_string(id) + " 0";
              default:
                  return "";
              }
          }
      };
-     std::array<int, Action::ACTION_NUM> action_cost = {1, 2, 1, 1, -1};
+     std::array<int, Action::ACTION_NUM> action_cost = {1, 2, 1, 2, 1, 2, -1};
 
     DirectedGraph<Edge> rev_graph;
     std::vector<std::vector<Action>> graph;
@@ -153,10 +157,10 @@ struct Ships : public std::vector<Ship> {
                         add_edge(id, last, at ? Action::MULTI_FORWARD : Action::FORWARD);
                         // 右转
                         last = Ship::getId(pos + dir + dir, next(dir)).first;
-                        add_edge(id, last, Action::TURN_RIGHT);
+                        add_edge(id, last, at ? Action::MULTI_TURN_RIGHT : Action::TURN_RIGHT);
                         // 左传
                         last = Ship::getId(pos + dir + next(dir), prev(dir)).first;
-                        add_edge(id, last, Action::TURN_LEFT);
+                        add_edge(id, last, at ? Action::MULTI_TURN_LEFT : Action::TURN_LEFT);
                         // dept传送
                         // berth传送
                     }
@@ -183,10 +187,10 @@ struct Ships : public std::vector<Ship> {
     auto resolve() {
         return std::async(std::launch::async, [this] {
             for(auto & ship : *this) {
+                ship.output = "";
                 switch(ship.mode) {
                 case Ship::SAILING: {
                     if(ship.last_action_num > 0) {
-                        ship.output = "";
                         ship.last_action_num--;
                         break;
                     }
@@ -198,11 +202,12 @@ struct Ships : public std::vector<Ship> {
                             ship.target = 0;
                         }
                         else {
-                            ship.wait_time = 100;
+                            ship.output = "berth " + std::to_string(ship.id);
+                            ship.wait_time = 20;
                             ship.mode = Ship::LOADING;
                         }
                     }
-                    else {
+                    else if(dis[id] != -1){
                         int next_idx = 0, next_dis = dis[graph[id][0].to];
                         for(int i = 1; i < graph[id].size(); i++) {
                             auto i_dis = dis[graph[id][i].to];
@@ -223,6 +228,7 @@ struct Ships : public std::vector<Ship> {
                         ship.mode = Ship::SAILING;
                     }
                     else {
+                        ship.output = "berth " + std::to_string(ship.id);
                         ship.wait_time--;
                     }
                     break;
