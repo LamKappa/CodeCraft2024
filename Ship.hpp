@@ -10,17 +10,16 @@
 #include "Berth.hpp"
 #include "Config.h"
 #include "Dijkstra.hpp"
-// Hello World !!! 
 
 struct Ship {
     static decltype(Atlas::atlas.maze) &maze;
     std::array<Position, 6> area;
     using Area = std::array<Position, 6>;
 
-    static Area getArea(Position center_t, DIRECTION dir_t) {
+    static Area getArea(Position center_t, Direction dir_t) {
         Area ans;
-        auto front = Move[dir_t];
-        auto right = Move[++dir_t];
+        auto front = dir_t;
+        auto right = next(dir_t);
         for(int i = 0; i < 3; i++) {
             ans[i * 2] = center_t;
             ans[i * 2 + 1] = center_t + right;
@@ -38,16 +37,15 @@ struct Ship {
             MAP_SYMBOLS::COMMIT,
     };
 
-    static std::pair<int, bool> getId(Position center_t, DIRECTION dir_t) {
-        auto ls = getArea(center_t, dir_t);
-        bool ans = false;
-        for(auto pos : ls) {
-            ans |= (maze[pos] == MAP_SYMBOLS::SEA_MULTI || maze[pos] == MAP_SYMBOLS::SEA_GROUND_MULTI);
+    static std::pair<int, bool> getId(Position center_t, Direction dir_t) {
+        bool multi = false;
+        for(auto pos : getArea(center_t, dir_t)) {
+            multi |= (maze[pos] == MAP_SYMBOLS::SEA_MULTI || maze[pos] == MAP_SYMBOLS::SEA_GROUND_MULTI);
             if(!SHIP_BLOCK.count(maze[pos])) {
                 return {-1, false};
             }
         }
-        return {(int) center_t + dir_t * N * N, ans};
+        return {(int) center_t + dir_t * N * N, multi};
     }
 
     void updateArea() {
@@ -57,6 +55,8 @@ struct Ship {
     Ship() = default;
 
     friend auto &operator>>(std::istream &in, Ship &b) {
+        int id, good, x, y, dir, sta;
+        in >> id >> good >> x >> y >> dir >> sta;
         return in;
     }
 };
@@ -79,21 +79,19 @@ struct Ships : public std::vector<Ship> {
          graph.resize(N * N * 4);
          for(int i = 0; i < N; i++) {
             for(int j = 0; j < N; j++) {
-                for(auto dir : {UP, DOWN, LEFT, RIGHT}) {
-                    auto [id, at] = Ship::getId({i, j}, dir);
+                Position pos{i, j};
+                for(auto dir : Move) {
+                    auto [id, at] = Ship::getId(pos, dir);
                     auto dir_t = dir;
                     //前进
-                    auto last = Ship::getId(Position{i, j} + Move[dir], dir).first;
-                    graph.add_edge({id, last, at ? 2 : 1});
+                    auto last = Ship::getId(pos + dir, dir).first;
+                    if(last > 0) { graph.add_edge({id, last, at ? 2 : 1}); }
                     //右转
-                    ++dir_t;
-                    last = Ship::getId(Position{i, j} + Move[dir] + Move[dir], dir_t).first;
-                    graph.add_edge({id, last, 1});
+                    last = Ship::getId(pos + Move[dir] + dir, next(dir_t)).first;
+                    if(last > 0) { graph.add_edge({id, last, 1}); }
                     //左传
-                    dir_t = dir;
-                    --dir_t;
-                    last = Ship::getId(Position{i, j} + Move[dir] + Move[dir], dir_t).first;
-                    graph.add_edge({id, last, 1});
+                    last = Ship::getId(pos + Move[dir] + dir, prev(dir_t)).first;
+                    if(last > 0) { graph.add_edge({id, last, 1}); }
                 }
             }
          }
@@ -116,6 +114,9 @@ struct Ships : public std::vector<Ship> {
  * 2. [*已实现] transport, 用于计算从s到t的最优寻路, 此情景下最多中转一次
  * 3. [*已实现] 调度机制, 货物运到的速度<<装载, 所以动态优先调度船去转载货物 (考虑港口间移动)
  * 4. [*已实现] 调度添加边界 (当要结束时, 只考虑目标点位能转载的量)
+ *
+ * version 2:
+ * 1. 设定一个船在N*N*4的超平面上跑Dijkstra
  *
  * BUGS:
  *  1. [*已解决] Ship每次load最多loading_speed个货物, 但是要看berth够不够

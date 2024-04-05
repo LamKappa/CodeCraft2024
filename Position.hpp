@@ -45,6 +45,39 @@ constexpr std::array<Position, 4> Move{
         {1u, 0u},
 };
 
+using Direction = Position;
+
+#define RIGHT ((Direction)Move[0])
+#define LEFT ((Direction)Move[1])
+#define UP ((Direction)Move[2])
+#define DOWN ((Direction)Move[3])
+
+inline Direction next(Direction dir){
+    if(dir == RIGHT){
+        return DOWN;
+    }else if(dir == LEFT){
+        return UP;
+    }else if(dir == UP){
+        return RIGHT;
+    }else if(dir == DOWN){
+        return LEFT;
+    }
+    return Position::npos;
+}
+
+inline Direction prev(Direction dir){
+    if(dir == RIGHT){
+        return UP;
+    }else if(dir == LEFT){
+        return DOWN;
+    }else if(dir == UP){
+        return LEFT;
+    }else if(dir == DOWN){
+        return RIGHT;
+    }
+    return Position::npos;
+}
+
 const std::map<Position, int> COMMAND{
         {Position::npos, -1},
         {Move[0], 0},
@@ -52,38 +85,5 @@ const std::map<Position, int> COMMAND{
         {Move[2], 2},
         {Move[3], 3},
 };
-
-enum DIRECTION {
-    RIGHT,
-    LEFT,
-    UP,
-    DOWN,
-};
-
-DIRECTION operator++(DIRECTION &dir) {
-    switch(dir) {
-    case RIGHT:
-        return dir = DOWN;
-    case LEFT:
-        return dir = UP;
-    case UP:
-        return dir = RIGHT;
-    case DOWN:
-        return dir = LEFT;
-    }
-}
-
-DIRECTION operator--(DIRECTION &dir) {
-    switch(dir) {
-    case RIGHT:
-        return dir = UP;
-    case LEFT:
-        return dir = DOWN;
-    case UP:
-        return dir = LEFT;
-    case DOWN:
-        return dir = RIGHT;
-    }
-}
 
 #endif//CODECRAFTSDK_POSITION_HPP

@@ -153,18 +153,18 @@ void Output() {
             idle_cnt++;
         }
     }
-    for(int i = 0; i < ships.size(); i++) {
-        if(ships[i].mission.mission_state == Ship::Mission::MISSION_STATE::SAILING) {
-            if(ships[i].sail_out) { continue; }
-            auto next_move = ships[i].mission.next_move;
-            if(next_move == no_index) {
-                cout << "go " << i << '\n';
-            } else {
-                cout << "ship " << i << " " << (int) next_move << '\n';
-            }
-            ships[i].sail_out = true;
-        }
-    }
+    // for(int i = 0; i < ships.size(); i++) {
+    //     if(ships[i].mission.mission_state == Ship::Mission::MISSION_STATE::SAILING) {
+    //         if(ships[i].sail_out) { continue; }
+    //         auto next_move = ships[i].mission.next_move;
+    //         if(next_move == no_index) {
+    //             cout << "go " << i << '\n';
+    //         } else {
+    //             cout << "ship " << i << " " << (int) next_move << '\n';
+    //         }
+    //         ships[i].sail_out = true;
+    //     }
+    // }
 }
 
 int main(int argc, char *argv[]) {
@@ -210,10 +210,10 @@ int main(int argc, char *argv[]) {
                 berth.cargo.pop_front();
             }
         }
-        for(auto &ship: ships) {
-            tot_score += ship.load_values;
-            ship.load_values = ship.load = 0;
-        }
+        // for(auto &ship: ships) {
+        //     tot_score += ship.load_values;
+        //     ship.load_values = ship.load = 0;
+        // }
         // cerr << "tot_left_items: " << left_items << '\n';
         // cerr << "tot_left_values: " << left_value << '\n';
         // cerr << "idle occurred: " << idle_cnt << " times\n";
