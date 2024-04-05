@@ -203,7 +203,7 @@ struct Ships : public std::vector<Ship> {
                         if(is_commit) {
                             DEBUG tot_score += ship.load_value;
                             ship.load_num = ship.load_value = 0;
-                            ship.target = 0;
+                            ship.target = 0; // todo better strategy
                         }
                         else {
                             ship.output = "berth " + std::to_string(ship.id);
@@ -225,7 +225,7 @@ struct Ships : public std::vector<Ship> {
                 }
                 case Ship::LOADING: {
                     if(ship.load_num == SHIP_CAPACITY) {
-                        ship.target = berth_dis.size();
+                        ship.target = berth_dis.size(); // todo better strategy
                         ship.mode = Ship::SAILING;
                     }
                     else {
@@ -233,7 +233,7 @@ struct Ships : public std::vector<Ship> {
                         ship.load_num += cnt;
                         ship.load_value += value;
                         if(Berths::berths[ship.target].cargo.empty()) {
-                            ship.target++;
+                            ship.target++; // todo better strategy
                             ship.mode = Ship::SAILING;
                         }
                     }
