@@ -294,7 +294,9 @@ struct Robot {
 struct Robots : public std::vector<Robot> {
     using vector::vector;
     static Robots robots;
-    Robots() = default;
+    Robots() {
+        reserve(20);
+    }
 
     void new_robot(Position p) {
         auto id = static_cast<index_t>(size());
