@@ -20,16 +20,15 @@ struct Ship {
 
     std::array<Position, 6> area;
     ShipMode mode = WAITING;
-    int last_action_num = 0;
     int id;
     int load_num = 0;
+    int load_value = 0;
     int status;
     int target = 0;
     using Area = std::array<Position, 6>;
     Position pos;
     Direction dir;
     std::string output = "";
-    int wait_time = 0;
 
     static Area getArea(Position center_t, Direction dir_t) {
         Area ans;
@@ -79,9 +78,13 @@ struct Ship {
     Ship() = default;
 
     friend auto &operator>>(std::istream &in, Ship &b) {
-        int dir_t = 0;
-        in >> b.id >> b.load_num >> b.pos >> dir_t >> b.status;
+        int dir_t = 0, load_num = 0;
+        in >> b.id >> load_num >> b.pos >> dir_t >> b.status;
         b.dir = Move[dir_t];
+        // std::cerr << "berth: " << b.target << std::endl;
+        // std::cerr << "status: " << b.status << std::endl;
+        // std::cerr << b.load_num << " " << load_num << std::endl;
+        if(load_num != 0) ASSERT(b.load_num == load_num);
         return in;
     }
 };
@@ -188,26 +191,25 @@ struct Ships : public std::vector<Ship> {
         return std::async(std::launch::async, [this] {
             for(auto & ship : *this) {
                 ship.output = "";
+                if(ship.status == 1) {
+                    continue;
+                }
                 switch(ship.mode) {
                 case Ship::SAILING: {
-                    if(ship.last_action_num > 0) {
-                        ship.last_action_num--;
-                        break;
-                    }
                     auto [id, dir] = Ship::getId(ship.pos, ship.dir);
                     bool is_commit = ship.target >= berth_dis.size();
                     auto & dis = (is_commit ? commit_dis[ship.target - berth_dis.size()] : berth_dis[ship.target]);
                     if(dis[id] == 0) {
                         if(is_commit) {
+                            DEBUG tot_score += ship.load_value;
+                            ship.load_num = ship.load_value = 0;
                             ship.target = 0;
                         }
                         else {
                             ship.output = "berth " + std::to_string(ship.id);
-                            ship.wait_time = 20;
                             ship.mode = Ship::LOADING;
                         }
-                    }
-                    else if(dis[id] != -1){
+                    }else if(dis[id] > 0){
                         int next_idx = 0, next_dis = dis[graph[id][0].to];
                         for(int i = 1; i < graph[id].size(); i++) {
                             auto i_dis = dis[graph[id][i].to];
@@ -218,18 +220,22 @@ struct Ships : public std::vector<Ship> {
                         }
                         auto & edge = graph[id][next_idx];
                         ship.output = edge.toString(ship.id);
-                        ship.last_action_num = action_cost[edge.type] - 1;
                     }
                     break;
                 }
                 case Ship::LOADING: {
-                    if(ship.wait_time == 0) {
-                        ship.target++;
+                    if(ship.load_num == SHIP_CAPACITY) {
+                        ship.target = berth_dis.size();
                         ship.mode = Ship::SAILING;
                     }
                     else {
-                        ship.output = "berth " + std::to_string(ship.id);
-                        ship.wait_time--;
+                        auto[cnt, value] = Berths::berths[ship.target].get_load(SHIP_CAPACITY - ship.load_num);
+                        ship.load_num += cnt;
+                        ship.load_value += value;
+                        if(Berths::berths[ship.target].cargo.empty()) {
+                            ship.target++;
+                            ship.mode = Ship::SAILING;
+                        }
                     }
                     break;
                 }

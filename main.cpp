@@ -11,7 +11,7 @@
 using namespace std;
 
 int idle_cnt = 0;
-int tot_score = 0;
+int tot_score = 25000;
 int tot_values = 0;
 
 chrono::high_resolution_clock::time_point start_time;
@@ -97,13 +97,13 @@ void Input() {
         DEBUG tot_values += items.back().value;
     }
     cin >> R;
-    assert(R == robots.size());
+    ASSERT(R == robots.size());
     for(int i = 0; i < robots.size(); i++) {
         cin >> robots[i];
         assert(robots[i].id == i);
     }
     cin >> S;
-    assert(S == ships.size());
+    ASSERT(S == ships.size());
     for(int i = 0; i < ships.size(); i++) {
         cin >> ships[i];
     }

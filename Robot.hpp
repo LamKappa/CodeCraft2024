@@ -39,7 +39,7 @@ struct Robot {
         Mission create(decltype(executor) exec) {
             auto &mission = *this;
             if(mission.mission_state == CARRYING) { return exec->mission; }
-            if(mission.mission_state == SEARCHING) { return exec->mission; }
+            // if(mission.mission_state == SEARCHING) { return exec->mission; }
             for(auto [id, _]: mission.targets) {
                 Items::items.find_by_id(id).occupied = nullptr;
             }

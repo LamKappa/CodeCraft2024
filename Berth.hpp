@@ -82,8 +82,9 @@ struct Berth {
     }
 
     [[nodiscard]] auto inside(Position p) {
-        return inside_p1.first <= p.first && p.first <= inside_p2.first &&
-               inside_p1.second <= p.second && p.second <= inside_p2.second;
+        return p == pos;
+        // return inside_p1.first <= p.first && p.first <= inside_p2.first &&
+        //        inside_p1.second <= p.second && p.second <= inside_p2.second;
     }
 
     [[nodiscard]] auto around(Position p) {
@@ -119,8 +120,8 @@ struct Berth {
                 for(auto move: Move) {
                     auto v = u + move;
                     if(v.outside() || vis.count(v) ||
-                       Atlas::atlas.maze[v] != MAP_SYMBOLS::BERTH ||
-                       Atlas::atlas.maze[v] != MAP_SYMBOLS::BERTH_AROUND) { continue; }
+                       (Atlas::atlas.maze[v] != MAP_SYMBOLS::BERTH &&
+                       Atlas::atlas.maze[v] != MAP_SYMBOLS::BERTH_AROUND)) { continue; }
                     q.emplace(v);
                 }
             }
@@ -133,7 +134,6 @@ struct Berth {
                     break;
                 }
             }
-            std::cerr << "berth: " << b.id << " " << b.pos << " " << b.dir << std::endl;
         }
         return in;
     }
