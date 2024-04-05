@@ -12,7 +12,6 @@
 #include "Dijkstra.hpp"
 
 struct Ship {
-    static decltype(Atlas::atlas.maze) &maze;
     std::array<Position, 6> area;
     using Area = std::array<Position, 6>;
 
@@ -39,13 +38,14 @@ struct Ship {
 
     static std::pair<int, bool> getId(Position center_t, Direction dir_t) {
         bool multi = false;
+        if(center_t.outside()) { return {-1, false}; }
         for(auto pos : getArea(center_t, dir_t)) {
-            multi |= (maze[pos] == MAP_SYMBOLS::SEA_MULTI || maze[pos] == MAP_SYMBOLS::SEA_GROUND_MULTI);
-            if(!SHIP_BLOCK.count(maze[pos])) {
+            if(pos.outside() || !SHIP_BLOCK.count(Atlas::atlas.maze[pos])) {
                 return {-1, false};
             }
+            multi |= (Atlas::atlas.maze[pos] == MAP_SYMBOLS::SEA_MULTI || Atlas::atlas.maze[pos] == MAP_SYMBOLS::SEA_GROUND_MULTI);
         }
-        return {(int) center_t + dir_t * N * N, multi};
+        return {(int) center_t + Id(dir_t) * N * N, multi};
     }
 
     void updateArea() {
@@ -60,7 +60,6 @@ struct Ship {
         return in;
     }
 };
-static decltype(Atlas::atlas.maze) & maze = Atlas::atlas.maze;
 
 struct Ships : public std::vector<Ship> {
     using vector::vector;
@@ -75,26 +74,30 @@ struct Ships : public std::vector<Ship> {
 
     Ships() = default;
 
-    void init() {
-         graph.resize(N * N * 4);
-         for(int i = 0; i < N; i++) {
-            for(int j = 0; j < N; j++) {
-                Position pos{i, j};
-                for(auto dir : Move) {
-                    auto [id, at] = Ship::getId(pos, dir);
-                    auto dir_t = dir;
-                    //前进
-                    auto last = Ship::getId(pos + dir, dir).first;
-                    if(last > 0) { graph.add_edge({id, last, at ? 2 : 1}); }
-                    //右转
-                    last = Ship::getId(pos + Move[dir] + dir, next(dir_t)).first;
-                    if(last > 0) { graph.add_edge({id, last, 1}); }
-                    //左传
-                    last = Ship::getId(pos + Move[dir] + dir, prev(dir_t)).first;
-                    if(last > 0) { graph.add_edge({id, last, 1}); }
+    auto init() {
+        return std::async(std::launch::async, [this] {
+            graph.resize(N * N * 4);
+            for(int i = 0; i < N; i++) {
+                for(int j = 0; j < N; j++) {
+                    Position pos{i, j};
+                    for(auto dir : Move) {
+                        auto [id, at] = Ship::getId(pos, dir);
+                        if(id < 0) { continue; }
+                        // 前进
+                        auto last = Ship::getId(pos + dir, dir).first;
+                        if(last >= 0) { graph.add_edge({id, last, at ? 2 : 1}); }
+                        // 右转
+                        last = Ship::getId(pos + dir + dir, next(dir)).first;
+                        if(last >= 0) { graph.add_edge({id, last, 1}); }
+                        // 左传
+                        last = Ship::getId(pos + dir + next(dir), prev(dir)).first;
+                        if(last >= 0) { graph.add_edge({id, last, 1}); }
+                        // dept传送
+                        // berth传送
+                    }
                 }
             }
-         }
+        });
     }
 
     auto resolve() {

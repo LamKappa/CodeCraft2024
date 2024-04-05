@@ -62,6 +62,7 @@ void Init() {
     cin >> buff;
 
     atlas.build();
+    async_pool.emplace_back(ships.init());
 
     DEBUG {
         for(auto &ft: async_pool) {

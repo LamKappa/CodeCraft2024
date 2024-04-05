@@ -52,6 +52,19 @@ using Direction = Position;
 #define UP ((Direction)Move[2])
 #define DOWN ((Direction)Move[3])
 
+inline int Id(Direction dir){
+    if(dir == RIGHT){
+        return 0;
+    }else if(dir == LEFT){
+        return 1;
+    }else if(dir == UP){
+        return 2;
+    }else if(dir == DOWN){
+        return 3;
+    }
+    return -1;
+}
+
 inline Direction next(Direction dir){
     if(dir == RIGHT){
         return DOWN;
