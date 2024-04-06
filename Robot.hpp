@@ -306,12 +306,7 @@ struct Robots : public std::vector<Robot> {
 
     std::vector<index_t> prior{};
 
-    static inline std::set<char> ROBOT_MULTI_SYM{
-        MAP_SYMBOLS::GROUND_MULTI,
-        MAP_SYMBOLS::ROBOT,
-        MAP_SYMBOLS::SEA_GROUND_MULTI,
-        MAP_SYMBOLS::BERTH,
-    };
+    const static std::set<char> ROBOT_MULTI_SYM;
 
     auto resolve() {
         return std::async(std::launch::async, [this] {

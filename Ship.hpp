@@ -18,14 +18,14 @@ struct Ship {
         LOADING,
     };
 
-    std::array<Position, 6> area;
+    using Area = std::array<Position, 6>;
     ShipMode mode = WAITING;
     int id;
+    Area area;
     int load_num = 0;
     int load_value = 0;
     int status;
     int target = 0;
-    using Area = std::array<Position, 6>;
     Position pos;
     Direction dir;
     std::string output = "";
@@ -54,22 +54,8 @@ struct Ship {
          }
     }
 
-    static inline std::set<char> SHIP_BLOCK_SYM{
-            MAP_SYMBOLS::SEA,
-            MAP_SYMBOLS::SEA_MULTI,
-            MAP_SYMBOLS::SHIP,
-            MAP_SYMBOLS::SEA_GROUND,
-            MAP_SYMBOLS::SEA_GROUND_MULTI,
-            MAP_SYMBOLS::COMMIT,
-            MAP_SYMBOLS::BERTH,
-            MAP_SYMBOLS::BERTH_AROUND,
-    };
-
-    static inline std::set<char> SHIP_MULTI_SYM{
-            MAP_SYMBOLS::SEA_MULTI,
-            MAP_SYMBOLS::SHIP,
-            MAP_SYMBOLS::SEA_GROUND_MULTI,
-    };
+    const static std::set<char> SHIP_BLOCK_SYM;
+    const static std::set<char> SHIP_MULTI_SYM;
 
     static std::pair<int, bool> getId(Position center_t, Direction dir_t) {
         bool multi = false;
@@ -257,6 +243,7 @@ struct Ships : public std::vector<Ship> {
                     }
                     else {
                         auto[cnt, value] = Berths::berths[ship.target].get_load(SHIP_CAPACITY - ship.load_num);
+                        std::cerr << "berth-get: " << cnt << " " << value << std::endl;
                         ship.load_num += cnt;
                         ship.load_value += value;
                         if(Berths::berths[ship.target].cargo.empty()) {

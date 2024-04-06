@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
         Input();
         Resolve();
         Output();
-        if(robots.size() < 8){
+        if(robots.size() < 12){
             for(auto p: robot_shop) {
                 money -= ROBOT_COST;
                 if(money < 0) { break; }
