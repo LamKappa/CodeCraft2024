@@ -28,7 +28,7 @@ struct Ship {
     int target = 0;
     Position pos;
     Direction dir;
-    std::string output = "";
+    char output[20];
 
     static Area getArea(Position center_t, Direction dir_t) {
         Area ans;
@@ -45,17 +45,18 @@ struct Ship {
 
     void updateTarget() {
          target = 0;
-         int val = Berths::berths[target].notified + Berths::berths[target].cargo_value;
+         int val = Berths::berths[target].notified_value + Berths::berths[target].cargo_value;
          for(int i = 1; i < Berths::berths.size(); i++) {
-             if(Berths::berths[i].notified + Berths::berths[i].cargo_value > val) {
-                 val = Berths::berths[i].notified + Berths::berths[i].cargo_value;
+             int val_t = Berths::berths[i].notified_value + Berths::berths[i].cargo_value;
+             if(val_t > val) {
+                 val = val_t;
                  target = i;
              }
          }
     }
 
-    const static std::set<char> SHIP_BLOCK_SYM;
-    const static std::set<char> SHIP_MULTI_SYM;
+    static std::set<char> SHIP_BLOCK_SYM;
+    static std::set<char> SHIP_MULTI_SYM;
 
     static std::pair<int, bool> getId(Position center_t, Direction dir_t) {
         bool multi = false;
@@ -110,19 +111,21 @@ struct Ships : public std::vector<Ship> {
          int to;
          TYPE type;
 
-         std::string toString(int id) const {
+         void toString(Ship &ship) const {
              switch(type) {
-             case FORWARD:
-             case MULTI_FORWARD:
-                 return "ship " + std::to_string(id);
-             case TURN_LEFT:
-             case MULTI_TURN_LEFT:
-                 return "rot " + std::to_string(id) + " 1";
-             case TURN_RIGHT:
-             case MULTI_TURN_RIGHT:
-                 return "rot " + std::to_string(id) + " 0";
-             default:
-                 return "";
+             case Action::FORWARD:
+             case Action::MULTI_FORWARD:
+                 snprintf(ship.output, sizeof(Ship::output), "ship %d", ship.id);
+                 break;
+             case Action::TURN_LEFT:
+             case Action::MULTI_TURN_LEFT:
+                 snprintf(ship.output, sizeof(Ship::output), "rot %d 1", ship.id);
+                 break;
+             case Action::TURN_RIGHT:
+             case Action::MULTI_TURN_RIGHT:
+                 snprintf(ship.output, sizeof(Ship::output), "rot %d 0", ship.id);
+                 break;
+             default:;
              }
          }
      };
@@ -203,7 +206,7 @@ struct Ships : public std::vector<Ship> {
     auto resolve() {
         return std::async(std::launch::async, [this] {
             for(auto & ship : *this) {
-                ship.output = "";
+                ship.output[0] = '\0';
                 if(ship.status == 1) {
                     continue;
                 }
@@ -219,10 +222,10 @@ struct Ships : public std::vector<Ship> {
                             ship.updateTarget();
                         }
                         else {
-                            ship.output = "berth " + std::to_string(ship.id);
+                            snprintf(ship.output, sizeof(Ship::output), "berth %d", ship.id);
                             ship.mode = Ship::LOADING;
                         }
-                    }else if(dis[id] > 0){
+                    }else if(dis[id] > 0 && !graph[id].empty()){
                         int next_idx = 0, next_dis = dis[graph[id][0].to];
                         for(int i = 1; i < graph[id].size(); i++) {
                             auto i_dis = dis[graph[id][i].to];
@@ -232,7 +235,7 @@ struct Ships : public std::vector<Ship> {
                             }
                         }
                         auto & edge = graph[id][next_idx];
-                        ship.output = edge.toString(ship.id);
+                        edge.toString(ship);
                     }
                     break;
                 }
@@ -243,7 +246,6 @@ struct Ships : public std::vector<Ship> {
                     }
                     else {
                         auto[cnt, value] = Berths::berths[ship.target].get_load(SHIP_CAPACITY - ship.load_num);
-                        std::cerr << "berth-get: " << cnt << " " << value << std::endl;
                         ship.load_num += cnt;
                         ship.load_value += value;
                         if(Berths::berths[ship.target].cargo.empty()) {
@@ -289,7 +291,9 @@ struct Ships : public std::vector<Ship> {
  * 4. [*已实现] 调度添加边界 (当要结束时, 只考虑目标点位能转载的量)
  *
  * version 2:
- * 1. 设定一个船在N*N*4的超平面上跑Dijkstra
+ * 1. [*已实现] 设定一个船在N*N*4的超平面上跑Dijkstra
+ * 2. 基于version1写一个决策分配模型
+ * 3. 解决多船决策和避障
  *
  * BUGS:
  *  1. [*已解决] Ship每次load最多loading_speed个货物, 但是要看berth够不够
