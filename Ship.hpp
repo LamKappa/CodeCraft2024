@@ -123,8 +123,8 @@ struct Ships : public std::vector<Ship> {
     std::vector<std::vector<int>> berth_dis;
     std::vector<std::vector<int>> commit_dis;
 
-    void updateTarget(Ship & ship) {
-        if(ship.target < Berths::berths.size()) {
+    float updateTarget(Ship & ship) {
+        if(ship.target < berth_dis.size()) {
             Berths::berths[ship.target].occupied = nullptr;
         }
         int target = 0;
@@ -145,9 +145,10 @@ struct Ships : public std::vector<Ship> {
         }
         ship.target = target;
         Berths::berths[target].occupied = &ship;
+        return val;
     }
-    void selectCommit(Ship & ship) {
-        if(ship.target < Berths::berths.size()) {
+    int selectCommit(Ship & ship) {
+        if(ship.target < berth_dis.size()) {
             Berths::berths[ship.target].occupied = nullptr;
         }
         int target = 0;
@@ -160,6 +161,7 @@ struct Ships : public std::vector<Ship> {
         }
         target += berth_dis.size();
         ship.target = target;
+        return commit_dis[target - berth_dis.size()][id];
     }
 
     void add_edge(int f, int t, Action::TYPE type) {
@@ -216,6 +218,18 @@ struct Ships : public std::vector<Ship> {
         });
     }
 
+    void check_force_back(Ship &ship){
+        int target = ship.target;
+        if(target < berth_dis.size()){
+            int dis = selectCommit(ship);
+            if(dis < MAX_FRAME - stamp - 5){
+                ship.target = target;
+            }else{
+                ship.mode = Ship::SAILING;
+            }
+        }
+    }
+
     auto resolve() {
         return std::async(std::launch::async, [this] {
             for(auto & ship : *this) {
@@ -223,6 +237,7 @@ struct Ships : public std::vector<Ship> {
                 if(ship.status == 1) {
                     continue;
                 }
+                check_force_back(ship);
                 switch(ship.mode) {
                 case Ship::SAILING: {
                     auto [id, dir] = Ship::getId(ship.pos, ship.dir);

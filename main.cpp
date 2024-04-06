@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
         Output();
         if(j == robot_shop.size()) j = 0;
         for(; j < robot_shop.size(); j++) {
-            if(robots.size() > 15) { break; }
+            if(robots.size() > 12) { break; }
             if(money - ROBOT_COST < 0) { break; }
             money -= ROBOT_COST;
             robots.new_robot(robot_shop[j]);
