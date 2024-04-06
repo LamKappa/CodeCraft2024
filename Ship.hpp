@@ -262,11 +262,15 @@ struct Ships : public std::vector<Ship> {
     }
 
     void new_ship(Position p) {
-        Ship ship{
-                .id = (int)size(),
-                .pos = p,
-                .dir = RIGHT
-        };
+        // Ship ship{
+        //         .id = (int)size(),
+        //         .pos = p,
+        //         .dir = RIGHT
+        // };
+        Ship ship;
+        ship.id = (int) size();
+        ship.pos = p;
+        ship.dir = RIGHT;
         ship.updateTarget();
         push_back(ship);
     }
