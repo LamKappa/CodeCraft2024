@@ -39,7 +39,7 @@ struct Robot {
         Mission create(decltype(executor) exec) {
             auto &mission = *this;
             if(mission.mission_state == CARRYING) { return exec->mission; }
-            // if(mission.mission_state == SEARCHING) { return exec->mission; }
+            if(mission.mission_state == SEARCHING) { return exec->mission; }
             for(auto [id, _]: mission.targets) {
                 Items::items.find_by_id(id).occupied = nullptr;
             }
@@ -167,8 +167,8 @@ struct Robot {
                 Items::items.find_by_id(id).occupied = nullptr;
             }
             auto distance = [](auto p1, auto p2) -> int { return Atlas::atlas.distance(p1, p2); };
-            std::array<std::array<float, 3 * Item::OVERDUE>, BERTH_NUM> dp{};
-            std::array<std::unordered_map<int, decltype(mission.targets)>, BERTH_NUM> item_list;
+            std::vector<std::array<float, 3 * Item::OVERDUE>> dp(Berths::berths.size());
+            std::vector<std::unordered_map<int, decltype(mission.targets)>> item_list(Berths::berths.size());
             for(auto &item: Items::items) {
                 if(item.occupied) { continue; }
                 auto live_time = item.live_time();

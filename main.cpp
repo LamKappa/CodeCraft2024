@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
         int cost = robots.size() * ROBOT_COST + ships.size() * SHIP_COST;
         int left_items = 0, left_value = 0;
         for(auto &berth: berths) {
-            // cerr << "left_items: " << berth.cargo.size() << '\n';
+            cerr << "left_items: " << berth.cargo.size() << '\n';
             left_items += (int) berth.cargo.size();
             while(!berth.cargo.empty()) {
                 left_value += berth.cargo.front().value;

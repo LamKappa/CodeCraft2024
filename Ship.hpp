@@ -124,6 +124,9 @@ struct Ships : public std::vector<Ship> {
     std::vector<std::vector<int>> commit_dis;
 
     void updateTarget(Ship & ship) {
+        if(ship.target < Berths::berths.size()) {
+            Berths::berths[ship.target].occupied = nullptr;
+        }
         int target = 0;
         auto calc = [&](int berth_id){
             auto &berth = Berths::berths[berth_id];
@@ -132,6 +135,8 @@ struct Ships : public std::vector<Ship> {
         };
         float val = 0.f;
         for(int i = 0; i < Berths::berths.size(); i++) {
+            auto &berth = Berths::berths[i];
+            if(berth.occupied) { continue; }
             float val_t = calc(i);
             if(val_t > val) {
                 val = val_t;
@@ -139,8 +144,12 @@ struct Ships : public std::vector<Ship> {
             }
         }
         ship.target = target;
+        Berths::berths[target].occupied = &ship;
     }
     void selectCommit(Ship & ship) {
+        if(ship.target < Berths::berths.size()) {
+            Berths::berths[ship.target].occupied = nullptr;
+        }
         int target = 0;
         auto id = Ship::getId(ship.pos, ship.dir).first;
         for(int i = 1; i < commit_point.size(); i++) {
@@ -230,8 +239,11 @@ struct Ships : public std::vector<Ship> {
                             ship.mode = Ship::LOADING;
                         }
                     }else if(dis[id] > 0 && !graph[id].empty()){
-                        int next_idx = 0, next_dis = dis[graph[id][0].to];
-                        for(int i = 1; i < graph[id].size(); i++) {
+                        int next_idx = 0, next_dis = -1;
+                        std::vector<int> sf(graph[id].size());
+                        std::iota(sf.begin(), sf.end(), 0);
+                        std::shuffle(sf.begin(), sf.end(), eng);
+                        for(auto i : sf) {
                             auto i_dis = dis[graph[id][i].to];
                             if(next_dis == -1 || (i_dis != -1 && i_dis < next_dis)) {
                                 next_dis = i_dis;
