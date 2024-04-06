@@ -42,19 +42,6 @@ struct Ship {
         return ans;
     }
 
-
-    void updateTarget() {
-         target = 0;
-         int val = Berths::berths[target].notified_value + Berths::berths[target].cargo_value;
-         for(int i = 1; i < Berths::berths.size(); i++) {
-             int val_t = Berths::berths[i].notified_value + Berths::berths[i].cargo_value;
-             if(val_t > val) {
-                 val = val_t;
-                 target = i;
-             }
-         }
-    }
-
     static std::set<char> SHIP_BLOCK_SYM;
     static std::set<char> SHIP_MULTI_SYM;
 
@@ -136,6 +123,23 @@ struct Ships : public std::vector<Ship> {
     std::vector<std::vector<int>> berth_dis;
     std::vector<std::vector<int>> commit_dis;
 
+    void updateTarget(Ship & ship) {
+        int target = 0;
+        auto calc = [&](int berth_id){
+            auto &berth = Berths::berths[berth_id];
+            return (float) (berth.notified_value + berth.cargo_value) /
+                   (float) (berth_dis[berth_id][Ship::getId(ship.pos, ship.dir).first] + 0.01f);
+        };
+        float val = 0.f;
+        for(int i = 0; i < Berths::berths.size(); i++) {
+            float val_t = calc(i);
+            if(val_t > val) {
+                val = val_t;
+                target = i;
+            }
+        }
+        ship.target = target;
+    }
     void selectCommit(Ship & ship) {
         int target = 0;
         auto id = Ship::getId(ship.pos, ship.dir).first;
@@ -219,7 +223,7 @@ struct Ships : public std::vector<Ship> {
                         if(is_commit) {
                             DEBUG tot_score += ship.load_value;
                             ship.load_num = ship.load_value = 0;
-                            ship.updateTarget();
+                            updateTarget(ship);
                         }
                         else {
                             snprintf(ship.output, sizeof(Ship::output), "berth %d", ship.id);
@@ -249,14 +253,14 @@ struct Ships : public std::vector<Ship> {
                         ship.load_num += cnt;
                         ship.load_value += value;
                         if(Berths::berths[ship.target].cargo.empty()) {
-                            ship.updateTarget();
+                            updateTarget(ship);
                             ship.mode = Ship::SAILING;
                         }
                     }
                     break;
                 }
                 default:
-                    ship.updateTarget();
+                    updateTarget(ship);
                     ship.mode = Ship::SAILING;
                 }
             }
@@ -273,7 +277,7 @@ struct Ships : public std::vector<Ship> {
         ship.id = (int) size();
         ship.pos = p;
         ship.dir = RIGHT;
-        ship.updateTarget();
+        updateTarget(ship);
         push_back(ship);
     }
 };

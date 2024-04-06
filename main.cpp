@@ -154,6 +154,7 @@ int main(int argc, char *argv[]) {
     cin.tie(nullptr);
 
     Init();
+    int robot_avg_alloc = 8 / robot_shop.size();
     {
         // after init
         Input();
@@ -164,27 +165,27 @@ int main(int argc, char *argv[]) {
             ships.new_ship(p);
             cout << "lboat " << (int) p.first << " " << (int) p.second << '\n';
         }
-        for(int i = 0; i < 8 / robot_shop.size(); i++) {
-            for(auto p: robot_shop) {
+        for(int i = 0; i < robot_avg_alloc; i++) {
+            for(int j = 0; j < robot_shop.size(); j++) {
                 if(money - ROBOT_COST < 0) { break; }
                 money -= ROBOT_COST;
-                robots.new_robot(p);
-                cout << "lbot " << (int) p.first << " " << (int) p.second << '\n';
+                robots.new_robot(robot_shop[j]);
+                cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << '\n';
             }
         }
         cout << "OK" << endl;
     }
-    for(int _ = 2; _ <= MAX_FRAME; _++) {
+    for(int _ = 2, j = 0; _ <= MAX_FRAME; _++) {
         Input();
         Resolve();
         Output();
-        if(robots.size() < 12){
-            for(auto p: robot_shop) {
-                money -= ROBOT_COST;
-                if(money < 0) { break; }
-                robots.new_robot(p);
-                cout << "lbot " << (int) p.first << " " << (int) p.second << '\n';
-            }
+        if(j == robot_shop.size()) j = 0;
+        for(; j < robot_shop.size(); j++) {
+            if(robots.size() > 15) { break; }
+            if(money - ROBOT_COST < 0) { break; }
+            money -= ROBOT_COST;
+            robots.new_robot(robot_shop[j]);
+            cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << '\n';
         }
         cout << "OK" << endl;
     }
@@ -217,7 +218,8 @@ int main(int argc, char *argv[]) {
         cerr << "profit-recall: " << fixed << setprecision(2)
              << 100.f * (float) (tot_score - cost) / (float) (tot_score - cost + left_value) << "% "
              << "(" << tot_score - cost << " / " << tot_score - cost + left_value << ")\n";
-    }else{
+    }
+    else {
         for(auto &ft: async_pool) {
             ft.wait();
         }
