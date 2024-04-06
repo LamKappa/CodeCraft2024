@@ -2,6 +2,9 @@
 #ifndef CODECRAFTSDK_DIJKSTRA_HPP
 #define CODECRAFTSDK_DIJKSTRA_HPP
 
+#include <vector>
+#include <queue>
+
 template<typename Edge>
 struct DirectedGraph {
     using ValueType = decltype(Edge::w);

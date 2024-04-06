@@ -1,4 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
+
+#SET(CMAKE_C_COMPILER /usr/bin/clang)
+#SET(CMAKE_CXX_COMPILER /usr/bin/clang++)
+
 project(CodeCraftSDK)
 
 set(CMAKE_CXX_STANDARD 17)
