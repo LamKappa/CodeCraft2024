@@ -304,7 +304,12 @@ struct Ships : public std::vector<Ship> {
                         ship.load_num += cnt;
                         ship.load_value += value;
                         if(Berths::berths[ship.target].cargo.empty()) {
-                            updateTarget(ship);
+                            auto val1 = updateTarget(ship);
+                            int target_t = ship.target;
+                            auto val2 = selectCommit(ship);
+                            if(val1 > (float) ship.load_value / (float) val2){
+                                ship.target = target_t;
+                            }
                             ship.mode = Ship::SAILING;
                         }
                     }

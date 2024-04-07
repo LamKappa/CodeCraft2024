@@ -196,12 +196,18 @@ int main(int argc, char *argv[]) {
         Input();
         Resolve();
         Output();
-        while(robots.size() < MAX_ROBOT && money >= ROBOT_COST){
-            if(j == robot_shop.size()) j = 0;
-            money -= ROBOT_COST;
-            robots.new_robot(robot_shop[j]);
-            cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << '\n';
-            j++;
+        if(robots.size() < MAX_ROBOT && money >= ROBOT_COST){
+            int cargo_hold = 0;
+            for(auto &berth: berths){
+                cargo_hold += berth.notified + berth.cargo.size();
+            }
+            while(robots.size() < MAX_ROBOT && money >= ROBOT_COST && cargo_hold < 60 * (MAX_ROBOT - robots.size()) / MAX_ROBOT){
+                if(j == robot_shop.size()) j = 0;
+                money -= ROBOT_COST;
+                robots.new_robot(robot_shop[j]);
+                cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << '\n';
+                j++;
+            }
         }
         cout << "OK" << endl;
     }
