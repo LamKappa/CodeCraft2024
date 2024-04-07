@@ -38,8 +38,8 @@ struct Berth {
 
     Berth() = default;
 
-    static constexpr int TRANSPORT_TIME = 500;
-    static constexpr int MAX_TRANSPORT_TIME = 3000;
+    // static constexpr int TRANSPORT_TIME = 500;
+    // static constexpr int MAX_TRANSPORT_TIME = 3000;
 
     // struct Tag {
     //     int x = 0;

@@ -184,16 +184,16 @@ struct Ships : public std::vector<Ship> {
                 for(int j = 0; j < N; j++) {
                     Position pos{i, j};
                     for(auto dir : Move) {
-                        auto [id, at] = Ship::getId(pos, dir);
+                        auto id = Ship::getId(pos, dir).first;
                         if(id < 0) { continue; }
                         // 前进
-                        auto last = Ship::getId(pos + dir, dir).first;
+                        auto [last, at] = Ship::getId(pos + dir, dir);
                         add_edge(id, last, at ? Action::MULTI_FORWARD : Action::FORWARD);
                         // 右转
-                        last = Ship::getId(pos + dir + dir, next(dir)).first;
+                        std::tie(last, at) = Ship::getId(pos + dir + dir, next(dir));
                         add_edge(id, last, at ? Action::MULTI_TURN_RIGHT : Action::TURN_RIGHT);
                         // 左传
-                        last = Ship::getId(pos + dir + next(dir), prev(dir)).first;
+                        std::tie(last, at) = Ship::getId(pos + dir + next(dir), prev(dir));
                         add_edge(id, last, at ? Action::MULTI_TURN_LEFT : Action::TURN_LEFT);
                         // dept传送
                         // berth传送

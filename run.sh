@@ -3,10 +3,10 @@
 seed=$RANDOM
 
 choice=2
-#seed=5898399
+seed=5898399
 #seed=19550
 #seed=29367
-seed=10
+#seed=10
 
 echo "start seed:"$seed
 

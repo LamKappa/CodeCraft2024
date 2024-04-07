@@ -154,6 +154,7 @@ int main(int argc, char *argv[]) {
     cin.tie(nullptr);
 
     Init();
+    int max_robot = 10;
     int robot_avg_alloc = 8 / robot_shop.size();
     {
         // after init
@@ -181,7 +182,7 @@ int main(int argc, char *argv[]) {
         Output();
         if(j == robot_shop.size()) j = 0;
         for(; j < robot_shop.size(); j++) {
-            if(robots.size() > 12) { break; }
+            if(robots.size() > max_robot) { break; }
             if(money - ROBOT_COST < 0) { break; }
             money -= ROBOT_COST;
             robots.new_robot(robot_shop[j]);

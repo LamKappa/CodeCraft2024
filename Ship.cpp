@@ -15,6 +15,7 @@ std::set<char> Ship::SHIP_MULTI_SYM{
         MAP_SYMBOLS::SEA_MULTI,
         MAP_SYMBOLS::SHIP,
         MAP_SYMBOLS::SEA_GROUND_MULTI,
+        MAP_SYMBOLS::COMMIT,
         MAP_SYMBOLS::BERTH,
         MAP_SYMBOLS::BERTH_AROUND,
 };
