@@ -31,8 +31,8 @@ struct Berth {
     std::deque<Item> cargo;
     int cargo_value = 0;
 
-    Position inside_p1, inside_p2;
-    Position around_p1, around_p2;
+    Position inside_p1{N, N}, inside_p2;
+    Position around_p1{N, N}, around_p2;
 
     Direction dir = Position::npos;
 
@@ -81,9 +81,8 @@ struct Berth {
     }
 
     [[nodiscard]] auto inside(Position p) {
-        return p == pos;
-        // return inside_p1.first <= p.first && p.first <= inside_p2.first &&
-        //        inside_p1.second <= p.second && p.second <= inside_p2.second;
+        return inside_p1.first <= p.first && p.first <= inside_p2.first &&
+               inside_p1.second <= p.second && p.second <= inside_p2.second;
     }
 
     [[nodiscard]] auto around(Position p) {

@@ -93,6 +93,7 @@ struct Ships : public std::vector<Ship> {
              TURN_RIGHT,
              MULTI_TURN_RIGHT,
              DEPT,
+             BERTH,
              ACTION_NUM,
          };
          int to;
@@ -112,11 +113,17 @@ struct Ships : public std::vector<Ship> {
              case Action::MULTI_TURN_RIGHT:
                  snprintf(ship.output, sizeof(Ship::output), "rot %d 0", ship.id);
                  break;
+             case Action::DEPT:
+                 snprintf(ship.output, sizeof(Ship::output), "dept %d", ship.id);
+                 break;
+             case Action::BERTH:
+                 snprintf(ship.output, sizeof(Ship::output), "berth %d", ship.id);
+                 break;
              default:;
              }
          }
      };
-     std::array<int, Action::ACTION_NUM> action_cost = {1, 2, 1, 2, 1, 2, -1};
+     std::array<int, Action::ACTION_NUM> action_cost = {1, 2, 1, 2, 1, 2, -1, -1};
 
     DirectedGraph<Edge> rev_graph;
     std::vector<std::vector<Action>> graph;
@@ -156,7 +163,7 @@ struct Ships : public std::vector<Ship> {
         int target = 0;
         auto id = Ship::getId(ship.pos, ship.dir).first;
         for(int i = 1; i < commit_point.size(); i++) {
-            auto d = commit_dis[i][id];
+            // auto d = commit_dis[i][id];
             if(commit_dis[i][id] < commit_dis[target][id]) {
                 target = i;
             }
@@ -170,7 +177,13 @@ struct Ships : public std::vector<Ship> {
         if(f == -1 || t == -1) {
             return;
         }
-        rev_graph.add_edge({t, f, action_cost[type]});
+        int cost = action_cost[type];
+        if(cost == -1){
+            auto[p1, _1] = Ship::unpack(f);
+            auto[p2, _2] = Ship::unpack(t);
+            cost = 2 * (std::abs(p1.first - p2.first) + std::abs(p1.second - p2.second));
+        }
+        rev_graph.add_edge({t, f, cost});
         graph[f].push_back({t, type});
     }
 
@@ -199,6 +212,12 @@ struct Ships : public std::vector<Ship> {
                         add_edge(id, last, at ? Action::MULTI_TURN_LEFT : Action::TURN_LEFT);
                         // dept传送
                         // berth传送
+                        for(auto &berth : Berths::berths){
+                            if(berth.around(pos)){
+                                std::tie(last, at) = Ship::getId(berth.pos, berth.dir);
+                                add_edge(id, last, Action::BERTH);
+                            }
+                        }
                     }
                 }
             }

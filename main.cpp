@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
     cin.tie(nullptr);
 
     Init();
-    int max_robot = 10;
+    int max_robot = 12;
     int robot_avg_alloc = 8 / robot_shop.size();
     {
         // after init
