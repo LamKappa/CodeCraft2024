@@ -36,7 +36,7 @@ constexpr int MAX_FRAME = 15000;
 constexpr int ROBOT_COST = 2000;
 constexpr int SHIP_COST = 8000;
 
-constexpr int MAX_ROBOT = 30;
+constexpr int MAX_ROBOT = 40;
 
 extern int stamp, money;
 extern std::mt19937 eng;
