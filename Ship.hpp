@@ -130,8 +130,10 @@ struct Ships : public std::vector<Ship> {
         int target = 0;
         auto calc = [&](int berth_id){
             auto &berth = Berths::berths[berth_id];
+            auto berth_hold = berth.notified + berth.cargo.size();
             return (float) (berth.notified_value + berth.cargo_value) /
-                   (float) (berth_dis[berth_id][Ship::getId(ship.pos, ship.dir).first] + 0.01f);
+                   ((float) berth_dis[berth_id][Ship::getId(ship.pos, ship.dir).first] +
+                            (float) berth_hold / (float) berth.loading_speed);
         };
         float val = 0.f;
         for(int i = 0; i < Berths::berths.size(); i++) {
@@ -240,6 +242,9 @@ struct Ships : public std::vector<Ship> {
                 check_force_back(ship);
                 switch(ship.mode) {
                 case Ship::SAILING: {
+                    // if(ship.target < berth_dis.size()){
+                    //     updateTarget(ship);
+                    // }
                     auto [id, dir] = Ship::getId(ship.pos, ship.dir);
                     bool is_commit = ship.target >= berth_dis.size();
                     auto & dis = (is_commit ? commit_dis[ship.target - berth_dis.size()] : berth_dis[ship.target]);

@@ -111,6 +111,23 @@ void Input() {
 }
 
 void Resolve() {
+    for(auto &berth : berths){
+        if(berth.disabled_pulling) { continue; }
+        Ship vship;
+        vship.pos = berth.pos;
+        vship.dir = berth.dir;
+        auto berth_hold = berth.notified + berth.cargo.size();
+        auto dis_come = (int) Atlas::INF_DIS;
+        auto dis_back = ships.selectCommit(vship);
+        for(auto &ship : ships){
+            auto dis_t = ships.berth_dis[berth.id][Ship::getId(ship.pos, ship.dir).first];
+            dis_come = min(dis_come, dis_t);
+        }
+        if(MAX_FRAME - stamp <= dis_come + dis_back + berth_hold / berth.loading_speed){
+            berth.disabled_pulling = true;
+        }
+    }
+
     robots.resolve().wait();
 
     ships.resolve().wait();
