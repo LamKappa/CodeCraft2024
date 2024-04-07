@@ -295,7 +295,7 @@ struct Robots : public std::vector<Robot> {
     using vector::vector;
     static Robots robots;
     Robots() {
-        reserve(20);
+        reserve(MAX_ROBOT);
     }
 
     void new_robot(Position p) {

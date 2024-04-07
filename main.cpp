@@ -171,7 +171,6 @@ int main(int argc, char *argv[]) {
     cin.tie(nullptr);
 
     Init();
-    int max_robot = 12;
     int robot_avg_alloc = 8 / robot_shop.size();
     {
         // after init
@@ -197,13 +196,17 @@ int main(int argc, char *argv[]) {
         Input();
         Resolve();
         Output();
-        if(j == robot_shop.size()) j = 0;
-        for(; j < robot_shop.size(); j++) {
-            if(robots.size() > max_robot) { break; }
-            if(money - ROBOT_COST < 0) { break; }
-            money -= ROBOT_COST;
-            robots.new_robot(robot_shop[j]);
-            cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << '\n';
+        if(robots.size() < MAX_ROBOT && money >= ROBOT_COST){
+            if(j == robot_shop.size()) j = 0;
+            int cargo_hold = 0;
+            for(auto &berth: berths){
+                cargo_hold += berth.notified + berth.cargo.size();
+            }
+            if(cargo_hold < 130 * (MAX_ROBOT - robots.size()) / MAX_ROBOT){
+                robots.new_robot(robot_shop[j]);
+                cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << '\n';
+                j++;
+            }
         }
         cout << "OK" << endl;
     }
