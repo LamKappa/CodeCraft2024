@@ -235,15 +235,13 @@ int main(int argc, char *argv[]) {
         // cerr << "tot_left_items: " << left_items << '\n';
         // cerr << "tot_left_values: " << left_value << '\n';
         // cerr << "idle occurred: " << idle_cnt << " times\n";
+        cerr << "ship-capacity: " << SHIP_CAPACITY << '\n';
         cerr << "robots: " << robots.size() << " ships: " << ships.size() << '\n';
         cerr << "tot_item_values: " << tot_values << '\n';
-        cerr << "score: " << tot_score + BASE_SCORE << '\n';
-        cerr << "recall: " << fixed << setprecision(2)
-             << 100.f * (float) (tot_score) / (float) (tot_score + left_value + sailing_value - BASE_SCORE) << "% "
+        cerr << "score: " << tot_score + BASE_SCORE - cost << " (" << tot_score + BASE_SCORE << " - " << cost << ")" << '\n';
+        cerr << "ship/robot: " << fixed << setprecision(2)
+             << 100.f * (float) (tot_score) / (float) (tot_score + left_value + sailing_value) << "% "
              << "(" << tot_score << " / " << tot_score + left_value + sailing_value << ")\n";
-        cerr << "profit-recall: " << fixed << setprecision(2)
-             << 100.f * (float) (tot_score - cost) / (float) (tot_score + left_value + sailing_value - cost) << "% "
-             << "(" << tot_score - cost << " / " << tot_score + left_value + sailing_value - cost << ")\n";
     }
     else {
         for(auto &ft: async_pool) {
