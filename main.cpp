@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
         int cost = robots.size() * ROBOT_COST + ships.size() * SHIP_COST;
         int left_items = 0, left_value = 0;
         for(auto &berth: berths) {
-            cerr << "left_items: " << berth.cargo.size() << '\n';
+            // cerr << "left_items: " << berth.cargo.size() << '\n';
             left_items += (int) berth.cargo.size();
             while(!berth.cargo.empty()) {
                 left_value += berth.cargo.front().value;
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
         // cerr << "tot_left_items: " << left_items << '\n';
         // cerr << "tot_left_values: " << left_value << '\n';
         // cerr << "idle occurred: " << idle_cnt << " times\n";
-        cerr << "ship-capacity: " << SHIP_CAPACITY << '\n';
+        cerr << "ship-value: " << sailing_value << " (capacity: " << SHIP_CAPACITY << ")" << '\n';
         cerr << "robots: " << robots.size() << " ships: " << ships.size() << '\n';
         cerr << "tot_item_values: " << tot_values << '\n';
         cerr << "score: " << tot_score + BASE_SCORE - cost << " (" << tot_score + BASE_SCORE << " - " << cost << ")" << '\n';
