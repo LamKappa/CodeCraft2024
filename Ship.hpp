@@ -42,6 +42,10 @@ struct Ship {
         return ans;
     }
 
+    void updateArea() {
+        area = getArea(pos, dir);
+    }
+
     static std::set<char> SHIP_BLOCK_SYM;
     static std::set<char> SHIP_MULTI_SYM;
 
@@ -96,8 +100,10 @@ struct Ships : public std::vector<Ship> {
             BERTH,
             ACTION_NUM,
         };
+        int form;
         int to;
         TYPE type;
+        int w;
 
         void toString(Ship &ship) const {
             switch(type) {
@@ -126,37 +132,52 @@ struct Ships : public std::vector<Ship> {
     std::array<int, Action::ACTION_NUM> action_cost = {1, 2, 1, 2, 1, 2, -1, -1};
 
     DirectedGraph<Edge> rev_graph;
-    std::vector<std::vector<Action>> graph;
+    DirectedGraph<Action> graph;
     std::vector<std::vector<int>> berth_dis;
     std::vector<std::vector<int>> commit_dis;
+    uint32_t tick;
+    std::vector<int> occupy_table;
+    std::vector<bool> multi_table;
 
-    float updateTarget(Ship &ship) {
+    bool multi(Position pos) {
+        return multi_table[pos];
+    }
+
+    std::vector<int> getAbstractPos(Position pos, Direction dir = {0, 0}) {
+        if(dir != 0) {
+            return {Ship::getId(pos, dir).first};
+        }
+        else {
+            std::vector<int> ans;
+            ans.reserve(Move.size());
+            for(auto dir_t : Move) {
+                ans.push_back((int)pos + Id(dir_t) * N * N);
+            }
+            return ans;
+        }
+    }
+
+    bool updateTarget(Ship &ship) {
         if(ship.target < berth_dis.size()) {
             Berths::berths[ship.target].occupied = nullptr;
         }
         int target = 0;
+        auto id = Ship::getId(ship.pos, ship.dir).first;
+        auto dis = rev_graph.dijkstra_plus_({id}, get_occupy_fun(ship.id));
         auto calc = [&](int berth_id) {
-            auto &berth = Berths::berths[berth_id];
-            Ship vship = ship;
-            auto distance = berth_dis[berth_id][Ship::getId(ship.pos, ship.dir).first];
-            auto back_time = ships.selectCommit(vship);
-            auto berth_hold = berth.notified + berth.cargo.size();
-            auto load_time = std::min<float>((float) (MAX_FRAME - stamp - distance - back_time),
-                                             (float) berth_hold / (float) berth.loading_speed);
-            auto load_cnt = load_time * (float) berth.loading_speed;
+            auto & berth = Berths::berths[berth_id];
             auto load_value = 0.f;
-            for(int i = 0; i < berth.cargo.size() && load_cnt-- > 0; i++){
+            for(int i = 0; i < berth.cargo.size(); i++){
                 load_value += (float) berth.cargo[i].value;
             }
-            if(load_cnt > 0){
-                load_value += ((float) load_cnt / (float) berth.notified) * (float) berth.notified_value;
-            }
-            return load_value / ((float) distance + load_time);
+            return load_value;
         };
         auto val = 0.f;
+        bool finish = false;
         for(int i = 0; i < Berths::berths.size(); i++) {
             auto &berth = Berths::berths[i];
-            if(berth.occupied) { continue; }
+            if(berth.occupied || dis[berth.abstract_pos] == -1) { continue; }
+            finish = true;
             auto val_t = calc(i);
             if(val_t > val) {
                 val = val_t;
@@ -165,23 +186,37 @@ struct Ships : public std::vector<Ship> {
         }
         ship.target = target;
         Berths::berths[target].occupied = &ship;
-        return val;
+        return finish;
     }
-    int selectCommit(Ship &ship) {
+
+    bool selectCommit(Ship &ship) {
         if(ship.target < berth_dis.size()) {
             Berths::berths[ship.target].occupied = nullptr;
         }
-        int target = 0;
+        int target = 1000;
         auto id = Ship::getId(ship.pos, ship.dir).first;
-        for(int i = 1; i < commit_point.size(); i++) {
-            // auto d = commit_dis[i][id];
-            if(commit_dis[i][id] < commit_dis[target][id]) {
+        auto dis = rev_graph.dijkstra_plus_({id}, get_occupy_fun(ship.id));
+        for(int i = 0; i < commit_point.size(); i++) {
+            auto commit_abstract_pos = getAbstractPos(commit_point[i]);
+            bool valid = false;
+            for(auto p : commit_abstract_pos) {
+                if(dis[p] != -1) {
+                    valid = true;
+                }
+            }
+            if(!valid) {
+                continue;
+            }
+            if(target >= 1000 || commit_dis[i][id] < commit_dis[target][id]) {
                 target = i;
             }
         }
-        target += berth_dis.size();
+        if(target >= 1000) {
+            return false;
+        }
+        target += (int)berth_dis.size();
         ship.target = target;
-        return commit_dis[target - berth_dis.size()][id];
+        return true;
     }
 
     void add_edge(int f, int t, Action::TYPE type) {
@@ -195,7 +230,26 @@ struct Ships : public std::vector<Ship> {
             cost = 2 * (std::abs(p1.first - p2.first) + std::abs(p1.second - p2.second));
         }
         rev_graph.add_edge({t, f, cost});
-        graph[f].push_back({t, type});
+        graph[f].push_back({f, t, type, cost});
+    }
+
+    void updateOccupyTable(bool full) {
+        for(auto & ship : *this) {
+            auto area = Ship::getArea(ship.pos, ship.dir);
+            for(auto & p : area) {
+                if(multi_table[p]) {
+                    continue;
+                }
+                else {
+                    if(full) {
+                        occupy_table[p] = ship.id;
+                    }
+                    else {
+                        occupy_table[p] = 0;
+                    }
+                }
+            }
+        }
     }
 
     Ships() {
@@ -204,11 +258,14 @@ struct Ships : public std::vector<Ship> {
 
     auto init() {
         return std::async(std::launch::async, [this] {
+            occupy_table.resize(N * N);
+            multi_table.resize(N * N);
             rev_graph.resize(N * N * 4);
             graph.resize(N * N * 4);
             for(int i = 0; i < N; i++) {
                 for(int j = 0; j < N; j++) {
                     Position pos{i, j};
+                    multi_table[pos] = Ship::SHIP_MULTI_SYM.count(Atlas::atlas.maze[pos]);
                     for(auto dir: Move) {
                         auto id = Ship::getId(pos, dir).first;
                         if(id < 0) { continue; }
@@ -233,7 +290,8 @@ struct Ships : public std::vector<Ship> {
                 }
             }
             for(auto &berth: Berths::berths) {
-                berth_dis.emplace_back(rev_graph.dijkstra(Ship::getId(berth.pos, berth.dir).first));
+                berth.abstract_pos = Ship::getId(berth.pos, berth.dir).first;
+                berth_dis.emplace_back(rev_graph.dijkstra(berth.abstract_pos));
             }
             for(auto &commit: commit_point) {
                 commit_dis.emplace_back(graph.size(), -1);
@@ -250,26 +308,52 @@ struct Ships : public std::vector<Ship> {
         });
     }
 
-    void check_force_back(Ship &ship) {
-        int target = ship.target;
-        if(target < berth_dis.size()) {
-            int dis = selectCommit(ship);
-            if(dis < MAX_FRAME - stamp - 5) {
-                ship.target = target;
-            } else {
-                ship.mode = Ship::SAILING;
+    // void check_force_back(Ship &ship) {
+    //     int target = ship.target;
+    //     if(target < berth_dis.size()) {
+    //         int dis = selectCommit(ship);
+    //         if(dis < MAX_FRAME - stamp - 5) {
+    //             ship.target = target;
+    //         } else {
+    //             ship.mode = Ship::SAILING;
+    //         }
+    //     }
+    // }
+
+    void setDept(Ship & ship) {
+            sprintf(ship.output, "dept %d", ship.id);
+    }
+
+    std::function<bool(int)> get_occupy_fun(int idx) {
+        return [this, idx](int pos_id) -> bool{
+            auto [pos, dir] = Ship::unpack(idx);
+            for(auto & p : Ship::getArea(pos, dir)) {
+                if(this->occupy_table[p] != 0 && this->occupy_table[p] != idx) {
+                    return true;
+                }
             }
-        }
+            return false;
+        };
+    }
+
+    template<int idx>
+    bool occupy_fun(int pos_id) {
+
     }
 
     auto resolve() {
         return std::async(std::launch::async, [this] {
+            auto start_time = std::chrono::system_clock::now();
+            updateOccupyTable(true);
+            for(auto &ship : *this) {
+                ship.updateArea();
+            }
             for(auto &ship: *this) {
                 ship.output[0] = '\0';
                 if(ship.status == 1) {
                     continue;
                 }
-                check_force_back(ship);
+                // check_force_back(ship);
                 switch(ship.mode) {
                 case Ship::SAILING: {
                     // if(ship.target < berth_dis.size()){
@@ -277,10 +361,27 @@ struct Ships : public std::vector<Ship> {
                     // }
                     auto [id, dir] = Ship::getId(ship.pos, ship.dir);
                     bool is_commit = ship.target >= berth_dis.size();
-                    auto &dis = (is_commit ? commit_dis[ship.target - berth_dis.size()] : berth_dis[ship.target]);
-                    if(dis[id] == 0) {
+                    std::vector<int> target_abstract_pos = {};
+                    if(is_commit) {
+                        target_abstract_pos = getAbstractPos(commit_point[ship.target - berth_dis.size()]);
+                    } else {
+                        target_abstract_pos = getAbstractPos(Berths::berths[ship.target].pos, Berths::berths[ship.target].dir);
+                    }
+                    auto dis = rev_graph.dijkstra_plus_(target_abstract_pos, get_occupy_fun(ship.id));
+                    if(dis[id] == -1) {
+                        bool success = false;
                         if(is_commit) {
-                            DEBUG tot_score += ship.load_value;
+                            success = selectCommit(ship);
+                        }
+                        else {
+                            success = updateTarget(ship);
+                        }
+                        if(!success) {
+                            setDept(ship);
+                        }
+                    }
+                    else if(dis[id] == 0) {
+                        if(is_commit) {
                             ship.load_num = ship.load_value = 0;
                             updateTarget(ship);
                         } else {
@@ -301,6 +402,7 @@ struct Ships : public std::vector<Ship> {
                         }
                         auto &edge = graph[id][next_idx];
                         edge.toString(ship);
+                        // std::tie(ship.pos, ship.dir) = Ship::unpack(edge.to);
                     }
                     break;
                 }
@@ -313,12 +415,13 @@ struct Ships : public std::vector<Ship> {
                         ship.load_num += cnt;
                         ship.load_value += value;
                         if(Berths::berths[ship.target].cargo.empty()) {
-                            auto val1 = updateTarget(ship);
-                            int target_t = ship.target;
-                            auto val2 = selectCommit(ship);
-                            if(val1 > (float) ship.load_value / (float) val2) {
-                                ship.target = target_t;
-                            }
+                            updateTarget(ship);
+                            // auto val1 = updateTarget(ship);
+                            // int target_t = ship.target;
+                            // auto val2 = selectCommit(ship);
+                            // if(val1 > (float) ship.load_value / (float) val2) {
+                            //     ship.target = target_t;
+                            // }
                             ship.mode = Ship::SAILING;
                         }
                     }
@@ -329,6 +432,11 @@ struct Ships : public std::vector<Ship> {
                     ship.mode = Ship::SAILING;
                 }
             }
+            updateOccupyTable(false);
+            for(int i = 0; i < size(); i++) {
+                std::cerr << "ship" << i << " : " << (*this)[i].output << std::endl;
+            }
+            std::cerr << "use time: " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start_time).count() << std::endl;
         });
     }
 

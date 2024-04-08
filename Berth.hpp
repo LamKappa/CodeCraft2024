@@ -30,6 +30,7 @@ struct Berth {
     int notified_value = 0;
     std::deque<Item> cargo;
     int cargo_value = 0;
+    int abstract_pos;
 
     Position inside_p1{N, N}, inside_p2;
     Position around_p1{N, N}, around_p2;

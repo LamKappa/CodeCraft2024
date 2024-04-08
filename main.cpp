@@ -116,16 +116,16 @@ void Resolve() {
         Ship vship;
         vship.pos = berth.pos;
         vship.dir = berth.dir;
-        auto berth_hold = berth.notified + berth.cargo.size();
-        auto dis_come = (int) Atlas::INF_DIS;
-        auto dis_back = ships.selectCommit(vship);
-        for(auto &ship : ships){
-            auto dis_t = ships.berth_dis[berth.id][Ship::getId(ship.pos, ship.dir).first];
-            dis_come = min(dis_come, dis_t);
-        }
-        if(MAX_FRAME - stamp <= dis_come + dis_back + berth_hold / berth.loading_speed){
-            berth.disabled_pulling = true;
-        }
+        // auto berth_hold = berth.notified + berth.cargo.size();
+        // auto dis_come = (int) Atlas::INF_DIS;
+        // auto dis_back = ships.selectCommit(vship);
+        // for(auto &ship : ships){
+        //     auto dis_t = ships.berth_dis[berth.id][Ship::getId(ship.pos, ship.dir).first];
+        //     dis_come = min(dis_come, dis_t);
+        // }
+        // if(MAX_FRAME - stamp <= dis_come + dis_back + berth_hold / berth.loading_speed){
+        //     berth.disabled_pulling = true;
+        // }
     }
 
     robots.resolve().wait();
@@ -208,6 +208,10 @@ int main(int argc, char *argv[]) {
                 cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << '\n';
                 j++;
             }
+        }
+        if(ships.size() < 2 && money >= SHIP_COST) {
+            ships.new_ship(ship_shop[0]);
+            cout << "lboat " << (int) ship_shop[0].first << " " << (int) ship_shop[0].second << '\n';
         }
         cout << "OK" << endl;
     }

@@ -13,6 +13,14 @@ struct DirectedGraph {
     std::vector<bool> vis;
     std::vector<int> dfn, low;
 
+    std::vector<Edge> & operator[](int idx) {
+        return edge[idx];
+    }
+
+    auto size() {
+        return edge.size();
+    }
+
     void resize(int node_size_t) {
         this->node_size = node_size_t;
         edge.resize(node_size_t + 1);
@@ -45,6 +53,32 @@ struct DirectedGraph {
                     continue;
                 }
                 q.emplace(d + e.w, e.to);
+            }
+        }
+        return dis;
+    }
+
+    std::vector<ValueType> dijkstra_plus_(std::vector<int> s, const std::function<bool(int pos)> &occupy) {
+        std::vector<ValueType> dis(node_size + 1, -1);
+        std::vector<std::vector<int>> tags(node_size + 1);
+        using Pos = std::pair<ValueType, int>;
+        std::priority_queue<Pos, std::vector<Pos>, std::greater<>> q;
+        tags[0].insert(tags[0].end(), s.begin(), s.end());
+        for(int i = 0; i <= node_size; i++) {
+            auto & ls = tags[i];
+            for(auto x : ls) {
+                if(dis[x] != -1 || occupy(x)) {
+                    continue;
+                } else {
+                    dis[x] = i;
+                }
+                for(const Edge &e : edge[x]) {
+                    if(dis[e.to] != -1) {
+                        continue;
+                    }
+                    tags[i + e.w].push_back(e.to);
+                    // q.emplace(d + e.w, e.to);
+                }
             }
         }
         return dis;
