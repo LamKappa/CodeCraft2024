@@ -2,7 +2,7 @@
 
 seed=$RANDOM
 
-choice=2
+choice=1
 #seed=5898399
 seed=19550
 #seed=29367

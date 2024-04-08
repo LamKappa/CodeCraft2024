@@ -117,8 +117,8 @@ void Resolve() {
     //     vship.pos = berth.pos;
     //     vship.dir = berth.dir;
     //     auto berth_hold = berth.notified + berth.cargo.size();
-    //     auto dis_come = (int) Atlas::INF_DIS;
-    //     auto dis_back = ships.selectCommit(vship);
+    //     auto dis_come = (int) Atlas::INF_DIS, dis_back = 0;
+    //     ships.selectCommit(vship, &dis_back);
     //     for(auto &ship : ships){
     //         auto dis_t = ships.berth_dis[berth.id][Ship::getId(ship.pos, ship.dir).first];
     //         dis_come = min(dis_come, dis_t);
@@ -232,12 +232,11 @@ int main(int argc, char *argv[]) {
         for(auto &ship: ships) {
             sailing_value += ship.load_value;
         }
-        // cerr << "tot_left_items: " << left_items << '\n';
-        // cerr << "tot_left_values: " << left_value << '\n';
         // cerr << "idle occurred: " << idle_cnt << " times\n";
+        cerr << "tot_item_values: " << tot_values << '\n';
+        cerr << "left_items: " << left_items << " (" << left_value << ")" << '\n';
         cerr << "ship-value: " << sailing_value << " (capacity: " << SHIP_CAPACITY << ")" << '\n';
         cerr << "robots: " << robots.size() << " ships: " << ships.size() << '\n';
-        cerr << "tot_item_values: " << tot_values << '\n';
         cerr << "score: " << tot_score + BASE_SCORE - cost << " (" << tot_score + BASE_SCORE << " - " << cost << ")" << '\n';
         cerr << "ship/robot: " << fixed << setprecision(2)
              << 100.f * (float) (tot_score) / (float) (tot_score + left_value + sailing_value) << "% "
