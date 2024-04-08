@@ -62,10 +62,10 @@ struct DirectedGraph {
         std::vector<ValueType> dis(node_size + 1, -1);
         std::vector<std::vector<int>> tags(node_size + 1);
         using Pos = std::pair<ValueType, int>;
-        std::priority_queue<Pos, std::vector<Pos>, std::greater<>> q;
+        // std::priority_queue<Pos, std::vector<Pos>, std::greater<>> q;
         tags[0].insert(tags[0].end(), s.begin(), s.end());
         for(int i = 0; i <= node_size; i++) {
-            auto & ls = tags[i];
+            auto ls = tags[i];
             for(auto x : ls) {
                 if(dis[x] != -1 || occupy(x)) {
                     continue;

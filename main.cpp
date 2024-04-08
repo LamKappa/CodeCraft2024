@@ -111,22 +111,22 @@ void Input() {
 }
 
 void Resolve() {
-    for(auto &berth : berths){
-        if(berth.disabled_pulling) { continue; }
-        Ship vship;
-        vship.pos = berth.pos;
-        vship.dir = berth.dir;
-        // auto berth_hold = berth.notified + berth.cargo.size();
-        // auto dis_come = (int) Atlas::INF_DIS;
-        // auto dis_back = ships.selectCommit(vship);
-        // for(auto &ship : ships){
-        //     auto dis_t = ships.berth_dis[berth.id][Ship::getId(ship.pos, ship.dir).first];
-        //     dis_come = min(dis_come, dis_t);
-        // }
-        // if(MAX_FRAME - stamp <= dis_come + dis_back + berth_hold / berth.loading_speed){
-        //     berth.disabled_pulling = true;
-        // }
-    }
+    // for(auto &berth : berths){
+    //     if(berth.disabled_pulling) { continue; }
+    //     Ship vship;
+    //     vship.pos = berth.pos;
+    //     vship.dir = berth.dir;
+    //     auto berth_hold = berth.notified + berth.cargo.size();
+    //     auto dis_come = (int) Atlas::INF_DIS;
+    //     auto dis_back = ships.selectCommit(vship);
+    //     for(auto &ship : ships){
+    //         auto dis_t = ships.berth_dis[berth.id][Ship::getId(ship.pos, ship.dir).first];
+    //         dis_come = min(dis_come, dis_t);
+    //     }
+    //     if(MAX_FRAME - stamp <= dis_come + dis_back + berth_hold / berth.loading_speed){
+    //         berth.disabled_pulling = true;
+    //     }
+    // }
 
     robots.resolve().wait();
 
@@ -210,6 +210,7 @@ int main(int argc, char *argv[]) {
             }
         }
         if(ships.size() < 2 && money >= SHIP_COST) {
+            money -= SHIP_COST;
             ships.new_ship(ship_shop[0]);
             cout << "lboat " << (int) ship_shop[0].first << " " << (int) ship_shop[0].second << '\n';
         }
@@ -234,7 +235,8 @@ int main(int argc, char *argv[]) {
         // cerr << "tot_left_items: " << left_items << '\n';
         // cerr << "tot_left_values: " << left_value << '\n';
         // cerr << "idle occurred: " << idle_cnt << " times\n";
-        cerr << "tot_item_values: " << tot_values << '\n';
+        cerr << "robots: " << robots.size() << " ships: " << ships.size() << '\n';
+        cerr << "tot_item_values: " << tot_values << " " << tot_values + 25000 << '\n';
         cerr << "profit: " << fixed << setprecision(2)
              << 100.f * (float) (tot_score + left_value - cost) / (float) (tot_score + left_value) << "% "
              << "(" << tot_score + left_value - cost << " / " << tot_score + left_value << ")\n";

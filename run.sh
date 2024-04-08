@@ -10,7 +10,7 @@ seed=19550
 
 echo "start seed:"$seed
 
-../SemiFinalJudge -s $seed -l ERR -f 0 -d ../output.txt \
+../SemiFinalJudge -s $seed -l INFO -f 0 -d ../output.txt \
 "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64 && ./main" \
 -m ../maps/map$choice.txt
 

@@ -136,7 +136,8 @@ struct Ships : public std::vector<Ship> {
     std::vector<std::vector<int>> berth_dis;
     std::vector<std::vector<int>> commit_dis;
     uint32_t tick;
-    std::vector<int> occupy_table;
+    // std::vector<int> occupy_table;
+    std::map<int, index_t> occupy_table;
     std::vector<bool> multi_table;
 
     bool multi(Position pos) {
@@ -234,6 +235,10 @@ struct Ships : public std::vector<Ship> {
     }
 
     void updateOccupyTable(bool full) {
+        if(!full){
+            occupy_table.clear();
+            return;
+        }
         for(auto & ship : *this) {
             auto area = Ship::getArea(ship.pos, ship.dir);
             for(auto & p : area) {
@@ -245,7 +250,7 @@ struct Ships : public std::vector<Ship> {
                         occupy_table[p] = ship.id;
                     }
                     else {
-                        occupy_table[p] = 0;
+                        // occupy_table[p] = no_index;
                     }
                 }
             }
@@ -258,7 +263,7 @@ struct Ships : public std::vector<Ship> {
 
     auto init() {
         return std::async(std::launch::async, [this] {
-            occupy_table.resize(N * N);
+            // occupy_table.resize(N * N);
             multi_table.resize(N * N);
             rev_graph.resize(N * N * 4);
             graph.resize(N * N * 4);
@@ -326,9 +331,9 @@ struct Ships : public std::vector<Ship> {
 
     std::function<bool(int)> get_occupy_fun(int idx) {
         return [this, idx](int pos_id) -> bool{
-            auto [pos, dir] = Ship::unpack(idx);
+            auto [pos, dir] = Ship::unpack(pos_id);
             for(auto & p : Ship::getArea(pos, dir)) {
-                if(this->occupy_table[p] != 0 && this->occupy_table[p] != idx) {
+                if(this->occupy_table.count(p) && this->occupy_table[p] != idx) {
                     return true;
                 }
             }
@@ -336,14 +341,14 @@ struct Ships : public std::vector<Ship> {
         };
     }
 
-    template<int idx>
-    bool occupy_fun(int pos_id) {
-
-    }
+    // template<int idx>
+    // bool occupy_fun(int pos_id) {
+    //
+    // }
 
     auto resolve() {
         return std::async(std::launch::async, [this] {
-            auto start_time = std::chrono::system_clock::now();
+            // auto start_time = std::chrono::system_clock::now();
             updateOccupyTable(true);
             for(auto &ship : *this) {
                 ship.updateArea();
@@ -382,6 +387,7 @@ struct Ships : public std::vector<Ship> {
                     }
                     else if(dis[id] == 0) {
                         if(is_commit) {
+                            DEBUG tot_score += ship.load_value;
                             ship.load_num = ship.load_value = 0;
                             updateTarget(ship);
                         } else {
@@ -433,10 +439,10 @@ struct Ships : public std::vector<Ship> {
                 }
             }
             updateOccupyTable(false);
-            for(int i = 0; i < size(); i++) {
-                std::cerr << "ship" << i << " : " << (*this)[i].output << std::endl;
-            }
-            std::cerr << "use time: " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start_time).count() << std::endl;
+            // for(int i = 0; i < size(); i++) {
+            //     std::cerr << "ship" << i << " : " << (*this)[i].output << std::endl;
+            // }
+            // std::cerr << "use time: " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - start_time).count() << std::endl;
         });
     }
 
