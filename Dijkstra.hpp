@@ -61,12 +61,10 @@ struct DirectedGraph {
     std::vector<ValueType> dijkstra_plus_(std::vector<int> s, const std::function<bool(int pos)> &occupy) {
         std::vector<ValueType> dis(node_size + 1, -1);
         std::vector<std::vector<int>> tags(node_size + 1);
-        using Pos = std::pair<ValueType, int>;
-        // std::priority_queue<Pos, std::vector<Pos>, std::greater<>> q;
         tags[0].insert(tags[0].end(), s.begin(), s.end());
         for(int i = 0; i <= node_size; i++) {
-            auto ls = tags[i];
-            for(auto x : ls) {
+            for(int j = 0, J = (int) tags[i].size(); j < J; j++) {
+                auto x = tags[i][j];
                 if(dis[x] != -1 || occupy(x)) {
                     continue;
                 } else {
@@ -77,7 +75,6 @@ struct DirectedGraph {
                         continue;
                     }
                     tags[i + e.w].push_back(e.to);
-                    // q.emplace(d + e.w, e.to);
                 }
             }
         }

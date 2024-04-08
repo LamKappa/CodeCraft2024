@@ -135,14 +135,13 @@ struct Ships : public std::vector<Ship> {
     DirectedGraph<Action> graph;
     std::vector<std::vector<int>> berth_dis;
     std::vector<std::vector<int>> commit_dis;
-    uint32_t tick;
-    // std::vector<int> occupy_table;
-    std::map<int, index_t> occupy_table;
-    std::vector<bool> multi_table;
+    // uint32_t tick;
+    std::array<index_t, N * N> occupy_table;
 
-    bool multi(Position pos) {
-        return multi_table[pos];
-    }
+    // std::vector<bool> multi_table;
+    // bool multi(Position pos) {
+    //     return multi_table[pos];
+    // }
 
     std::vector<int> getAbstractPos(Position pos, Direction dir = {0, 0}) {
         if(dir != 0) {
@@ -166,12 +165,12 @@ struct Ships : public std::vector<Ship> {
         auto id = Ship::getId(ship.pos, ship.dir).first;
         auto dis = rev_graph.dijkstra_plus_({id}, get_occupy_fun(ship.id));
         auto calc = [&](int berth_id) {
-            auto & berth = Berths::berths[berth_id];
+            auto &berth = Berths::berths[berth_id];
             auto load_value = 0.f;
             for(int i = 0; i < berth.cargo.size(); i++){
                 load_value += (float) berth.cargo[i].value;
             }
-            return load_value;
+            return load_value / (float) dis[berth.abstract_pos];
         };
         auto val = 0.f;
         bool finish = false;
@@ -234,23 +233,18 @@ struct Ships : public std::vector<Ship> {
         graph[f].push_back({f, t, type, cost});
     }
 
-    void updateOccupyTable(bool full) {
-        if(!full){
-            occupy_table.clear();
-            return;
-        }
+    void updateOccupyTable(bool fill) {
         for(auto & ship : *this) {
-            auto area = Ship::getArea(ship.pos, ship.dir);
-            for(auto & p : area) {
-                if(multi_table[p]) {
+            for(auto & p : Ship::getArea(ship.pos, ship.dir)) {
+                if(Ship::SHIP_MULTI_SYM.count(Atlas::atlas.maze[p])) {
                     continue;
                 }
                 else {
-                    if(full) {
+                    if(fill) {
                         occupy_table[p] = ship.id;
                     }
                     else {
-                        // occupy_table[p] = no_index;
+                        occupy_table[p] = no_index;
                     }
                 }
             }
@@ -263,14 +257,14 @@ struct Ships : public std::vector<Ship> {
 
     auto init() {
         return std::async(std::launch::async, [this] {
-            // occupy_table.resize(N * N);
-            multi_table.resize(N * N);
+            occupy_table.fill(no_index);
+            // multi_table.resize(N * N);
             rev_graph.resize(N * N * 4);
             graph.resize(N * N * 4);
             for(int i = 0; i < N; i++) {
                 for(int j = 0; j < N; j++) {
                     Position pos{i, j};
-                    multi_table[pos] = Ship::SHIP_MULTI_SYM.count(Atlas::atlas.maze[pos]);
+                    // multi_table[pos] = Ship::SHIP_MULTI_SYM.count(Atlas::atlas.maze[pos]);
                     for(auto dir: Move) {
                         auto id = Ship::getId(pos, dir).first;
                         if(id < 0) { continue; }
@@ -333,7 +327,7 @@ struct Ships : public std::vector<Ship> {
         return [this, idx](int pos_id) -> bool{
             auto [pos, dir] = Ship::unpack(pos_id);
             for(auto & p : Ship::getArea(pos, dir)) {
-                if(this->occupy_table.count(p) && this->occupy_table[p] != idx) {
+                if(this->occupy_table[p] != no_index && this->occupy_table[p] != idx) {
                     return true;
                 }
             }

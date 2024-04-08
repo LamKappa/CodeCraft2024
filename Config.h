@@ -18,10 +18,10 @@ const size_t RANDOM_SEED = 42;
 const size_t RANDOM_SEED = std::random_device{}();
 #endif
 
-using u8 = u_int8_t;
-using u16 = u_int16_t;
-using u32 = u_int32_t;
-using u64 = u_int64_t;
+using u8 = uint8_t;
+using u16 = uint16_t;
+using u32 = uint32_t;
+using u64 = uint64_t;
 using f80 = long double;
 
 using index_t = u16;
