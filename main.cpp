@@ -11,7 +11,7 @@
 using namespace std;
 
 int idle_cnt = 0;
-int tot_score = 25000;
+int tot_score = 0;
 int tot_values = 0;
 
 chrono::high_resolution_clock::time_point start_time;
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
             for(auto &berth: berths){
                 cargo_hold += berth.notified + berth.cargo.size();
             }
-            while(robots.size() < MAX_ROBOT && money >= ROBOT_COST && cargo_hold < 60 * (MAX_ROBOT - robots.size()) / MAX_ROBOT){
+            while(robots.size() < MAX_ROBOT && money >= ROBOT_COST){// && cargo_hold < 60 * (MAX_ROBOT - robots.size()) / MAX_ROBOT){
                 if(j == robot_shop.size()) j = 0;
                 money -= ROBOT_COST;
                 robots.new_robot(robot_shop[j]);
@@ -228,24 +228,22 @@ int main(int argc, char *argv[]) {
                 berth.cargo.pop_front();
             }
         }
-        // for(auto &ship: ships) {
-        //     tot_score += ship.load_values;
-        //     ship.load_values = ship.load = 0;
-        // }
+        int sailing_value = 0;
+        for(auto &ship: ships) {
+            sailing_value += ship.load_value;
+        }
         // cerr << "tot_left_items: " << left_items << '\n';
         // cerr << "tot_left_values: " << left_value << '\n';
         // cerr << "idle occurred: " << idle_cnt << " times\n";
         cerr << "robots: " << robots.size() << " ships: " << ships.size() << '\n';
-        cerr << "tot_item_values: " << tot_values << " " << tot_values + 25000 << '\n';
-        cerr << "profit: " << fixed << setprecision(2)
-             << 100.f * (float) (tot_score + left_value - cost) / (float) (tot_score + left_value) << "% "
-             << "(" << tot_score + left_value - cost << " / " << tot_score + left_value << ")\n";
+        cerr << "tot_item_values: " << tot_values << '\n';
+        cerr << "score: " << tot_score + BASE_SCORE << '\n';
         cerr << "recall: " << fixed << setprecision(2)
-             << 100.f * (float) (tot_score) / (float) (tot_score + left_value) << "% "
-             << "(" << tot_score << " / " << tot_score + left_value << ")\n";
+             << 100.f * (float) (tot_score) / (float) (tot_score + left_value + sailing_value - BASE_SCORE) << "% "
+             << "(" << tot_score << " / " << tot_score + left_value + sailing_value << ")\n";
         cerr << "profit-recall: " << fixed << setprecision(2)
-             << 100.f * (float) (tot_score - cost) / (float) (tot_score - cost + left_value) << "% "
-             << "(" << tot_score - cost << " / " << tot_score - cost + left_value << ")\n";
+             << 100.f * (float) (tot_score - cost) / (float) (tot_score + left_value + sailing_value - cost) << "% "
+             << "(" << tot_score - cost << " / " << tot_score + left_value + sailing_value - cost << ")\n";
     }
     else {
         for(auto &ft: async_pool) {

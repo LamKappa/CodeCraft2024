@@ -25,7 +25,7 @@ struct Ship {
     int load_num = 0;
     int load_value = 0;
     int status;
-    int target = 0;
+    int target = 1000;
     Position pos;
     Direction dir;
     char output[20];
