@@ -368,16 +368,22 @@ struct Ships : public std::vector<Ship> {
                     case Ship::SAILING: {
                         auto [id, dir] = Ship::getId(ship.pos, ship.dir);
                         bool is_commit = ship.target >= berth_dis.size();
-                        std::vector<int> target_abstract_pos = {};
-                        if(is_commit) {
-                            target_abstract_pos = getAbstractPos(commit_point[ship.target - berth_dis.size()]);
-                        } else {
-                            if(Berths::berths[ship.target].occupied != &ship) {
-                                updateTarget(ship);
+                        std::vector<int> dis;
+                        if(size() > 1) {
+                            std::vector<int> target_abstract_pos = {};
+                            if(is_commit) {
+                                target_abstract_pos = getAbstractPos(commit_point[ship.target - berth_dis.size()]);
+                            } else {
+                                if(Berths::berths[ship.target].occupied != &ship) {
+                                    updateTarget(ship);
+                                }
+                                target_abstract_pos = getAbstractPos(Berths::berths[ship.target].pos, Berths::berths[ship.target].dir);
                             }
-                            target_abstract_pos = getAbstractPos(Berths::berths[ship.target].pos, Berths::berths[ship.target].dir);
+                            dis = rev_graph.dijkstra_plus_(target_abstract_pos, get_occupy_fun(ship.id));
                         }
-                        auto dis = rev_graph.dijkstra_plus_(target_abstract_pos, get_occupy_fun(ship.id));
+                        else {
+                            dis = is_commit ? commit_dis[ship.target - berth_dis.size()] : berth_dis[ship.target];
+                        }
                         if(dis[id] == -1) {
                             bool success = false;
                             if(is_commit) {
