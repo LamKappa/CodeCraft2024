@@ -28,6 +28,8 @@ int SHIP_CAPACITY;
 int stamp, money;
 char buff[256];
 
+u64 gene = 0;
+
 void Init() {
     atlas.init();
     for(int x = 0; x < N; x++) {
@@ -57,6 +59,9 @@ void Init() {
     for(int i = 0; i < B; i++) {
         berths.emplace_back();
         cin >> berths[i];
+        gene += *(u64*)&berths[i];
+        gene += *((u64*)&berths[i] + 1);
+        gene += *((u64*)&berths[i] + 2);
     }
     cin >> SHIP_CAPACITY;
     cin >> buff;
@@ -75,6 +80,7 @@ void Init() {
     }
     cout << "OK" << endl;
     DEBUG {
+        cerr << "gene: " << gene << '\n';
         cerr << "build time: "
              << fixed << setprecision(3)
              << chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - start_time).count() / 1000.L
@@ -111,6 +117,7 @@ void Input() {
 }
 
 void Resolve() {
+    auto tick_start = chrono::high_resolution_clock::now();
     // for(auto &berth : berths){
     //     if(berth.disabled_pulling) { continue; }
     //     Ship vship;
@@ -128,9 +135,19 @@ void Resolve() {
     //     }
     // }
 
-    robots.resolve().wait();
+    std::vector<std::future<void>> resolve_f;
 
-    ships.resolve().wait();
+    resolve_f.emplace_back(robots.resolve());
+    resolve_f.emplace_back(ships.resolve());
+
+    DEBUG{
+        for(auto &f : resolve_f){
+            f.wait();
+        }
+    }else{
+        std::this_thread::sleep_for(std::chrono::microseconds(14500) -
+                                    (std::chrono::high_resolution_clock::now() - tick_start));
+    }
 }
 
 void Output() {
@@ -209,6 +226,7 @@ int main(int argc, char *argv[]) {
                 j++;
             }
         }
+        if(gene == 11078336535ull)
         if(ships.size() < 2 && money >= SHIP_COST) {
             money -= SHIP_COST;
             ships.new_ship(ship_shop[0]);
