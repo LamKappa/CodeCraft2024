@@ -137,7 +137,7 @@ void Resolve() {
 
     std::vector<std::future<void>> resolve_f;
 
-    resolve_f.emplace_back(robots.resolve());
+    robots.resolve().wait();
     resolve_f.emplace_back(ships.resolve());
 
     DEBUG{
