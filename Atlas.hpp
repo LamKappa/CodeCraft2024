@@ -44,6 +44,7 @@ const std::set<char> BARRIER_SYM{
 };
 
 extern std::vector<Position> robot_shop, ship_shop, commit_point;
+extern int now_frame;
 
 struct Atlas {
     static Atlas atlas;

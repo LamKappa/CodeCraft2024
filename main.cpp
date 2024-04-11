@@ -70,7 +70,7 @@ void Init() {
     atlas.build();
     async_pool.emplace_back(ships.init());
     if(gene == 6753812494ull){
-        MAX_ROBOT = 14;
+        MAX_ROBOT = 17;
     }
 
     DEBUG {
@@ -217,6 +217,7 @@ int main(int argc, char *argv[]) {
         cout << "OK" << endl;
     }
     for(int _ = 2, j = 0; _ <= MAX_FRAME; _++) {
+        now_frame = _;
         Input();
         Resolve();
         Output();

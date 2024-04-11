@@ -44,7 +44,8 @@ struct Robot {
                 Items::items.find_by_id(id).occupied = nullptr;
             }
             mission = {SEARCHING, exec};
-            auto calc_value = [](const Robot &robot, const Item &item, const Berth &berth) {
+            std::function<float(const Robot &robot, const Item &item, const Berth &berth)> calc_value;
+            calc_value = [](const Robot &robot, const Item &item, const Berth &berth) {
                 Atlas &atlas = Atlas::atlas;
                 auto distance = (int) atlas.distance(robot.pos, item.pos) + (int) atlas.distance(item.pos, berth.pos);
                 if(distance > MAX_FRAME - stamp) { return -0.f; }
@@ -52,6 +53,14 @@ struct Robot {
                 rate = (float) std::pow(rate, 0.62);
                 return (rate * (float) item.value) / (float) distance;
             };
+            if(now_frame >= MAX_FRAME - 1000) {
+                calc_value = [](const Robot &robot, const Item &item, const Berth &berth) {
+                    Atlas &atlas = Atlas::atlas;
+                    auto distance = (int) atlas.distance(robot.pos, item.pos) + (int) atlas.distance(item.pos, berth.pos);
+                    if(distance > MAX_FRAME - stamp) { return -0.f; }
+                    return (float)item.value;
+                };
+            }
             std::priority_queue<std::pair<decltype(reserved_value), decltype(targets)::value_type>> q;
             for(auto &item: Items::items) {
                 if(item.deleted || item.live_time() < Atlas::atlas.distance(exec->pos, item.pos)) { continue; }

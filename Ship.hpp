@@ -168,7 +168,9 @@ struct Ships : public std::vector<Ship> {
         auto id = Ship::getId(ship.pos, ship.dir).first;
         auto &dis = ship.dis;
         if(ship.dis_update_stamp < stamp) {
-            dis = rev_graph.dijkstra_plus_({id}, get_occupy_fun(ship.id));
+            if(size() > 1) {
+                dis = rev_graph.dijkstra_plus_({id}, get_occupy_fun(ship.id));
+            }
             ship.dis_update_stamp = stamp;
         }
         auto calc = [&](int berth_id) {
@@ -178,19 +180,32 @@ struct Ships : public std::vector<Ship> {
             // for(int i = 0; i < berth.cargo.size(); i++) {
             //     load_value += (float) berth.cargo[i].value;
             // }
-            return load_value / ((float) dis[berth.abstract_pos] + (float) berth_hold / berth.loading_speed);
+            auto d = size() > 1 ? dis[berth.abstract_pos] : berth_dis[berth.id][id];
+            return load_value / ((float) d + (float) berth_hold / berth.loading_speed);
         };
         auto val = 0.f;
         bool finish = false;
         for(int i = 0; i < Berths::berths.size(); i++) {
             auto &berth = Berths::berths[i];
-            if(berth.occupied || dis[berth.abstract_pos] == -1) { continue; }
+            if(size() > 1) {
+                if(berth.occupied || dis[berth.abstract_pos] == -1) { continue; }
+            }
+            else {
+                if(berth.occupied || berth_dis[i][id] == -1) { continue; }
+            }
             finish = true;
             auto val_t = calc(i);
             if(val_t > val) {
                 val = val_t;
                 target = i;
-                if(time) { *time = dis[berth.abstract_pos]; }
+                if(time) {
+                    if(size() > 1) {
+                        *time = dis[berth.abstract_pos];
+                    }
+                    else {
+                        *time = berth_dis[i][id];
+                    }
+                }
             }
         }
         ship.target = target;
@@ -206,16 +221,23 @@ struct Ships : public std::vector<Ship> {
         auto id = Ship::getId(ship.pos, ship.dir).first;
         auto &dis = ship.dis;
         if(ship.dis_update_stamp < stamp) {
-            dis = rev_graph.dijkstra_plus_({id}, get_occupy_fun(ship.id));
+            if(size() > 1) {
+                dis = rev_graph.dijkstra_plus_({id}, get_occupy_fun(ship.id));
+            }
             ship.dis_update_stamp = stamp;
         }
         for(int i = 0; i < commit_point.size(); i++) {
             auto commit_abstract_pos = getAbstractPos(commit_point[i]);
             bool valid = false;
-            for(auto p: commit_abstract_pos) {
-                if(dis[p] != -1) {
-                    valid = true;
+            if(size() > 1) {
+                for(auto p: commit_abstract_pos) {
+                    if(dis[p] != -1) {
+                        valid = true;
+                    }
                 }
+            }
+            else {
+                valid = (commit_dis[i][id] != -1);
             }
             if(!valid) {
                 continue;
