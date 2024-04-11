@@ -62,7 +62,8 @@ struct DirectedGraph {
         std::vector<ValueType> dis(node_size + 1, -1);
         std::vector<std::vector<int>> tags(node_size + 1);
         tags[0].insert(tags[0].end(), s.begin(), s.end());
-        for(int i = 0; i <= node_size; i++) {
+        int max_i = 0;
+        for(int i = 0; i <= node_size && i <= max_i; i++) {
             for(int j = 0, J = (int) tags[i].size(); j < J; j++) {
                 auto x = tags[i][j];
                 if(dis[x] != -1 || occupy(x)) {
@@ -74,6 +75,7 @@ struct DirectedGraph {
                     if(dis[e.to] != -1) {
                         continue;
                     }
+                    max_i = std::max(max_i, i + e.w);
                     tags[i + e.w].push_back(e.to);
                 }
             }

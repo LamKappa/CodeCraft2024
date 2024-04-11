@@ -29,6 +29,9 @@ struct Ship {
     int target = 1000;
     Position pos;
     Direction dir;
+
+    Position last_dis_pos;
+    Direction last_dis_dir;
     char output[20];
 
     std::vector<int> dis;
@@ -149,7 +152,7 @@ struct Ships : public std::vector<Ship> {
 
     std::vector<int> getAbstractPos(Position pos, Direction dir = {0, 0}) {
         if(dir != 0) {
-            return {Ship::getId(pos, dir).first};
+            return {(int) pos + Id(dir) * N * N};
         } else {
             std::vector<int> ans;
             ans.reserve(Move.size());
@@ -160,6 +163,18 @@ struct Ships : public std::vector<Ship> {
         }
     }
 
+    void updateDistance(Ship & ship) {
+        if(ship.dir == ship.last_dis_dir && ship.pos == ship.last_dis_pos) {
+            return;
+        }
+        ship.last_dis_dir = ship.dir;
+        ship.last_dis_pos = ship.pos;
+        auto id = getAbstractPos(ship.pos, ship.dir)[0];
+        ship.dis = graph.dijkstra_plus_({id}, get_occupy_fun(ship.id));
+    }
+
+
+
     bool updateTarget(Ship &ship, int *time = nullptr) {
         if(ship.target < berth_dis.size()) {
             Berths::berths[ship.target].occupied = nullptr;
@@ -169,7 +184,7 @@ struct Ships : public std::vector<Ship> {
         auto &dis = ship.dis;
         if(ship.dis_update_stamp < stamp) {
             if(size() > 1) {
-                dis = rev_graph.dijkstra_plus_({id}, get_occupy_fun(ship.id));
+                updateDistance(ship);
             }
             ship.dis_update_stamp = stamp;
         }
@@ -222,7 +237,7 @@ struct Ships : public std::vector<Ship> {
         auto &dis = ship.dis;
         if(ship.dis_update_stamp < stamp) {
             if(size() > 1) {
-                dis = rev_graph.dijkstra_plus_({id}, get_occupy_fun(ship.id));
+                updateDistance(ship);
             }
             ship.dis_update_stamp = stamp;
         }
@@ -400,6 +415,58 @@ struct Ships : public std::vector<Ship> {
         };
     }
 
+    Action getNextAction(Ship & ship) {
+        updateDistance(ship);
+        std::vector<int> target_abstract_pos = {};
+        if(ship.target >= berth_dis.size()) {
+            target_abstract_pos = getAbstractPos(commit_point[ship.target - berth_dis.size()]);
+        } else {
+            target_abstract_pos = getAbstractPos(Berths::berths[ship.target].pos, Berths::berths[ship.target].dir);
+        }
+        int target = target_abstract_pos[0];
+        auto & dis = ship.dis;
+        for(auto p : target_abstract_pos) {
+            if(dis[target] == -1 || (dis[p] != -1 && dis[p] < dis[target])) {
+                target = p;
+            }
+        }
+        auto id = getAbstractPos(ship.pos, ship.dir).front();
+        int last = target;
+        while(target != id) {
+            // std::vector<int> valid_point;
+            // for(auto & edge : rev_graph[target]) {
+            //     if(dis[edge.to] != -1 && dis[edge.to] <= dis[target]) {
+            //         valid_point.push_back(edge.to);
+            //     }
+            // }
+            // std::shuffle(valid_point.begin(), valid_point.end(), eng);
+            auto next = rev_graph[target][0];
+            auto next_val = dis[rev_graph[target][0].to];
+            for(int i = 1; i < rev_graph[target].size(); i++) {
+                auto val = dis[rev_graph[target][i].to];
+                if(next_val == -1 || (val != -1 && val < next_val)) {
+                    next_val = val;
+                    next = rev_graph[target][i];
+                }
+                else if(val != -1 && val <= next_val) {
+                    std::uniform_int_distribution<int> u(0, 1);
+                    if(u(eng)) {
+                        next_val = val;
+                        next = rev_graph[target][i];
+                    }
+                }
+            }
+            last = target;
+            target = next.to;
+        }
+        for(auto & act : graph[id]) {
+            if(act.to == last) {
+                return act;
+            }
+        }
+        return {};
+    }
+
     // template<int idx>
     // bool occupy_fun(int pos_id) {
     //
@@ -425,6 +492,7 @@ struct Ships : public std::vector<Ship> {
                         auto [id, dir] = Ship::getId(ship.pos, ship.dir);
                         bool is_commit = ship.target >= berth_dis.size();
                         std::vector<int> dis;
+                        int real_dis = N * N * 10;
                         if(size() > 1) {
                             std::vector<int> target_abstract_pos = {};
                             if(is_commit) {
@@ -435,12 +503,17 @@ struct Ships : public std::vector<Ship> {
                                 }
                                 target_abstract_pos = getAbstractPos(Berths::berths[ship.target].pos, Berths::berths[ship.target].dir);
                             }
-                            dis = rev_graph.dijkstra_plus_(target_abstract_pos, get_occupy_fun(ship.id));
+                            updateDistance(ship);
+                            dis = ship.dis;
+                            for(auto p : target_abstract_pos) {
+                                real_dis = std::min(real_dis, dis[p]);
+                            }
                         }
                         else {
                             dis = is_commit ? commit_dis[ship.target - berth_dis.size()] : berth_dis[ship.target];
+                            real_dis = dis[id];
                         }
-                        if(dis[id] == -1) {
+                        if(real_dis == -1) {
                             bool success = false;
                             if(is_commit) {
                                 success = selectCommit(ship);
@@ -450,7 +523,7 @@ struct Ships : public std::vector<Ship> {
                             if(!success) {
                                 setDept(ship);
                             }
-                        } else if(dis[id] == 0) {
+                        } else if(real_dis == 0) {
                             if(is_commit) {
                                 DEBUG tot_score += ship.load_value;
                                 ship.load_num = ship.load_value = 0;
@@ -459,19 +532,25 @@ struct Ships : public std::vector<Ship> {
                                 snprintf(ship.output, sizeof(Ship::output), "berth %d", ship.id);
                                 ship.mode = Ship::LOADING;
                             }
-                        } else if(dis[id] > 0 && !graph[id].empty()) {
-                            int next_idx = 0, next_dis = -1;
-                            std::vector<int> sf(graph[id].size());
-                            std::iota(sf.begin(), sf.end(), 0);
-                            std::shuffle(sf.begin(), sf.end(), eng);
-                            for(auto i: sf) {
-                                auto i_dis = dis[graph[id][i].to];
-                                if(next_dis == -1 || (i_dis != -1 && i_dis < next_dis)) {
-                                    next_dis = i_dis;
-                                    next_idx = i;
-                                }
+                        } else if(real_dis > 0 && !graph[id].empty()) {
+                            Action edge;
+                            if(size() > 1) {
+                                edge = getNextAction(ship);
                             }
-                            auto &edge = graph[id][next_idx];
+                            else {
+                                int next_idx = 0, next_dis = -1;
+                                std::vector<int> sf(graph[id].size());
+                                std::iota(sf.begin(), sf.end(), 0);
+                                std::shuffle(sf.begin(), sf.end(), eng);
+                                for(auto i: sf) {
+                                    auto i_dis = dis[graph[id][i].to];
+                                    if(next_dis == -1 || (i_dis != -1 && i_dis < next_dis)) {
+                                        next_dis = i_dis;
+                                        next_idx = i;
+                                    }
+                                }
+                                edge = graph[id][next_idx];
+                            }
                             edge.toString(ship);
                             // std::tie(ship.pos, ship.dir) = Ship::unpack(edge.to);
                         }
