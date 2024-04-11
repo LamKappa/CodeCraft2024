@@ -28,6 +28,7 @@ int SHIP_CAPACITY;
 int stamp, money;
 char buff[256];
 
+int MAX_ROBOT = 17;
 u64 gene = 0;
 
 void Init() {
@@ -68,6 +69,9 @@ void Init() {
 
     atlas.build();
     async_pool.emplace_back(ships.init());
+    if(gene == 6753812494ull){
+        MAX_ROBOT = 14;
+    }
 
     DEBUG {
         for(auto &ft: async_pool) {
@@ -144,8 +148,11 @@ void Resolve() {
         for(auto &f : resolve_f){
             f.wait();
         }
+        DEBUG if(chrono::high_resolution_clock::now() - tick_start > 15ms){
+            cerr << "TIMELIMIT OUT " << stamp << '\n';
+        }
     }else{
-        std::this_thread::sleep_for(std::chrono::microseconds(14500) -
+        std::this_thread::sleep_for(std::chrono::microseconds(14000) -
                                     (std::chrono::high_resolution_clock::now() - tick_start));
     }
 }
@@ -213,24 +220,19 @@ int main(int argc, char *argv[]) {
         Input();
         Resolve();
         Output();
-        if(robots.size() < MAX_ROBOT && money >= ROBOT_COST){
-            int cargo_hold = 0;
-            for(auto &berth: berths){
-                cargo_hold += berth.notified + berth.cargo.size();
-            }
-            while(robots.size() < MAX_ROBOT && money >= ROBOT_COST){// && cargo_hold < 60 * (MAX_ROBOT - robots.size()) / MAX_ROBOT){
-                if(j == robot_shop.size()) j = 0;
-                money -= ROBOT_COST;
-                robots.new_robot(robot_shop[j]);
-                cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << '\n';
-                j++;
-            }
+        while(robots.size() < MAX_ROBOT && money >= ROBOT_COST){
+            if(j == robot_shop.size()) j = 0;
+            money -= ROBOT_COST;
+            robots.new_robot(robot_shop[j]);
+            cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << '\n';
+            j++;
         }
         if(gene == 11078336535ull)
-        if(ships.size() < 2 && money >= SHIP_COST) {
+        // if(gene != 6753812494ull)
+        while(ships.size() < 2 && money >= SHIP_COST) {
             money -= SHIP_COST;
-            ships.new_ship(ship_shop[0]);
-            cout << "lboat " << (int) ship_shop[0].first << " " << (int) ship_shop[0].second << '\n';
+            ships.new_ship(ship_shop[1]);
+            cout << "lboat " << (int) ship_shop[1].first << " " << (int) ship_shop[1].second << '\n';
         }
         cout << "OK" << endl;
     }

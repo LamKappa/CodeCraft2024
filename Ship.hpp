@@ -10,6 +10,7 @@
 #include "Berth.hpp"
 #include "Config.h"
 #include "Dijkstra.hpp"
+#include "Robot.hpp"
 
 struct Ship {
     enum ShipMode {
@@ -172,11 +173,12 @@ struct Ships : public std::vector<Ship> {
         }
         auto calc = [&](int berth_id) {
             auto &berth = Berths::berths[berth_id];
-            auto load_value = 0.f;
-            for(int i = 0; i < berth.cargo.size(); i++) {
-                load_value += (float) berth.cargo[i].value;
-            }
-            return load_value / (float) dis[berth.abstract_pos];
+            auto berth_hold = berth.notified + (int) berth.cargo.size();
+            auto load_value = berth.notified_value + berth.cargo_value;
+            // for(int i = 0; i < berth.cargo.size(); i++) {
+            //     load_value += (float) berth.cargo[i].value;
+            // }
+            return load_value / ((float) dis[berth.abstract_pos] + (float) berth_hold / berth.loading_speed);
         };
         auto val = 0.f;
         bool finish = false;
@@ -271,6 +273,7 @@ struct Ships : public std::vector<Ship> {
             // multi_table.resize(N * N);
             rev_graph.resize(N * N * 4);
             graph.resize(N * N * 4);
+            Bitset<N * N> vis{};
             for(int i = 0; i < N; i++) {
                 for(int j = 0; j < N; j++) {
                     Position pos{i, j};
@@ -288,6 +291,37 @@ struct Ships : public std::vector<Ship> {
                         std::tie(last, at) = Ship::getId(pos + dir + next(dir), prev(dir));
                         add_edge(id, last, at ? Action::MULTI_TURN_LEFT : Action::TURN_LEFT);
                         // dept传送
+                        // {
+                        //     Queue<Position, 3 * N> q;
+                        //     vis.reset(0, N * N);
+                        //     q.push(pos);
+                        //     while(!q.empty()){
+                        //         auto u = q.pop();
+                        //         if(Ship::SHIP_MULTI_SYM.count(Atlas::atlas.maze[u])){
+                        //             auto ab_last = getAbstractPos(u);
+                        //             for(auto k : ab_last){
+                        //                 auto [p, d] = Ship::unpack(k);
+                        //                 bool fl = true;
+                        //                 for(auto x : Ship::getArea(p, d)){
+                        //                     if(!Ship::SHIP_MULTI_SYM.count(x)) {
+                        //                         fl = false;
+                        //                         break;
+                        //                     }
+                        //                 }
+                        //                 if(!fl) { continue; }
+                        //                 add_edge(id, k, Action::DEPT);
+                        //                 break;
+                        //             }
+                        //             break;
+                        //         }
+                        //         vis.set(u);
+                        //         for(auto &move : Move){
+                        //             auto v = u + move;
+                        //             if(v.outside() || vis.test(v)) { continue; }
+                        //             q.push(v);
+                        //         }
+                        //     }
+                        // }
                         // berth传送
                         for(auto &berth: Berths::berths) {
                             if(berth.around(pos)) {
@@ -320,7 +354,7 @@ struct Ships : public std::vector<Ship> {
     void check_force_back(Ship &ship) {
         int target = ship.target, time;
         if(target < berth_dis.size() && selectCommit(ship, &time)) {
-            if(time < MAX_FRAME - stamp - 5) {
+            if(time < MAX_FRAME - stamp - (size() > 1 ? 50 : 5)) {
                 ship.target = target;
             } else {
                 ship.mode = Ship::SAILING;
@@ -430,7 +464,11 @@ struct Ships : public std::vector<Ship> {
                             ship.load_num += cnt;
                             ship.load_value += value;
                             if(Berths::berths[ship.target].cargo.empty()) {
-                                updateTarget(ship);
+                                if(gene == 6753812494ull && Robots::robots.size() < MAX_ROBOT && ship.load_value + money >= ROBOT_COST){
+                                    selectCommit(ship);
+                                }else{
+                                    updateTarget(ship);
+                                }
                                 // auto val1 = updateTarget(ship);
                                 // int target_t = ship.target;
                                 // auto val2 = selectCommit(ship);

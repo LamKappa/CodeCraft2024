@@ -35,11 +35,12 @@ constexpr int MAX_FRAME = 15000;
 
 constexpr int ROBOT_COST = 2000;
 constexpr int SHIP_COST = 8000;
-
-constexpr int MAX_ROBOT = 17;
 constexpr int BASE_SCORE = 25000;
 
+
+extern int MAX_ROBOT;
 extern int stamp, money;
+extern u64 gene;
 extern std::mt19937 eng;
 extern int SHIP_CAPACITY;
 extern std::chrono::high_resolution_clock::time_point start_time;
