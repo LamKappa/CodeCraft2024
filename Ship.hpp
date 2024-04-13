@@ -576,7 +576,8 @@ struct Ships : public std::vector<Ship> {
                         ship.load_num += cnt;
                         ship.load_value += value;
                         if(Berths::berths[ship.target].cargo.empty()) {
-                            if(Robots::robots.size() < MAX_ROBOT && ship.load_value + money >= ROBOT_COST) {
+                            if((robot0_cnt < MAX_ROBOT0 && ship.load_value >= ROBOT0_COST) ||
+                               (robot1_cnt < MAX_ROBOT1 && ship.load_value >= ROBOT1_COST)) {
                                 selectCommit(ship);
                             } else {
                                 updateTarget(ship);

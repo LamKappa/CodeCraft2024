@@ -28,7 +28,9 @@ int SHIP_CAPACITY;
 int stamp, money;
 char buff[256];
 
-int MAX_ROBOT = 40;
+int robot0_cnt = 0, robot1_cnt = 0;
+
+int MAX_ROBOT0 = 30, MAX_ROBOT1 = 10;
 int MAX_SHIP = 10;
 u64 gene = 0;
 
@@ -78,16 +80,19 @@ void Init() {
 
     switch(gene){
     case MAP1:
-        MAX_ROBOT = 17;
-        MAX_SHIP = 2;
+        MAX_ROBOT0 = 19;
+        MAX_ROBOT1 = 0;
+        MAX_SHIP = 3;
         break;
     case MAP2:
-        MAX_ROBOT = 17;
+        MAX_ROBOT0 = 17;
+        MAX_ROBOT1 = 0;
         MAX_SHIP = 2;
         break;
     default:
-        MAX_ROBOT = 17;
-        MAX_SHIP = 2;
+        MAX_ROBOT0 = 17;
+        MAX_ROBOT1 = 0;
+        MAX_SHIP = 1;
         break;
     }
 
@@ -125,13 +130,13 @@ void Input() {
         DEBUG tot_values += items.back().value;
     }
     cin >> R;
-    ASSERT(R == robots.size());
+    // ASSERT(R == robots.size());
     for(int i = 0; i < robots.size(); i++) {
         cin >> robots[i];
         assert(robots[i].id == i);
     }
     cin >> S;
-    ASSERT(S == ships.size());
+    // ASSERT(S == ships.size());
     for(int i = 0; i < ships.size(); i++) {
         cin >> ships[i];
     }
@@ -213,7 +218,7 @@ int main(int argc, char *argv[]) {
     cin.tie(nullptr);
 
     Init();
-    int robot_avg_alloc = 8 / robot_shop.size();
+    int robot_avg_alloc = std::min(8, MAX_ROBOT0) / robot_shop.size();
     {
         // after init
         Input();
@@ -224,13 +229,14 @@ int main(int argc, char *argv[]) {
             ships.new_ship(p);
             cout << "lboat " << (int) p.first << " " << (int) p.second << '\n';
         }
-        for(int i = 0; i < robot_avg_alloc; i++) {
-            for(int j = 0; j < robot_shop.size(); j++) {
-                if(money - ROBOT_COST < 0) { break; }
-                money -= ROBOT_COST;
-                robots.new_robot(robot_shop[j]);
-                cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << " 0" << '\n';
-            }
+        int j = 0;
+        while(robot0_cnt < MAX_ROBOT0 && money >= ROBOT0_COST){
+            if(j == robot_shop.size()) j = 0;
+            if(money - ROBOT0_COST < 0) { break; }
+            money -= ROBOT0_COST;
+            robots.new_robot(robot_shop[j]);
+            cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << " 0" << '\n';
+            j++; robot0_cnt++;
         }
         cout << "OK" << endl;
     }
@@ -239,12 +245,19 @@ int main(int argc, char *argv[]) {
         Input();
         Resolve();
         Output();
-        while(robots.size() < MAX_ROBOT && money >= ROBOT_COST){
+        while(robot0_cnt < MAX_ROBOT0 && money >= ROBOT0_COST){
             if(j == robot_shop.size()) j = 0;
-            money -= ROBOT_COST;
+            money -= ROBOT0_COST;
             robots.new_robot(robot_shop[j]);
             cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << " 0" << '\n';
-            j++;
+            j++; robot0_cnt++;
+        }
+        while(robot1_cnt < MAX_ROBOT1 && money >= ROBOT1_COST){
+            if(j == robot_shop.size()) j = 0;
+            money -= ROBOT1_COST;
+            robots.new_robot(robot_shop[j], 1);
+            cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << " 1" << '\n';
+            j++; robot1_cnt++;
         }
         while(ships.size() < MAX_SHIP && money >= SHIP_COST) {
             money -= SHIP_COST;
@@ -255,7 +268,9 @@ int main(int argc, char *argv[]) {
     }
 
     DEBUG {
-        int cost = robots.size() * ROBOT_COST + ships.size() * SHIP_COST;
+        int robot_cost = robot0_cnt * ROBOT0_COST + robot1_cnt * ROBOT1_COST;
+        int ship_cost = ships.size() * SHIP_COST;
+        int cost = robot_cost + ship_cost;
         int left_items = 0, left_value = 0;
         for(auto &berth: berths) {
             // cerr << "left_items: " << berth.cargo.size() << '\n';
@@ -273,7 +288,7 @@ int main(int argc, char *argv[]) {
         cerr << "tot_item_values: " << tot_values << '\n';
         cerr << "left_items: " << left_items << " (" << left_value << ")" << '\n';
         cerr << "ship-value: " << sailing_value << " (capacity: " << SHIP_CAPACITY << ")" << '\n';
-        cerr << "robot-value: " << tot_score + left_value + sailing_value << " (clean: " << tot_score + left_value + sailing_value - robots.size() * ROBOT_COST << ")" << '\n';
+        cerr << "robot-value: " << tot_score + left_value + sailing_value << " (clean: " << tot_score + left_value + sailing_value - robot_cost << ")" << '\n';
         cerr << "robots: " << robots.size() << " ships: " << ships.size() << '\n';
         cerr << "score: " << tot_score + BASE_SCORE - cost << " (" << tot_score + BASE_SCORE << " - " << cost << ")" << '\n';
         cerr << "ship/robot: " << fixed << setprecision(2)
