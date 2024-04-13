@@ -28,7 +28,7 @@ int SHIP_CAPACITY;
 int stamp, money;
 char buff[256];
 
-int MAX_ROBOT = 17;
+int MAX_ROBOT = 20;
 u64 gene = 0;
 
 void Init() {
@@ -69,8 +69,12 @@ void Init() {
 
     atlas.build();
     async_pool.emplace_back(ships.init());
-    if(gene == 6753812494ull){
+    if(gene == 6753812494ull) {
+        MAX_ROBOT = 18;
+    } else if(gene == 11078336535ull) {
         MAX_ROBOT = 17;
+    } else {
+        MAX_ROBOT = 19;
     }
 
     DEBUG {
@@ -228,8 +232,9 @@ int main(int argc, char *argv[]) {
             cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << '\n';
             j++;
         }
-        if(gene == 11078336535ull)
-        // if(gene != 6753812494ull)
+        // if(gene == 11078336535ull || gene == 7545880592ull)
+        // if(gene == 6753812494ull)
+        if(gene != 6753812494ull)
         while(ships.size() < 2 && money >= SHIP_COST) {
             money -= SHIP_COST;
             ships.new_ship(ship_shop[1]);

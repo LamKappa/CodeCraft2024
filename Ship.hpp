@@ -173,8 +173,6 @@ struct Ships : public std::vector<Ship> {
         ship.dis = graph.dijkstra_plus_({id}, get_occupy_fun(ship.id));
     }
 
-
-
     bool updateTarget(Ship &ship, int *time = nullptr) {
         if(ship.target < berth_dis.size()) {
             Berths::berths[ship.target].occupied = nullptr;
@@ -492,7 +490,7 @@ struct Ships : public std::vector<Ship> {
                         auto [id, dir] = Ship::getId(ship.pos, ship.dir);
                         bool is_commit = ship.target >= berth_dis.size();
                         std::vector<int> dis;
-                        int real_dis = N * N * 10;
+                        int real_dis = -1;
                         if(size() > 1) {
                             std::vector<int> target_abstract_pos = {};
                             if(is_commit) {
@@ -506,7 +504,9 @@ struct Ships : public std::vector<Ship> {
                             updateDistance(ship);
                             dis = ship.dis;
                             for(auto p : target_abstract_pos) {
-                                real_dis = std::min(real_dis, dis[p]);
+                                if(real_dis == -1 || (dis[p] != -1 && dis[p] < real_dis)) {
+                                    real_dis = dis[p];
+                                }
                             }
                         }
                         else {
