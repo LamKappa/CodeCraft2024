@@ -466,6 +466,17 @@ struct Ships : public std::vector<Ship> {
         return {};
     }
 
+    void allShipDis() {
+        std::vector<std::future<void>> ship_f;
+        for(auto &ship : *this) {
+            ship_f.emplace_back(std::async(std::launch::async, [this, &ship] {
+                updateDistance(ship);
+            }));
+        }
+        for(auto & f : ship_f) {
+            f.wait();
+        }
+    }
     // template<int idx>
     // bool occupy_fun(int pos_id) {
     //
@@ -478,6 +489,7 @@ struct Ships : public std::vector<Ship> {
             for(auto &ship: *this) {
                 ship.updateArea();
             }
+            allShipDis();
             std::vector<std::future<void>> ship_f;
             for(auto &ship: *this) {
                 ship.output[0] = '\0';

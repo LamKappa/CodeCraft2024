@@ -82,6 +82,10 @@ void Init() {
         MAX_SHIP = 1;
         break;
     case MAP2:
+        MAX_ROBOT = 20;
+        MAX_SHIP = 2;
+        break;
+    default:
         MAX_ROBOT = 17;
         MAX_SHIP = 2;
         break;
