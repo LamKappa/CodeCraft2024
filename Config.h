@@ -39,6 +39,7 @@ constexpr int BASE_SCORE = 25000;
 
 
 extern int MAX_ROBOT;
+extern int MAX_SHIP;
 extern int stamp, money;
 extern u64 gene;
 extern std::mt19937 eng;

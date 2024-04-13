@@ -127,6 +127,7 @@ struct Ships : public std::vector<Ship> {
                 snprintf(ship.output, sizeof(Ship::output), "rot %d 0", ship.id);
                 break;
             case Action::DEPT:
+                DEBUG std::cerr << "dept " << stamp << '\n';
                 snprintf(ship.output, sizeof(Ship::output), "dept %d", ship.id);
                 break;
             case Action::BERTH:
@@ -194,7 +195,7 @@ struct Ships : public std::vector<Ship> {
             //     load_value += (float) berth.cargo[i].value;
             // }
             auto d = size() > 1 ? dis[berth.abstract_pos] : berth_dis[berth.id][id];
-            return load_value / ((float) d + (float) berth_hold / berth.loading_speed);
+            return (float) load_value / ((float) d + (float) std::min(berth_hold, SHIP_CAPACITY - ship.load_num) / (float) berth.loading_speed);
         };
         auto val = 0.f;
         bool finish = false;
@@ -326,37 +327,37 @@ struct Ships : public std::vector<Ship> {
                         std::tie(last, at) = Ship::getId(pos + dir + next(dir), prev(dir));
                         add_edge(id, last, at ? Action::MULTI_TURN_LEFT : Action::TURN_LEFT);
                         // dept传送
-                        // {
-                        //     Queue<Position, 3 * N> q;
-                        //     vis.reset(0, N * N);
-                        //     q.push(pos);
-                        //     while(!q.empty()){
-                        //         auto u = q.pop();
-                        //         if(Ship::SHIP_MULTI_SYM.count(Atlas::atlas.maze[u])){
-                        //             auto ab_last = getAbstractPos(u);
-                        //             for(auto k : ab_last){
-                        //                 auto [p, d] = Ship::unpack(k);
-                        //                 bool fl = true;
-                        //                 for(auto x : Ship::getArea(p, d)){
-                        //                     if(!Ship::SHIP_MULTI_SYM.count(x)) {
-                        //                         fl = false;
-                        //                         break;
-                        //                     }
-                        //                 }
-                        //                 if(!fl) { continue; }
-                        //                 add_edge(id, k, Action::DEPT);
-                        //                 break;
-                        //             }
-                        //             break;
-                        //         }
-                        //         vis.set(u);
-                        //         for(auto &move : Move){
-                        //             auto v = u + move;
-                        //             if(v.outside() || vis.test(v)) { continue; }
-                        //             q.push(v);
-                        //         }
-                        //     }
-                        // }
+                        {
+                            Queue<Position, 3 * N> q;
+                            vis.reset(0, N * N);
+                            q.push(pos);
+                            while(!q.empty()){
+                                auto u = q.pop();
+                                if(Ship::SHIP_MULTI_SYM.count(Atlas::atlas.maze[u])){
+                                    auto ab_last = getAbstractPos(u);
+                                    for(auto k : ab_last){
+                                        auto [p, d] = Ship::unpack(k);
+                                        bool fl = true;
+                                        for(auto x : Ship::getArea(p, d)){
+                                            if(!Ship::SHIP_MULTI_SYM.count(x)) {
+                                                fl = false;
+                                                break;
+                                            }
+                                        }
+                                        if(!fl) { continue; }
+                                        add_edge(id, k, Action::DEPT);
+                                        break;
+                                    }
+                                    break;
+                                }
+                                vis.set(u);
+                                for(auto &move : Move){
+                                    auto v = u + move;
+                                    if(v.outside() || vis.test(v)) { continue; }
+                                    q.push(v);
+                                }
+                            }
+                        }
                         // berth传送
                         for(auto &berth: Berths::berths) {
                             if(berth.around(pos)) {
@@ -413,7 +414,7 @@ struct Ships : public std::vector<Ship> {
         };
     }
 
-    Action getNextAction(Ship & ship) {
+        Action getNextAction(Ship & ship) {
         updateDistance(ship);
         std::vector<int> target_abstract_pos = {};
         if(ship.target >= berth_dis.size()) {
@@ -565,7 +566,7 @@ struct Ships : public std::vector<Ship> {
                             ship.load_num += cnt;
                             ship.load_value += value;
                             if(Berths::berths[ship.target].cargo.empty()) {
-                                if(gene == 6753812494ull && Robots::robots.size() < MAX_ROBOT && ship.load_value + money >= ROBOT_COST){
+                                if(Robots::robots.size() < MAX_ROBOT && ship.load_value + money >= ROBOT_COST){
                                     selectCommit(ship);
                                 }else{
                                     updateTarget(ship);

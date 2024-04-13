@@ -28,8 +28,14 @@ int SHIP_CAPACITY;
 int stamp, money;
 char buff[256];
 
-int MAX_ROBOT = 20;
+int MAX_ROBOT = 40;
+int MAX_SHIP = 10;
 u64 gene = 0;
+
+enum MAP{
+    MAP1 = 4961533958ull,
+    MAP2 = 2385117190ull
+};
 
 void Init() {
     atlas.init();
@@ -69,12 +75,16 @@ void Init() {
 
     atlas.build();
     async_pool.emplace_back(ships.init());
-    if(gene == 6753812494ull) {
-        MAX_ROBOT = 18;
-    } else if(gene == 11078336535ull) {
+
+    switch(gene){
+    case MAP1:
         MAX_ROBOT = 17;
-    } else {
-        MAX_ROBOT = 19;
+        MAX_SHIP = 1;
+        break;
+    case MAP2:
+        MAX_ROBOT = 17;
+        MAX_SHIP = 2;
+        break;
     }
 
     DEBUG {
@@ -232,10 +242,7 @@ int main(int argc, char *argv[]) {
             cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << '\n';
             j++;
         }
-        // if(gene == 11078336535ull || gene == 7545880592ull)
-        // if(gene == 6753812494ull)
-        if(gene != 6753812494ull)
-        while(ships.size() < 2 && money >= SHIP_COST) {
+        while(ships.size() < MAX_SHIP && money >= SHIP_COST) {
             money -= SHIP_COST;
             ships.new_ship(ship_shop[1]);
             cout << "lboat " << (int) ship_shop[1].first << " " << (int) ship_shop[1].second << '\n';
@@ -262,6 +269,7 @@ int main(int argc, char *argv[]) {
         cerr << "tot_item_values: " << tot_values << '\n';
         cerr << "left_items: " << left_items << " (" << left_value << ")" << '\n';
         cerr << "ship-value: " << sailing_value << " (capacity: " << SHIP_CAPACITY << ")" << '\n';
+        cerr << "robot-value: " << tot_score + left_value + sailing_value << " (clean: " << tot_score + left_value + sailing_value - robots.size() * ROBOT_COST << ")" << '\n';
         cerr << "robots: " << robots.size() << " ships: " << ships.size() << '\n';
         cerr << "score: " << tot_score + BASE_SCORE - cost << " (" << tot_score + BASE_SCORE << " - " << cost << ")" << '\n';
         cerr << "ship/robot: " << fixed << setprecision(2)
