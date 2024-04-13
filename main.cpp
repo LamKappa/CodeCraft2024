@@ -78,16 +78,16 @@ void Init() {
 
     switch(gene){
     case MAP1:
-        MAX_ROBOT = 17;
-        MAX_SHIP = 2;
+        MAX_ROBOT = 18;
+        MAX_SHIP = 3;
         break;
     case MAP2:
         MAX_ROBOT = 17;
         MAX_SHIP = 2;
         break;
     default:
-        MAX_ROBOT = 17;
-        MAX_SHIP = 2;
+        MAX_ROBOT = 19;
+        MAX_SHIP = 1;
         break;
     }
 

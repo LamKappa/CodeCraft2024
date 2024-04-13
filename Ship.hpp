@@ -463,6 +463,9 @@ struct Ships : public std::vector<Ship> {
     }
 
     void allShipDis() {
+        if(size() <= 1) {
+            return;
+        }
         std::vector<std::future<void>> ship_f;
         for(auto &ship: *this) {
             if(ship.status == 1) {
@@ -476,12 +479,50 @@ struct Ships : public std::vector<Ship> {
             f.wait();
         }
     }
-    // template<int idx>
-    // bool occupy_fun(int pos_id) {
-    //
-    // }
+
+    int getDisCommit(Ship &ship, int target) {
+        auto id = getAbstractPos(ship.pos, ship.dir).front();
+        if(size() <= 1) {
+            return commit_dis[target][id];
+        }
+        else {
+            auto abstractPos = getAbstractPos(commit_point[target]);
+            return *std::max_element(abstractPos.begin(), abstractPos.end(), [&](int a, int b) {
+                if(ship.dis[a] == -1) {
+                    return true;
+                } else if(ship.dis[b] == -1) {
+                    return false;
+                } else {
+                    return ship.dis[a] > ship.dis[b];
+                }
+            });
+        }
+    }
+
+    int getDisBerth(Ship &ship, int target) {
+        auto id = getAbstractPos(ship.pos, ship.dir).front();
+        if(size() <= 1) {
+            return berth_dis[target][id];
+        } else {
+            return ship.dis[getAbstractPos(Berths::berths[target].pos, Berths::berths[target].dir).front()];
+        }
+    }
 
     auto resolve() {
+
+        if(now_frame >= MAX_FRAME - 500 && final_berth.empty()) { // update final berth
+            std::vector<int> berth_id(Berths::berths.size());
+            std::iota(berth_id.begin(), berth_id.end(), 0);
+            std::sort(berth_id.begin(), berth_id.end(), [&](const int a, const int b) {
+                return Berths::berths[a].cargo_value + Berths::berths[a].notified_value >
+                Berths::berths[b].cargo_value + Berths::berths[b].notified_value;
+            });
+            for(auto i = std::min(size(), Berths::berths.size()); i < Berths::berths.size(); i++) {
+                Berths::berths[berth_id[i]].disabled_pulling = true;
+            }
+        }
+
+
         return std::async(std::launch::async, [this] {
             // auto start_time = std::chrono::system_clock::now();
             updateOccupyTable(true);
@@ -598,6 +639,21 @@ struct Ships : public std::vector<Ship> {
                 }
             }
             updateOccupyTable(false);
+            // for(auto &berth : Berths::berths) {
+            //     auto berthAbstractPos = getAbstractPos(berth.pos, berth.dir).front();
+            //     bool valid = false;
+            //     for(auto &ship : *this) {
+            //         for(auto & commit_d : commit_dis) {
+            //             if(getDisBerth(ship, berth.id) + commit_d[berthAbstractPos] +
+            //                (berth.cargo.size() + berth.notified) / berth.loading_speed + now_frame < MAX_FRAME) {
+            //                 valid = true;
+            //             }
+            //         }
+            //     }
+            //     if(!valid) {
+            //         berth.disabled_pulling = false;
+            //     }
+            // }
             // for(int i = 0; i < size(); i++) {
             //     std::cerr << "ship" << i << " : " << (*this)[i].output << std::endl;
             // }

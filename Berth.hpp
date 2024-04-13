@@ -17,6 +17,8 @@
 #include "Queue.hpp"
 // #include "SegTree.hpp"
 
+extern std::vector<int> final_berth;
+
 struct Berth {
     index_t id{};
     Position pos;
