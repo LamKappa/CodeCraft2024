@@ -164,7 +164,7 @@ struct Ships : public std::vector<Ship> {
         }
     }
 
-    void updateDistance(Ship & ship) {
+    void updateDistance(Ship &ship) {
         if(ship.dir == ship.last_dis_dir && ship.pos == ship.last_dis_pos) {
             return;
         }
@@ -203,8 +203,7 @@ struct Ships : public std::vector<Ship> {
             auto &berth = Berths::berths[i];
             if(size() > 1) {
                 if(berth.occupied || dis[berth.abstract_pos] == -1) { continue; }
-            }
-            else {
+            } else {
                 if(berth.occupied || berth_dis[i][id] == -1) { continue; }
             }
             finish = true;
@@ -215,8 +214,7 @@ struct Ships : public std::vector<Ship> {
                 if(time) {
                     if(size() > 1) {
                         *time = dis[berth.abstract_pos];
-                    }
-                    else {
+                    } else {
                         *time = berth_dis[i][id];
                     }
                 }
@@ -249,8 +247,7 @@ struct Ships : public std::vector<Ship> {
                         valid = true;
                     }
                 }
-            }
-            else {
+            } else {
                 valid = (commit_dis[i][id] != -1);
             }
             if(!valid) {
@@ -327,37 +324,37 @@ struct Ships : public std::vector<Ship> {
                         std::tie(last, at) = Ship::getId(pos + dir + next(dir), prev(dir));
                         add_edge(id, last, at ? Action::MULTI_TURN_LEFT : Action::TURN_LEFT);
                         // dept传送
-                        {
-                            Queue<Position, 3 * N> q;
-                            vis.reset(0, N * N);
-                            q.push(pos);
-                            while(!q.empty()){
-                                auto u = q.pop();
-                                if(Ship::SHIP_MULTI_SYM.count(Atlas::atlas.maze[u])){
-                                    auto ab_last = getAbstractPos(u);
-                                    for(auto k : ab_last){
-                                        auto [p, d] = Ship::unpack(k);
-                                        bool fl = true;
-                                        for(auto x : Ship::getArea(p, d)){
-                                            if(!Ship::SHIP_MULTI_SYM.count(x)) {
-                                                fl = false;
-                                                break;
-                                            }
-                                        }
-                                        if(!fl) { continue; }
-                                        add_edge(id, k, Action::DEPT);
-                                        break;
-                                    }
-                                    break;
-                                }
-                                vis.set(u);
-                                for(auto &move : Move){
-                                    auto v = u + move;
-                                    if(v.outside() || vis.test(v)) { continue; }
-                                    q.push(v);
-                                }
-                            }
-                        }
+                        // {
+                        //     Queue<Position, 3 * N> q;
+                        //     vis.reset(0, N * N);
+                        //     q.push(pos);
+                        //     while(!q.empty()) {
+                        //         auto u = q.pop();
+                        //         if(Ship::SHIP_MULTI_SYM.count(Atlas::atlas.maze[u])) {
+                        //             auto ab_last = getAbstractPos(u);
+                        //             for(auto k: ab_last) {
+                        //                 auto [p, d] = Ship::unpack(k);
+                        //                 bool fl = true;
+                        //                 for(auto x: Ship::getArea(p, d)) {
+                        //                     if(!Ship::SHIP_MULTI_SYM.count(x)) {
+                        //                         fl = false;
+                        //                         break;
+                        //                     }
+                        //                 }
+                        //                 if(!fl) { continue; }
+                        //                 add_edge(id, k, Action::DEPT);
+                        //                 break;
+                        //             }
+                        //             break;
+                        //         }
+                        //         vis.set(u);
+                        //         for(auto &move: Move) {
+                        //             auto v = u + move;
+                        //             if(v.outside() || vis.test(v)) { continue; }
+                        //             q.push(v);
+                        //         }
+                        //     }
+                        // }
                         // berth传送
                         for(auto &berth: Berths::berths) {
                             if(berth.around(pos)) {
@@ -414,7 +411,7 @@ struct Ships : public std::vector<Ship> {
         };
     }
 
-        Action getNextAction(Ship & ship) {
+    Action getNextAction(Ship &ship) {
         updateDistance(ship);
         std::vector<int> target_abstract_pos = {};
         if(ship.target >= berth_dis.size()) {
@@ -423,8 +420,8 @@ struct Ships : public std::vector<Ship> {
             target_abstract_pos = getAbstractPos(Berths::berths[ship.target].pos, Berths::berths[ship.target].dir);
         }
         int target = target_abstract_pos[0];
-        auto & dis = ship.dis;
-        for(auto p : target_abstract_pos) {
+        auto &dis = ship.dis;
+        for(auto p: target_abstract_pos) {
             if(dis[target] == -1 || (dis[p] != -1 && dis[p] < dis[target])) {
                 target = p;
             }
@@ -446,8 +443,7 @@ struct Ships : public std::vector<Ship> {
                 if(next_val == -1 || (val != -1 && val < next_val)) {
                     next_val = val;
                     next = rev_graph[target][i];
-                }
-                else if(val != -1 && val <= next_val) {
+                } else if(val != -1 && val <= next_val) {
                     std::uniform_int_distribution<int> u(0, 1);
                     if(u(eng)) {
                         next_val = val;
@@ -458,7 +454,7 @@ struct Ships : public std::vector<Ship> {
             last = target;
             target = next.to;
         }
-        for(auto & act : graph[id]) {
+        for(auto &act: graph[id]) {
             if(act.to == last) {
                 return act;
             }
@@ -468,12 +464,15 @@ struct Ships : public std::vector<Ship> {
 
     void allShipDis() {
         std::vector<std::future<void>> ship_f;
-        for(auto &ship : *this) {
+        for(auto &ship: *this) {
+            if(ship.status == 1) {
+                continue;
+            }
             ship_f.emplace_back(std::async(std::launch::async, [this, &ship] {
                 updateDistance(ship);
             }));
         }
-        for(auto & f : ship_f) {
+        for(auto &f: ship_f) {
             f.wait();
         }
     }
@@ -487,121 +486,116 @@ struct Ships : public std::vector<Ship> {
             // auto start_time = std::chrono::system_clock::now();
             updateOccupyTable(true);
             for(auto &ship: *this) {
+                if(ship.status == 1) {
+                    continue;
+                }
                 ship.updateArea();
             }
             allShipDis();
-            std::vector<std::future<void>> ship_f;
             for(auto &ship: *this) {
                 ship.output[0] = '\0';
-                ship_f.emplace_back(std::async(std::launch::async, [this, &ship] {
-                    if(ship.status == 1) {
-                        return;
-                    }
-                    check_force_back(ship);
-                    switch(ship.mode) {
-                    case Ship::SAILING: {
-                        auto [id, dir] = Ship::getId(ship.pos, ship.dir);
-                        bool is_commit = ship.target >= berth_dis.size();
-                        std::vector<int> dis;
-                        int real_dis = -1;
-                        if(size() > 1) {
-                            std::vector<int> target_abstract_pos = {};
-                            if(is_commit) {
-                                target_abstract_pos = getAbstractPos(commit_point[ship.target - berth_dis.size()]);
-                            } else {
-                                if(Berths::berths[ship.target].occupied != &ship) {
-                                    updateTarget(ship);
-                                }
-                                target_abstract_pos = getAbstractPos(Berths::berths[ship.target].pos, Berths::berths[ship.target].dir);
-                            }
-                            updateDistance(ship);
-                            dis = ship.dis;
-                            for(auto p : target_abstract_pos) {
-                                if(real_dis == -1 || (dis[p] != -1 && dis[p] < real_dis)) {
-                                    real_dis = dis[p];
-                                }
-                            }
-                        }
-                        else {
-                            dis = is_commit ? commit_dis[ship.target - berth_dis.size()] : berth_dis[ship.target];
-                            real_dis = dis[id];
-                        }
-                        if(real_dis == -1) {
-                            bool success = false;
-                            if(is_commit) {
-                                success = selectCommit(ship);
-                            } else {
-                                success = updateTarget(ship);
-                            }
-                            if(!success) {
-                                setDept(ship);
-                            }
-                        } else if(real_dis == 0) {
-                            if(is_commit) {
-                                DEBUG tot_score += ship.load_value;
-                                ship.load_num = ship.load_value = 0;
-                                updateTarget(ship);
-                            } else {
-                                snprintf(ship.output, sizeof(Ship::output), "berth %d", ship.id);
-                                ship.mode = Ship::LOADING;
-                            }
-                        } else if(real_dis > 0 && !graph[id].empty()) {
-                            Action edge;
-                            if(size() > 1) {
-                                edge = getNextAction(ship);
-                            }
-                            else {
-                                int next_idx = 0, next_dis = -1;
-                                std::vector<int> sf(graph[id].size());
-                                std::iota(sf.begin(), sf.end(), 0);
-                                std::shuffle(sf.begin(), sf.end(), eng);
-                                for(auto i: sf) {
-                                    auto i_dis = dis[graph[id][i].to];
-                                    if(next_dis == -1 || (i_dis != -1 && i_dis < next_dis)) {
-                                        next_dis = i_dis;
-                                        next_idx = i;
-                                    }
-                                }
-                                edge = graph[id][next_idx];
-                            }
-                            edge.toString(ship);
-                            // std::tie(ship.pos, ship.dir) = Ship::unpack(edge.to);
-                        }
-                        break;
-                    }
-                    case Ship::LOADING: {
-                        if(ship.load_num == SHIP_CAPACITY) {
-                            selectCommit(ship);
-                            ship.mode = Ship::SAILING;
+                if(ship.status == 1) {
+                    continue;
+                }
+                check_force_back(ship);
+                switch(ship.mode) {
+                case Ship::SAILING: {
+                    auto [id, dir] = Ship::getId(ship.pos, ship.dir);
+                    bool is_commit = ship.target >= berth_dis.size();
+                    std::vector<int> dis;
+                    int real_dis = -1;
+                    if(size() > 1) {
+                        std::vector<int> target_abstract_pos = {};
+                        if(is_commit) {
+                            target_abstract_pos = getAbstractPos(commit_point[ship.target - berth_dis.size()]);
                         } else {
-                            auto [cnt, value] = Berths::berths[ship.target].get_load(SHIP_CAPACITY - ship.load_num);
-                            ship.load_num += cnt;
-                            ship.load_value += value;
-                            if(Berths::berths[ship.target].cargo.empty()) {
-                                if(Robots::robots.size() < MAX_ROBOT && ship.load_value + money >= ROBOT_COST){
-                                    selectCommit(ship);
-                                }else{
-                                    updateTarget(ship);
-                                }
-                                // auto val1 = updateTarget(ship);
-                                // int target_t = ship.target;
-                                // auto val2 = selectCommit(ship);
-                                // if(val1 > (float) ship.load_value / (float) val2) {
-                                //     ship.target = target_t;
-                                // }
-                                ship.mode = Ship::SAILING;
+                            if(Berths::berths[ship.target].occupied != &ship) {
+                                updateTarget(ship);
+                            }
+                            target_abstract_pos = getAbstractPos(Berths::berths[ship.target].pos, Berths::berths[ship.target].dir);
+                        }
+                        updateDistance(ship);
+                        dis = ship.dis;
+                        for(auto p: target_abstract_pos) {
+                            if(real_dis == -1 || (dis[p] != -1 && dis[p] < real_dis)) {
+                                real_dis = dis[p];
                             }
                         }
-                        break;
+                    } else {
+                        dis = is_commit ? commit_dis[ship.target - berth_dis.size()] : berth_dis[ship.target];
+                        real_dis = dis[id];
                     }
-                    default:
-                        updateTarget(ship);
+                    if(real_dis == -1) {
+                        bool success = false;
+                        if(is_commit) {
+                            success = selectCommit(ship);
+                        } else {
+                            success = updateTarget(ship);
+                        }
+                        if(!success) {
+                            setDept(ship);
+                        }
+                    } else if(real_dis == 0) {
+                        if(is_commit) {
+                            DEBUG tot_score += ship.load_value;
+                            ship.load_num = ship.load_value = 0;
+                            updateTarget(ship);
+                        } else {
+                            snprintf(ship.output, sizeof(Ship::output), "berth %d", ship.id);
+                            ship.mode = Ship::LOADING;
+                        }
+                    } else if(real_dis > 0 && !graph[id].empty()) {
+                        Action edge;
+                        if(size() > 1) {
+                            edge = getNextAction(ship);
+                        } else {
+                            int next_idx = 0, next_dis = -1;
+                            std::vector<int> sf(graph[id].size());
+                            std::iota(sf.begin(), sf.end(), 0);
+                            std::shuffle(sf.begin(), sf.end(), eng);
+                            for(auto i: sf) {
+                                auto i_dis = dis[graph[id][i].to];
+                                if(next_dis == -1 || (i_dis != -1 && i_dis < next_dis)) {
+                                    next_dis = i_dis;
+                                    next_idx = i;
+                                }
+                            }
+                            edge = graph[id][next_idx];
+                        }
+                        edge.toString(ship);
+                        // std::tie(ship.pos, ship.dir) = Ship::unpack(edge.to);
+                    }
+                    break;
+                }
+                case Ship::LOADING: {
+                    if(ship.load_num == SHIP_CAPACITY) {
+                        selectCommit(ship);
                         ship.mode = Ship::SAILING;
+                    } else {
+                        auto [cnt, value] = Berths::berths[ship.target].get_load(SHIP_CAPACITY - ship.load_num);
+                        ship.load_num += cnt;
+                        ship.load_value += value;
+                        if(Berths::berths[ship.target].cargo.empty()) {
+                            if(Robots::robots.size() < MAX_ROBOT && ship.load_value + money >= ROBOT_COST) {
+                                selectCommit(ship);
+                            } else {
+                                updateTarget(ship);
+                            }
+                            // auto val1 = updateTarget(ship);
+                            // int target_t = ship.target;
+                            // auto val2 = selectCommit(ship);
+                            // if(val1 > (float) ship.load_value / (float) val2) {
+                            //     ship.target = target_t;
+                            // }
+                            ship.mode = Ship::SAILING;
+                        }
                     }
-                }));
-            }
-            for(auto &f: ship_f) {
-                f.wait();
+                    break;
+                }
+                default:
+                    updateTarget(ship);
+                    ship.mode = Ship::SAILING;
+                }
             }
             updateOccupyTable(false);
             // for(int i = 0; i < size(); i++) {

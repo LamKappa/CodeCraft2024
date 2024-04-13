@@ -79,10 +79,10 @@ void Init() {
     switch(gene){
     case MAP1:
         MAX_ROBOT = 17;
-        MAX_SHIP = 1;
+        MAX_SHIP = 2;
         break;
     case MAP2:
-        MAX_ROBOT = 20;
+        MAX_ROBOT = 17;
         MAX_SHIP = 2;
         break;
     default:
@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
                 if(money - ROBOT_COST < 0) { break; }
                 money -= ROBOT_COST;
                 robots.new_robot(robot_shop[j]);
-                cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << '\n';
+                cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << " 0" << '\n';
             }
         }
         cout << "OK" << endl;
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
             if(j == robot_shop.size()) j = 0;
             money -= ROBOT_COST;
             robots.new_robot(robot_shop[j]);
-            cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << '\n';
+            cout << "lbot " << (int) robot_shop[j].first << " " << (int) robot_shop[j].second << " 0" << '\n';
             j++;
         }
         while(ships.size() < MAX_SHIP && money >= SHIP_COST) {
